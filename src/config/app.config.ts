@@ -31,9 +31,6 @@ const appConfig = {
 	customer: {
 		base_url: String(process.env.CUSTOMER_SERVICE_URL),
 	},
-	quotation: {
-		base_url: String(process.env.QUOTATIONS_SERVICE_URL),
-	},
 	generalApiGateway: {
 		base_url: String(process.env.API_GATEWAY_URL),
 	},

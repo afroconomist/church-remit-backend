@@ -1,7 +1,6 @@
 import { DB_TABLES } from "@shared/enums/db-tables.enum";
 // import { ObjectLiteral } from "@shared/types/object-literal.type";
 import { Model, ModelObject } from "objection";
-import bcrypt from "bcrypt";
 
 
 export class IDVerification extends Model {

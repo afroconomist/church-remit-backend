@@ -4,23 +4,24 @@ import "module-alias/register";
 import express from "express";
 import http from "http";
 import {
-	bootstrapApp,
-	setErrorHandler,
-	setUndefinedRoutesErrorHandler,
+  bootstrapApp,
+  setErrorHandler,
+  setUndefinedRoutesErrorHandler,
 } from "./bootstrap";
 import RouteVersion from "@config/route.config";
 import routes from "./shared/routes/index.routes";
 import logger from "@shared/utils/logger";
-import { BullAdapter } from 'bull-board/bullAdapter';
-import { createBullBoard } from 'bull-board';
+import { createBullBoard } from '@bull-board/api';
+import { BullAdapter } from '@bull-board/api/bullAdapter';
+import { ExpressAdapter } from '@bull-board/express';
 import { QueueService } from "./v1/modules/userManagement/queues/wallet-creation.queue";
 import { container } from "tsyringe";
 
 class App {
-	private app: express.Application;
-	private server: http.Server;
+  private app: express.Application;
+  private server: http.Server;
 
-	constructor() {
+  constructor() {
     this.app = express();
 
     this.app.use(express.json());
@@ -31,54 +32,60 @@ class App {
     this.registerModules();
     this.globalErrorHandler();
     this.undefinedRoutesErrorHandler();
-    this.registerBullBoard();
+    this.registerBullBoard(); // Register Bull Board here
     this.server = http.createServer(this.app);
-	}
+  }
 
-	private registerModules() {
-		this.app.use(routes.app);
-		this.app.use(routes.health);
-		this.app.use(RouteVersion.v1, routes.auditTrail);
-		this.app.use(RouteVersion.v1, routes.auth);
-		this.app.use(RouteVersion.v1, routes.userManagement);
-		this.app.use(RouteVersion.v1, routes.externalService);
-		this.app.use(RouteVersion.v1, routes.accessControl);
-		this.app.use(RouteVersion.v1, routes.policyManagement);
-		this.app.use(RouteVersion.v1, routes.walletManagement);
-	}
+  private registerModules() {
+    this.app.use(routes.app);
+    this.app.use(routes.health);
+    this.app.use(RouteVersion.v1, routes.auditTrail);
+    this.app.use(RouteVersion.v1, routes.auth);
+    this.app.use(RouteVersion.v1, routes.userManagement);
+    this.app.use(RouteVersion.v1, routes.accessControl);
+    this.app.use(RouteVersion.v1, routes.walletManagement);
+  }
 
-	private registerBullBoard() {
-		const queueService = container.resolve(QueueService);
-		const walletCreationQueue = queueService.getWalletCreationQueue();
-	  
-		const { router } = createBullBoard([new BullAdapter(walletCreationQueue)]);
-	  
-		this.app.use('/admin/queues', router);
-	  }
+  private registerBullBoard() {
+    const queueService = container.resolve(QueueService);
+    const walletCreationQueue = queueService.getWalletCreationQueue();
 
-	public getInstance() {
-		return this.app;
-	}
+    // Create Express adapter
+    const serverAdapter = new ExpressAdapter();
+    serverAdapter.setBasePath('/admin/queues');
 
-	private globalErrorHandler() {
-		setErrorHandler(this.app);
-	}
+    // Create Bull Board
+    createBullBoard({
+      queues: [new BullAdapter(walletCreationQueue)],
+      serverAdapter: serverAdapter,
+    });
 
-	private undefinedRoutesErrorHandler() {
-		setUndefinedRoutesErrorHandler(this.app);
-	}
+    this.app.use('/admin/queues', serverAdapter.getRouter());
+  }
 
-	public async close() {
-		if (this.server) {
-			this.server.close();
-		}
-	}
+  public getInstance() {
+    return this.app;
+  }
 
-	public listen(port: number, address = "0.0.0.0") {
-		return this.server.listen(port, address, () => {
-			logger.info(`Server listening on ${address}:${port}`);
-		});
-	}
+  private globalErrorHandler() {
+    setErrorHandler(this.app);
+  }
+
+  private undefinedRoutesErrorHandler() {
+    setUndefinedRoutesErrorHandler(this.app);
+  }
+
+  public async close() {
+    if (this.server) {
+      this.server.close();
+    }
+  }
+
+  public listen(port: number, address = "0.0.0.0") {
+    return this.server.listen(port, address, () => {
+      logger.info(`Server listening on ${address}:${port}`);
+    });
+  }
 }
 
 export default App;

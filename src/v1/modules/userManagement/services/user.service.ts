@@ -16,9 +16,7 @@ import AppError from "@shared/error/app.error";
 import { QueueService } from "../queues/wallet-creation.queue";
 import IdVerificationRepository from "../repositories/id_verification.repository";
 import ActionReasonFactory from "../factories/action_reason.factory";
-import { uploadMultipart } from "@shared/external-services/media-upload/media-upload.service";
-import path from "path";
-import appConfig from "@config/app.config";
+// import { uploadMultipart } from "@shared/external-services/media-upload/media-upload.service";
 import ReasonRepository from "../repositories/reason.repository";
 import AccessControlManagementService from "../../accessControlManagement/services/access-control-management.service";
 import RoleRepo from "../../accessControlManagement/repositories/role.repo";
@@ -762,31 +760,31 @@ class UserService {
     }
   }
 
-  async uploadFile(req: Request) {
-    try {
-      if (!req.file) {
-        throw new AppError(400, "No file uploaded");
-      }
+  // async uploadFile(req: Request) {
+  //   try {
+  //     if (!req.file) {
+  //       throw new AppError(400, "No file uploaded");
+  //     }
 
-      const bucketName = appConfig.obs_credential.bucket_name as string;
-      const mimeType = req.file.mimetype;
-      const fileBuffer = req.file.buffer;
-      const objectKey = `uploads/${Date.now()}_${path.basename(
-        req.file.originalname
-      )}`;
+  //     const bucketName = appConfig.obs_credential.bucket_name as string;
+  //     const mimeType = req.file.mimetype;
+  //     const fileBuffer = req.file.buffer;
+  //     const objectKey = `uploads/${Date.now()}_${path.basename(
+  //       req.file.originalname
+  //     )}`;
 
-      const uploadedUrl = await uploadMultipart(
-        bucketName,
-        objectKey,
-        fileBuffer,
-        mimeType
-      );
+  //     const uploadedUrl = await uploadMultipart(
+  //       bucketName,
+  //       objectKey,
+  //       fileBuffer,
+  //       mimeType
+  //     );
 
-      return uploadedUrl;
-    } catch (error: any) {
-      logger.error({ error: "Uoload error" }, error.message);
-      throw new ServiceUnavailableError("Upload Error");
-    }
-  }
+  //     return uploadedUrl;
+  //   } catch (error: any) {
+  //     logger.error({ error: "Uoload error" }, error.message);
+  //     throw new ServiceUnavailableError("Upload Error");
+  //   }
+  // }
 }
 export default UserService;

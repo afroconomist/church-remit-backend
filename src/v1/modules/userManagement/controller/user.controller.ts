@@ -144,11 +144,11 @@ getUser = async (req: Request, res: Response) => {
       .send(SuccessResponse(response));
   };
 
-  uploadFile = async (req: Request, res: Response): Promise<void> => {
-    const response = await this.userService.uploadFile(req);
+  // uploadFile = async (req: Request, res: Response): Promise<void> => {
+  //   const response = await this.userService.uploadFile(req);
   
-	  res.send(SuccessResponse("Operation successful", { url: response }));
-	};
+	//   res.send(SuccessResponse("Operation successful", { url: response }));
+	// };
 }
 
 export default UserManagementController;
