@@ -1,0 +1,3 @@
+email,name,role,phone_number,address,id_type,id_number,supervisor_email,region
+bluezendd+200@gmail.com,Ade Test,supervisor,09133227788,Lagos,NIN,22200933445,james@gmail.com,NW
+aderinolasegun9+20@gmail.com,Precious Bola,administrator,09133227790,Abuja,BVN,12345678900,sam@gmail.com,SS
