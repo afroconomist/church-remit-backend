@@ -5,7 +5,7 @@ import ChurchService from "../services/church.service";
 import httpStatus from "http-status";
 // import logger from "@shared/utils/logger";
 
-injectable()
+@injectable()
 class ChurchController {
   constructor(private readonly churchService: ChurchService) {}
 

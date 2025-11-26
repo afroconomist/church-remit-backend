@@ -21,31 +21,37 @@ class ChurchService {
 
   async createChurchAndUser(church_user_data: CreateChurchAndUser) {
     try {
-      const existingChurch = await this.checkIfChurchExists(
+      const existingChurchResponse = await this.checkIfChurchExists(
         church_user_data.email
       );
-      if (!existingChurch?.success) return existingChurch;
-
-      const churchCreationResponse = await this.createChurchAndUserRecord(
-        church_user_data
-      );
-      if (!churchCreationResponse.success) return churchCreationResponse;
+      if (!existingChurchResponse?.success) return existingChurchResponse;
 
       const existingUserResponse = await this.checkIfUserExists(
         String(church_user_data.userEmail)
       );
       if (!existingUserResponse?.success) return existingUserResponse;
 
-      const userCreationResponse = await this.createChurchAndUserRecord(
+      const churchCreationResponse = await this.createChurchRecord(
         church_user_data
       );
-      if (!userCreationResponse.success) return userCreationResponse;
+      if (!churchCreationResponse.success) return churchCreationResponse;
+
+      const user = UserFactory.createUser({
+        firstName: church_user_data.userFirstName,
+        lastName: church_user_data.userLastName,
+        email: church_user_data.userEmail,
+        password: church_user_data.userPassword,
+        role: church_user_data.userRole,
+        churchId: churchCreationResponse.church_data.id,
+      });
+
+      const createdUser = await this.userRepository.save(user);
 
       return {
-        success: churchCreationResponse.success,
+        success: true,
         message: "Church and user account has been created successfully",
         church_data: churchCreationResponse.church_data,
-        user_data: userCreationResponse.user_data,
+        user_data: createdUser,
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Error creating church and user");
@@ -57,13 +63,13 @@ class ChurchService {
     }
   }
 
-  private async createChurchAndUserRecord(data: CreateChurchAndUser) {
+  private async createChurchRecord(data: CreateChurchAndUser) {
     try {
       const church = ChurchFactory.createChurch({
         churchName: data.churchName,
         churchType: data.churchType,
-        email: data.churchName,
-        phoneNumber: data.churchName,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
         website: data.website,
         streetAddress: data.streetAddress,
         city: data.city,
@@ -87,20 +93,9 @@ class ChurchService {
       });
       const createdChurch = await this.churchRepository.save(church);
 
-      const user = UserFactory.createUser({
-        firstName: data.userFirstName,
-        lastName: data.userLastName,
-        email: data.userEmail,
-        password: data.userPassword,
-        role: data.userRole,
-        churchId: createdChurch.id,
-      });
-      const createdUser = await this.userRepository.save(user);
-
       return {
         success: true,
         church_data: createdChurch,
-        user_data: createdUser,
       };
     } catch (error: any) {
       logger.error(
@@ -141,7 +136,7 @@ class ChurchService {
 
       return {
         success: true,
-        message: "Church account has been created successfully",
+        message: "Churches have been retrieved successfully",
         churches,
       };
     } catch (error) {

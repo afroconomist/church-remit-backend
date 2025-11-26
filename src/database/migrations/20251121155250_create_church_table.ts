@@ -21,7 +21,7 @@ export async function up(knex: Knex): Promise<void> {
       table
         .jsonb("initialFundsToCreate")
         .notNullable()
-        .defaultTo(JSON.stringify([]));
+        .defaultTo(knex.raw("'[]'::jsonb"));
       table.boolean("digitalGivingAndDonations").defaultTo(false);
       table.boolean("expenseManagement").defaultTo(false);
       table.boolean("payrollManagement").defaultTo(false);

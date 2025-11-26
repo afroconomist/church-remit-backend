@@ -1,7 +1,7 @@
 export const updateUserRules = {
   firstName: "required|string",
   lastName: "required|string",
-  middleName: "optional|string",
+  middleName: "required|string",
   phoneNumber: "required|min:11|max:13|phone",
   address: "required|string",
   role: "required|string",
