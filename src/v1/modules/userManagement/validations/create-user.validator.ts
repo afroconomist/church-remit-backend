@@ -10,5 +10,6 @@ export const createUserRules = {
     role: "required|string",
     supervisorId: "required|uuid",
     region: "required|string",
+    churchId: "required|uuid",
   };
   

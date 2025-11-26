@@ -1,7 +1,7 @@
 import { injectable } from "tsyringe";
 import { addMinutes } from "date-fns";
 import OTPRepo from "../repositories/otp.repo";
-import { resetPasswordMail } from "@shared/mailer/resetPasswordMail";
+// import { resetPasswordMail } from "@shared/mailer/resetPasswordMail";
 import { IUser } from "../model/user.model";
 
 
@@ -32,17 +32,17 @@ class OTPService {
         });
       }
 
-      const mail = {
-        name: data.user?.firstName,
-        email: data.user.email,
-        subject: "Password Reset Notification",
-        otp: data.token,
-      };
-      try {
-        await resetPasswordMail(mail);
-      } catch (e) {
-        console.log(e);
-      }
+      // const mail = {
+      //   name: data.user?.firstName,
+      //   email: data.user.email,
+      //   subject: "Password Reset Notification",
+      //   otp: data.token,
+      // };
+      // try {
+      //   await resetPasswordMail(mail);
+      // } catch (e) {
+      //   console.log(e);
+      // }
   }
 }
 

@@ -44,6 +44,7 @@ class App {
     this.app.use(RouteVersion.v1, routes.userManagement);
     this.app.use(RouteVersion.v1, routes.accessControl);
     this.app.use(RouteVersion.v1, routes.walletManagement);
+    this.app.use(RouteVersion.v1, routes.churchManagement);
   }
 
   private registerBullBoard() {

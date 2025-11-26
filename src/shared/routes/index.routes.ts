@@ -5,6 +5,7 @@ import authRoute from "../../v1/modules/userManagement/routes/auth.route";
 import userRoute from "../../v1/modules/userManagement/routes/user.route";
 import accessControlRoute from "../../v1/modules/accessControlManagement/routes/access-control.route";
 import walletRoute from "../../v1/modules/walletService/routes/wallet.route";
+import churchRoute from "../../v1/modules/churchManagement/routes/church.route";
 
 export default {
   app: appRoute,
@@ -13,5 +14,6 @@ export default {
   auth: authRoute,
   userManagement: userRoute,
   accessControl: accessControlRoute,
-  walletManagement: walletRoute
+  walletManagement: walletRoute,
+  churchManagement: churchRoute,
 };
