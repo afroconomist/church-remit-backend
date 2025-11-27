@@ -16,18 +16,7 @@ export class Church extends Model {
   timeZone!: string;
   baseCurrency!: string;
   fiscalYearStart!: Date;
-  initialFundsToCreate!: string[];
-  digitalGivingAndDonations!: boolean;
-  expenseManagement!: boolean;
-  payrollManagement!: boolean;
-  memberManagement!: boolean;
-  digitalGiving!: boolean;
-  eventsAndCheckIn!: boolean;
-  smallGroups!: boolean;
-  volunteerManagement!: boolean;
-  communications!: boolean;
-  facilities!: boolean;
-  mediaLibrary!: boolean;
+  initialFundsToCreate!: string[] | string;
 }
 
 export type IChurch = ModelObject<Church>;

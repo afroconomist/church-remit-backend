@@ -18,17 +18,6 @@ class ChurchFactory {
     church.baseCurrency = data.baseCurrency;
     church.fiscalYearStart = data.fiscalYearStart;
     church.initialFundsToCreate = data.initialFundsToCreate;
-    church.digitalGivingAndDonations = data.digitalGivingAndDonations;
-    church.expenseManagement = data.expenseManagement;
-    church.payrollManagement = data.payrollManagement;
-    church.memberManagement = data.memberManagement;
-    church.digitalGiving = data.digitalGiving;
-    church.eventsAndCheckIn = data.eventsAndCheckIn;
-    church.smallGroups = data.smallGroups;
-    church.volunteerManagement = data.volunteerManagement;
-    church.communications = data.communications;
-    church.facilities = data.facilities;
-    church.mediaLibrary = data.mediaLibrary;
 
     return church;
   }

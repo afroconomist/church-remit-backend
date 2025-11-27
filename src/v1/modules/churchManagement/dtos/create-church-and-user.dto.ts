@@ -11,18 +11,7 @@ export type CreateChurchAndUser = {
   timeZone: string;
   baseCurrency: string;
   fiscalYearStart: Date;
-  initialFundsToCreate: string[];
-  digitalGivingAndDonations: boolean;
-  expenseManagement: boolean;
-  payrollManagement: boolean;
-  memberManagement: boolean;
-  digitalGiving: boolean;
-  eventsAndCheckIn: boolean;
-  smallGroups: boolean;
-  volunteerManagement: boolean;
-  communications: boolean;
-  facilities: boolean;
-  mediaLibrary: boolean;
+  initialFundsToCreate: string[] | string;
 
   userFirstName?: string;
   userLastName?: string;

@@ -22,17 +22,6 @@ export async function up(knex: Knex): Promise<void> {
         .jsonb("initialFundsToCreate")
         .notNullable()
         .defaultTo(knex.raw("'[]'::jsonb"));
-      table.boolean("digitalGivingAndDonations").defaultTo(false);
-      table.boolean("expenseManagement").defaultTo(false);
-      table.boolean("payrollManagement").defaultTo(false);
-      table.boolean("memberManagement").defaultTo(false);
-      table.boolean("digitalGiving").defaultTo(false);
-      table.boolean("eventsAndCheckIn").defaultTo(false);
-      table.boolean("smallGroups").defaultTo(false);
-      table.boolean("volunteerManagement").defaultTo(false);
-      table.boolean("communications").defaultTo(false);
-      table.boolean("facilities").defaultTo(false);
-      table.boolean("mediaLibrary").defaultTo(false);
 
       table.timestamps(true, true, true);
     }

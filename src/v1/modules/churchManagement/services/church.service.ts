@@ -78,18 +78,7 @@ class ChurchService {
         timeZone: data.timeZone,
         baseCurrency: data.baseCurrency,
         fiscalYearStart: data.fiscalYearStart,
-        initialFundsToCreate: data.initialFundsToCreate,
-        digitalGivingAndDonations: data.digitalGivingAndDonations,
-        expenseManagement: data.expenseManagement,
-        payrollManagement: data.payrollManagement,
-        memberManagement: data.memberManagement,
-        digitalGiving: data.digitalGiving,
-        eventsAndCheckIn: data.eventsAndCheckIn,
-        smallGroups: data.smallGroups,
-        volunteerManagement: data.volunteerManagement,
-        communications: data.communications,
-        facilities: data.facilities,
-        mediaLibrary: data.mediaLibrary,
+        initialFundsToCreate: JSON.stringify(data.initialFundsToCreate),
       });
       const createdChurch = await this.churchRepository.save(church);
 
@@ -98,11 +87,8 @@ class ChurchService {
         church_data: createdChurch,
       };
     } catch (error: any) {
-      logger.error(
-        { error: error.message },
-        "Error creating church and user record"
-      );
-      throw new AppError(400, "Failed to create church and user record");
+      logger.error({ error: error.message }, "Error creating church record");
+      throw new AppError(400, "Failed to create church record");
     }
   }
 
