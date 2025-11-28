@@ -48,7 +48,7 @@ class ChurchService {
         email: church_user_data.userEmail,
         password: church_user_data.userPassword,
         role: church_user_data.userRole,
-        isDefaultPassword: church_user_data.userDefaultPassword,
+        isDefaultPassword: false,
         churchId: churchCreationResponse.church_data.id,
       });
       const createdUser = await this.userRepository.save(user);

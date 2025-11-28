@@ -45,7 +45,10 @@ class AuthService {
           status: "success",
         });
       } else {
-        throw new AppError(400, "Invalid OTP");
+        return {
+          success: false,
+          message: "Invalid OTP",
+        };
       }
 
       return {
@@ -69,7 +72,10 @@ class AuthService {
         status: "success",
       });
       if (isVerified) {
-        throw new AppError(400, "Your account is already verified!");
+        return {
+          success: false,
+          message: "Your account is already verified!",
+        };
       }
 
       const token = generateCode(6);
@@ -219,11 +225,11 @@ class AuthService {
         );
       }
 
-      const isVerified = await this.OtpRepository.findOne({
+      const notVerified = await this.OtpRepository.findOne({
         userId: user.id,
         status: "pending",
       });
-      if (isVerified && user.isDefaultPassword === false) {
+      if (notVerified && user.isDefaultPassword === false) {
         throw new AppError(400, "Your account is not verified!");
       }
 
