@@ -20,7 +20,7 @@ export class User extends Model {
   role?: string;
   supervisorId?: string;
   status!: string;
-  isDefaultPassword!: boolean;
+  isDefaultPassword?: boolean;
   signature!: string;
   transactionPin!: string;
   refreshToken!: string;

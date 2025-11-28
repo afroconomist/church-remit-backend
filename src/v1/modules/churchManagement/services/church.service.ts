@@ -5,18 +5,24 @@ import ChurchFactory from "../factories/church.factory";
 import UserFactory from "../../userManagement/factories/user.factory";
 import ChurchRepository from "../repositories/church.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
+import OTPService from "../../userManagement/services/otp.service";
+import MailService from "../../userManagement/services/mail.service";
 import logger from "@shared/utils/logger";
+import { generateCode } from "@shared/utils/functions.util";
 // import { ErrorResponse, SuccessResponse } from "@shared/utils/response.util";
 // import httpStatus from "http-status";
 // import ServiceUnavailableError from "@shared/error/service-unavailable.error";
 // import { IChurch } from "../model/Church.model";
+import { IUser } from "../../userManagement/model/user.model";
 import AppError from "@shared/error/app.error";
 
 @injectable()
 class ChurchService {
   constructor(
     private readonly churchRepository: ChurchRepository,
-    private readonly userRepository: UserRepository
+    private readonly userRepository: UserRepository,
+    private readonly otpService: OTPService,
+    private readonly mailService: MailService
   ) {}
 
   async createChurchAndUser(church_user_data: CreateChurchAndUser) {
@@ -42,14 +48,31 @@ class ChurchService {
         email: church_user_data.userEmail,
         password: church_user_data.userPassword,
         role: church_user_data.userRole,
+        isDefaultPassword: church_user_data.userDefaultPassword,
         churchId: churchCreationResponse.church_data.id,
       });
-
       const createdUser = await this.userRepository.save(user);
+
+      const otpReceiver: IUser = createdUser;
+      const token = generateCode(6);
+      await this.otpService.sendOTP({
+        user: otpReceiver,
+        token,
+        otpType: "account-verification",
+      });
+
+      const options = {
+        name: createdUser.firstName,
+        email: createdUser.email,
+        otp: token,
+        subject: "Account Verification",
+      };
+      this.mailService.sendOTPMail(options);
 
       return {
         success: true,
         message: "Church and user account has been created successfully",
+        otp_message: `Kindly check your email address ${user.email} for OTP`,
         church_data: churchCreationResponse.church_data,
         user_data: createdUser,
       };

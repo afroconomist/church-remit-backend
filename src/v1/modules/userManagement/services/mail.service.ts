@@ -7,56 +7,58 @@ class MailService {
   private transporter: Transporter;
 
   constructor() {
-    
     this.transporter = nodemailer.createTransport({
-      service: process.env.MAIL_SERVICE,
+      host: process.env.SMTP_HOST,
+      secure: true,
       auth: {
-        user: process.env.MAIL_USERNAME,
-        pass: process.env.MAIL_PASSWORD,
+        user: process.env.SMTP_USERNAME,
+        pass: process.env.SMTP_PASSWORD,
       },
     });
   }
 
   async sendLoginEmail(options: any): Promise<void> {
-    const data = { name: options.name }
+    const data = { name: options.name };
     try {
-        await this.sendMail(data, options, "login");
+      await this.sendMail(data, options, "login");
     } catch (error: any) {
-        logger.error({error: error.message}, "Error sending mail");
+      logger.error({ error: error.message }, "Error sending mail");
     }
   }
 
   async sendUserAccountMail(options: any): Promise<void> {
-    const data = { name: options.name,
-        email: options.email,
-        password: options.password,
-        subject: options.subject,
-        link: options.link }
+    const data = {
+      name: options.name,
+      email: options.email,
+      password: options.password,
+      subject: options.subject,
+      link: options.link,
+    };
     try {
-        await this.sendMail(data, options, "user_account");
+      await this.sendMail(data, options, "user_account");
     } catch (error: any) {
-        logger.error({error: error.message}, "Error sending mail");
+      logger.error({ error: error.message }, "Error sending mail");
     }
   }
-  
+
   async sendAccountReactivationMail(options: any): Promise<void> {
     const data = {
-        name: options.name,
-        email: options.email,
-        password: options.password,
-        subject: options.subject,
-        link: options.link,
-    }
+      name: options.name,
+      email: options.email,
+      password: options.password,
+      subject: options.subject,
+      link: options.link,
+    };
     try {
-        await this.sendMail(data, options, "reactivate-account");
+      await this.sendMail(data, options, "reactivate-account");
     } catch (error: any) {
-        logger.error({error: error.message}, "Error sending mail");
+      logger.error({ error: error.message }, "Error sending mail");
     }
   }
 
   async sendBulkUserAccountMail(optionsList: any[]): Promise<void> {
     try {
-      const promises = optionsList.map(options => {
+      const promises = optionsList.map((options) => {
         const data = {
           name: options.name,
           email: options.email,
@@ -71,52 +73,56 @@ class MailService {
       logger.error({ error: error.message }, "Error sending bulk emails");
     }
   }
-  
+
   async sendOTPMail(options: any): Promise<void> {
     const data = {
-        name: options.name,
-        email: options.email,
-        otp: options.otp,
-        subject: options.subject,
-    }
+      name: options.name,
+      email: options.email,
+      otp: options.otp,
+      subject: options.subject,
+    };
     try {
-        await this.sendMail(data, options, "otp");
+      await this.sendMail(data, options, "otp");
     } catch (error: any) {
-        logger.error({error: error.message}, "Failed to send OTP");   
+      logger.error({ error: error.message }, "Failed to send OTP");
     }
   }
 
   async policyCreationMail(options: any): Promise<void> {
     const data = {
-        name: options.name,
-        subject: options.subject,
-        email: options.email
-    }
+      name: options.name,
+      subject: options.subject,
+      email: options.email,
+    };
     try {
-        await this.sendMail(data, options, "policy-creation");
+      await this.sendMail(data, options, "policy-creation");
     } catch (error: any) {
-        logger.error({error: error.message}, "Failed to send OTP"); 
+      logger.error({ error: error.message }, "Failed to send OTP");
     }
   }
 
   async policyRejectionMail(options: any): Promise<void> {
     const data = {
-        name: options.name,
-        subject: options.subject,
-        email: options.email
-    }
+      name: options.name,
+      subject: options.subject,
+      email: options.email,
+    };
     try {
-        await this.sendMail(data, options, "policy-rejection");
+      await this.sendMail(data, options, "policy-rejection");
     } catch (error: any) {
-        logger.error({error: error.message}, "Failed to send OTP");   
+      logger.error({ error: error.message }, "Failed to send OTP");
     }
   }
-  
-  private async sendMail(data: any, options: any, template: any): Promise<void> {
+
+  private async sendMail(
+    data: any,
+    options: any,
+    template: any
+  ): Promise<void> {
     const html = this.renderTemplate(`${template}.pug`, data);
 
     const mailOptions = {
-      from: `${process.env.FROM_NAME} <${process.env.FROM_EMAIL}>`,
+      from: `${process.env.MAIL_FROM_NAME} <${process.env.MAIL_FROM}>`,
       to: options.email,
       subject: options.subject,
       html,
@@ -124,14 +130,17 @@ class MailService {
     try {
       await this.transporter.sendMail(mailOptions);
     } catch (error: any) {
-      logger.error({error: error.message}, "Failed to send email");
+      logger.error({ error: error.message }, "Failed to send email");
       throw new Error("Failed to send email");
     }
   }
 
-  
   private renderTemplate(templateName: string, data: any): string {
-    const templatePath = path.resolve(__dirname, "../../../../../src/shared/mailer/views", templateName);
+    const templatePath = path.resolve(
+      __dirname,
+      "../../../../../src/shared/mailer/views",
+      templateName
+    );
     return pug.renderFile(templatePath, data);
   }
 }

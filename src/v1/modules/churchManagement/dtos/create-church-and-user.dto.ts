@@ -18,5 +18,6 @@ export type CreateChurchAndUser = {
   userEmail?: string;
   userPassword?: string;
   userRole?: string;
+  userDefaultPassword?: boolean;
   churchId?: string;
 };

@@ -1,5 +1,5 @@
 import { CreateOTP } from "../dtos/create-otp.dto";
-import { IOTP } from "../model/otp.mdel";
+import { IOTP } from "../model/otp.model";
 
 class OTPFactory {
   static createOTP(data: CreateOTP) {
