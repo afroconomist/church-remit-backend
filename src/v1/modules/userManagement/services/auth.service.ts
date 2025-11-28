@@ -64,6 +64,14 @@ class AuthService {
         throw new AppError(400, "User not found");
       }
 
+      const isVerified = await this.OtpRepository.findOne({
+        userId: user.id,
+        status: "success",
+      });
+      if (isVerified) {
+        throw new AppError(400, "Your account is already verified!");
+      }
+
       const token = generateCode(6);
       await this.otpService.sendOTP({
         user,
