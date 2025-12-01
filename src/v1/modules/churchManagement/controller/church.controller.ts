@@ -16,7 +16,7 @@ class ChurchController {
       .json(result);
   };
 
-  getAll = async (res: Response) => {
+  getAll = async (_req: Request, res: Response) => {
     try {
       const churches = await this.churchService.getAllChurches();
       res.send(SuccessResponse("Operation successful", churches));

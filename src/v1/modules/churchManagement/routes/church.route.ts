@@ -15,8 +15,8 @@ router.post(
     churchController.registerChurchAndUser(req, res).catch((err) => next(err))
 );
 
-router.get("/churches/", (res: Response) => {
-  churchController.getAll(res);
+router.get("/churches/", (req: Request, res: Response) => {
+  churchController.getAll(req, res);
 });
 
 export default router;

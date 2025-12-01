@@ -141,13 +141,9 @@ class ChurchService {
 
   async getAllChurches() {
     try {
-      const { data: churches } = await this.churchRepository.getAll();
+      const churches = await this.churchRepository.getAll();
 
-      return {
-        success: true,
-        message: "Churches have been retrieved successfully",
-        churches,
-      };
+      return { churches };
     } catch (error) {
       logger.error({ error: "Error fetching churches," });
       throw new Error("An unexpected error occurred while fetching churches.");
