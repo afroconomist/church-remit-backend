@@ -6,13 +6,13 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid("id").primary().defaultTo(knex.fn.uuid());
     table.string("name").notNullable();
     table.string("email").notNullable().unique();
-    table.string("phoneNumber").notNullable();
+    table.string("phoneNumber").nullable();
     table.string("password").notNullable();
     table.string("avatar").nullable();
-    table.string("address").notNullable();
+    table.string("address").nullable();
     table.string("role").notNullable();
-    table.string("supervisorId").notNullable();
-    table.string("region").notNullable();
+    table.string("supervisorId").nullable();
+    table.string("region").nullable();
     table.boolean("isDefaultPassword").notNullable().defaultTo(true);
     table.string("status").notNullable().defaultTo('active').comment("active = Active Users, inactive = Inactive users/newly created users that has not changed their default password, deactivated = Deactivated users");
     table.string("signature").nullable();

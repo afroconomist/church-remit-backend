@@ -1,0 +1,20 @@
+export const createChurchAndUserRules = {
+  churchName: "required|string",
+  churchType: "required|string",
+  email: "required|string",
+  phoneNumber: "required|min:11|max:13|phone",
+  website: "required|string",
+  streetAddress: "required|string",
+  city: "required|string",
+  stateRegion: "required|string",
+  country: "required|string",
+  timeZone: "required|string",
+  baseCurrency: "required|string",
+  fiscalYearStart: "required|date",
+
+  userFirstName: "required|string",
+  userLastName: "required|string",
+  userEmail: "required|string",
+  userPassword: "required|string",
+  userRole: "required|string",
+};

@@ -1,7 +1,7 @@
 import Redis from "ioredis";
 import { singleton } from "tsyringe";
 import appConfig from "@config/app.config";
-import logger from "@shared/utils/logger";
+// import logger from "@shared/utils/logger";
 
 @singleton()
 class RedisClient {
@@ -39,16 +39,16 @@ class RedisClient {
       db: 0,
     });
 
-    redisClient.on("error", (err) => {
-      logger.error({ err }, "Redis client connection error");
+    redisClient.on("error", () => {
+      // logger.error({ err }, "Redis client connection error");
     });
 
     redisClient.on("ready", () => {
-      logger.info("Redis client is ready");
+      // logger.info("Redis client is ready");
     });
 
     redisClient.on("reconnecting", () => {
-      logger.info("Redis client is reconnected");
+      // logger.info("Redis client is reconnected");
     });
 
     return redisClient;

@@ -8,31 +8,32 @@ const SALT_ROUNDS = 10;
 export class User extends Model {
   static tableName = DB_TABLES.USERS;
   id!: string;
-  firstName!: string;
-  lastName!: string;
-  middleName!: string;
-  email!: string;
-  password!: string;
-  phoneNumber!: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  email?: string;
+  password?: string;
+  phoneNumber?: string;
   address?: string;
   avatar?: string;
-  region!: string;
-  role!: string;
+  region?: string;
+  role?: string;
   supervisorId?: string;
   status!: string;
-  isDefaultPassword!: boolean;
+  isDefaultPassword?: boolean;
   signature!: string;
   transactionPin!: string;
   refreshToken!: string;
-  addedBy!: string;
-  
+  addedBy?: string;
+  churchId?: string;
+
   static relationMappings = {
     userRole: {
       relation: Model.BelongsToOneRelation,
       modelClass: Role,
       join: {
-        from: 'users.role',
-        to: 'roles.id',
+        from: "users.role",
+        to: "roles.id",
       },
     },
   };

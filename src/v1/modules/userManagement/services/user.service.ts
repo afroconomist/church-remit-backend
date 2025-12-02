@@ -36,7 +36,7 @@ class UserService {
 
   async createUser(data: CreateUser, userId: string) {
     try {
-      const existingUserResponse = await this.checkIfUserExists(data.email);
+      const existingUserResponse = await this.checkIfUserExists(String(data.email));
       if (!existingUserResponse?.success) return existingUserResponse;
 
       const supervisorResponse = await this.checkSupervisorExistence(
@@ -363,7 +363,7 @@ class UserService {
 
       const usersWithWalletDetails = await Promise.all(
         users.map(async (user) => {
-          const addedBy = await this.userRepository.findById(user.addedBy);
+          const addedBy = await this.userRepository.findById(String(user.addedBy));
           const reason = await this.reasonRepository.findWhere({
             userId: user.id,
           });
@@ -373,7 +373,7 @@ class UserService {
           const means_of_id = await this.idVerificationRepository.findOne({
             userId: user.id,
           });
-          const role = await this.roleRepo.findByNameWithRelations(user.role);
+          const role = await this.roleRepo.findByNameWithRelations(String(user.role));
           return {
             ...user,
             addedBy: addedBy ? addedBy?.firstName + " " + addedBy?.lastName : "",
@@ -556,7 +556,7 @@ class UserService {
     const mail = {
       subject: "Account Reactivated",
       name: user.firstName + " " + user.lastName,
-      email: user.email.toLowerCase(),
+      email: String(user.email).toLowerCase(),
       password: password,
       link: process.env.FRONTEND_BASEURL + "/login",
     };
@@ -669,7 +669,7 @@ class UserService {
       this.idVerificationRepository.findOne({ userId: user.id }),
       user.addedBy ? this.userRepository.findById(user.addedBy) : null,
       this.reasonRepository.findWhere({ userId: user.id }),
-      this.roleRepo.findByNameWithRelations(user.role),
+      this.roleRepo.findByNameWithRelations(String(user.role)),
     ]);
 
     const wallet = await this.walletService.getWallet(user.id);

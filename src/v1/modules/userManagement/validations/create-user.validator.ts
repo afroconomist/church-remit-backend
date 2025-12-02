@@ -1,7 +1,7 @@
 export const createUserRules = {
     firstName: "required|string",
     lastName: "required|string",
-    middleName: "optional|string",
+    middleName: "required|string",
     email: "required|string|email",
     phoneNumber: "required|min:11|max:13|phone",
     address: "required|string",
@@ -10,5 +10,6 @@ export const createUserRules = {
     role: "required|string",
     supervisorId: "required|uuid",
     region: "required|string",
+    churchId: "required|uuid",
   };
   
