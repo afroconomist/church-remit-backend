@@ -3,7 +3,6 @@ import { Request, Response } from "express";
 import { injectable } from "tsyringe";
 import ChurchService from "../services/church.service";
 import httpStatus from "http-status";
-// import logger from "@shared/utils/logger";
 
 @injectable()
 class ChurchController {
@@ -19,10 +18,12 @@ class ChurchController {
   getAll = async (_req: Request, res: Response) => {
     try {
       const churches = await this.churchService.getAllChurches();
-      res.send(SuccessResponse("Operation successful", churches));
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", churches));
     } catch (error: any) {
-      res
-        .status(500)
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
         .json(ErrorResponse("Internal Server Error: ", error.message));
     }
   };
