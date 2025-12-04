@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import "dotenv/config";
 import "module-alias/register";
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import http from "http";
 import {
   bootstrapApp,
@@ -37,6 +37,9 @@ class App {
   }
 
   private registerModules() {
+    this.app.use("/", (_req: Request, res: Response, _next: NextFunction) => {
+      res.status(200).send("Church Remit API is running");
+    });
     this.app.use(routes.app);
     this.app.use(routes.health);
     this.app.use(RouteVersion.v1, routes.auditTrail);

@@ -11,10 +11,8 @@ import httpStatus from "http-status";
 import ServiceUnavailableError from "@shared/error/service-unavailable.error";
 import { IUser } from "../model/user.model";
 import WalletService from "./wallet.service";
-import WalletRepository from "../repositories/wallet.repository";
 import AppError from "@shared/error/app.error";
 import { QueueService } from "../queues/wallet-creation.queue";
-import IdVerificationRepository from "../repositories/id_verification.repository";
 import ActionReasonFactory from "../factories/action_reason.factory";
 // import { uploadMultipart } from "@shared/external-services/media-upload/media-upload.service";
 import ReasonRepository from "../repositories/reason.repository";
@@ -26,9 +24,7 @@ class UserService {
     private readonly userRepository: UserRepository,
     private readonly mailService: MailService,
     private readonly walletService: WalletService,
-    private readonly walletRepository: WalletRepository,
     private readonly queueService: QueueService,
-    private readonly idVerificationRepository: IdVerificationRepository,
     private readonly reasonRepository: ReasonRepository,
     private readonly accessControlManagementService: AccessControlManagementService,
     private readonly roleRepo: RoleRepo
@@ -39,10 +35,6 @@ class UserService {
       const existingUserResponse = await this.checkIfUserExists(String(data.email));
       if (!existingUserResponse?.success) return existingUserResponse;
 
-      const supervisorResponse = await this.checkSupervisorExistence(
-        data.supervisorId ?? ""
-      );
-      if (!supervisorResponse.success) return supervisorResponse;
 
       const password = this.generateUserPassword();
       data.password = password;
@@ -367,24 +359,12 @@ class UserService {
           const reason = await this.reasonRepository.findWhere({
             userId: user.id,
           });
-          const supervisor = await this.userRepository.findById(
-            user.supervisorId as string
-          );
-          const means_of_id = await this.idVerificationRepository.findOne({
-            userId: user.id,
-          });
-          const role = await this.roleRepo.findByNameWithRelations(String(user.role));
+          
+          const role = await this.roleRepo.findByNameWithRelations(String(user.roleId));
           return {
             ...user,
             addedBy: addedBy ? addedBy?.firstName + " " + addedBy?.lastName : "",
             reasons: reason,
-            supervisor: {
-              firstName: supervisor.firstName,
-              lastName: supervisor.lastName,
-              middlename: supervisor.middleName,
-            },
-            wallet: await this.walletService.getWallet(user.id),
-            means_of_id: means_of_id ?? {},
             permissions: role?.id
               ? (await this.accessControlManagementService.getRole(role?.id))
                   .permissions
@@ -424,28 +404,16 @@ class UserService {
         pageSize
       );
 
-      const userIds = users.map((user) => user.id);
-
-      const wallets =
-        userIds.length > 0
-          ? await this.walletRepository.findAllWhere({ userId: userIds })
-          : [];
-
-      const walletMap = new Map(
-        wallets.map((wallet) => [wallet.userId, wallet])
-      );
 
       const all_users = users.map((user) => {
-        const wallet = walletMap.get(user.id);
         return {
           firstName: user.firstName,
           lastName: user.lastName,
           middleName: user.middleName,
           email: user.email,
           phone_number: user.phoneNumber,
-          role: user.role,
+          role: user.roleId,
           status: user.status,
-          account_number: wallet?.accountNumber || "N/A",
         };
       });
 
@@ -476,12 +444,6 @@ class UserService {
 
   async getProfile(req: any) {
     const user = await this.userRepository.findById(req.user.id);
-    const supervisor = await this.userRepository.findById(
-      user.supervisorId as string
-    );
-    const means_of_id = await this.idVerificationRepository.findOneWhere({
-      userId: user.id,
-    });
     return {
       user: {
         firstName: user.firstName ?? "",
@@ -491,14 +453,7 @@ class UserService {
         avatar: user.avatar ?? "",
         email: user.email ?? "",
         address: user.address ?? "",
-        role: user.role ?? "",
-        supervisor: {
-          firstName: supervisor.firstName,
-          lastName: supervisor.lastName,
-          middlename: supervisor.middleName,
-        },
-        means_of_id: means_of_id ?? {},
-        region: user.region ?? "",
+        role: user.roleId ?? "",
       },
       wallet: await this.walletService.getWallet(user.id),
     };
@@ -601,8 +556,7 @@ class UserService {
         middleName: data.middleName,
         phoneNumber: data.phoneNumber,
         address: data.address,
-        role: data.role,
-        supervisorId: data.supervisorId,
+        roleId: data.roleId,
       });
       return {
         success: true,
@@ -614,26 +568,26 @@ class UserService {
     }
   }
 
-  async uploadSignature(req: Request, res: Response) {
-    try {
-      const user = await this.userRepository.findById(req.user.id);
+  // async uploadSignature(req: Request, res: Response) {
+  //   try {
+  //     const user = await this.userRepository.findById(req.user.id);
 
-      if (!user) {
-        return res
-          .status(httpStatus.CONFLICT)
-          .send(ErrorResponse("User does not exists"));
-      }
-      await this.userRepository.updateById(user.id, {
-        signature: req.body.signature,
-      });
-      return res
-        .status(httpStatus.OK)
-        .send(SuccessResponse("Signature uploaded successfully"));
-    } catch (error: any) {
-      logger.error(`Error uploading signature`);
-      throw new ServiceUnavailableError();
-    }
-  }
+  //     if (!user) {
+  //       return res
+  //         .status(httpStatus.CONFLICT)
+  //         .send(ErrorResponse("User does not exists"));
+  //     }
+  //     await this.userRepository.updateById(user.id, {
+  //       signature: req.body.signature,
+  //     });
+  //     return res
+  //       .status(httpStatus.OK)
+  //       .send(SuccessResponse("Signature uploaded successfully"));
+  //   } catch (error: any) {
+  //     logger.error(`Error uploading signature`);
+  //     throw new ServiceUnavailableError();
+  //   }
+  // }
 
   async uploadProfilePicture(req: Request, res: Response) {
     try {
@@ -662,17 +616,13 @@ class UserService {
       throw new AppError(400, "User does not exist");
     }
 
-    const [supervisor, means_of_id, addedBy, reason, role] = await Promise.all([
-      user.supervisorId
-        ? this.userRepository.findById(user.supervisorId as string)
-        : null,
-      this.idVerificationRepository.findOne({ userId: user.id }),
+    const [addedBy, reason, role] = await Promise.all([
+  
       user.addedBy ? this.userRepository.findById(user.addedBy) : null,
       this.reasonRepository.findWhere({ userId: user.id }),
-      this.roleRepo.findByNameWithRelations(String(user.role)),
+      this.roleRepo.findByNameWithRelations(String(user.roleId)),
     ]);
 
-    const wallet = await this.walletService.getWallet(user.id);
     const permissions = role
       ? (await this.accessControlManagementService.getRole(role.id)).permissions
       : [];
@@ -681,15 +631,6 @@ class UserService {
       ...user,
       addedBy: addedBy ? `${addedBy.firstName} ${addedBy.lastName}` : "",
       reasons: reason || [],
-      supervisor: supervisor
-        ? {
-            firstName: supervisor.firstName,
-            lastName: supervisor.lastName,
-            middleName: supervisor.middleName || "",
-          }
-        : { firstName: "", lastName: "", middleName: "" },
-      wallet: wallet || {},
-      means_of_id: means_of_id || {},
       permissions,
     };
   }
@@ -710,16 +651,6 @@ class UserService {
       );
     }
 
-    const wallet = await this.walletRepository.findOneWhere({
-      userId: user.id,
-    });
-
-    if (wallet && wallet.balance > 0) {
-      throw new AppError(
-        400,
-        "User cannot be deleted because their wallet has a balance"
-      );
-    }
     await this.userRepository.deleteById(user.id);
     const data = {
       userId: user.id,
@@ -739,26 +670,26 @@ class UserService {
     }
   }
 
-  async setTransactionPin(req: Request, res: Response) {
-    try {
-      const user = await this.userRepository.findById(req.user.id);
-      if (!user) {
-        return res
-          .status(httpStatus.CONFLICT)
-          .send(ErrorResponse("User does not exists"));
-      }
-      await this.userRepository.updateById(user.id, {
-        transactionPin: req.body.transactionPin,
-      });
-      return res
-        .status(httpStatus.OK)
-        .send(SuccessResponse("Transaction Pin set successfully"));
-    } catch (error: any) {
-      logger.error({ error: error.message }, "Error setting transaction pin");
+  // async setTransactionPin(req: Request, res: Response) {
+  //   try {
+  //     const user = await this.userRepository.findById(req.user.id);
+  //     if (!user) {
+  //       return res
+  //         .status(httpStatus.CONFLICT)
+  //         .send(ErrorResponse("User does not exists"));
+  //     }
+  //     await this.userRepository.updateById(user.id, {
+  //       transactionPin: req.body.transactionPin,
+  //     });
+  //     return res
+  //       .status(httpStatus.OK)
+  //       .send(SuccessResponse("Transaction Pin set successfully"));
+  //   } catch (error: any) {
+  //     logger.error({ error: error.message }, "Error setting transaction pin");
 
-      throw new ServiceUnavailableError();
-    }
-  }
+  //     throw new ServiceUnavailableError();
+  //   }
+  // }
 
   // async uploadFile(req: Request) {
   //   try {

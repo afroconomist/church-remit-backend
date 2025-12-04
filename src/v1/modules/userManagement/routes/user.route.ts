@@ -8,8 +8,6 @@ import {
   validateArray,
 } from "@shared/middlewares/validator.middleware";
 import { updateUserRules } from "../validations/update-user.validator";
-import { signatureUploadRules } from "../validations/signature.validator";
-import { setTransactionPinRules, updateTransactionPin } from "../validations/set-transaction-pin.validator";
 import UserManagementController from "../controller/user.controller";
 import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
 import { AccessControls } from "../../accessControlManagement/enums/access-control.enum";
@@ -54,10 +52,10 @@ router.put("/admin/update-user/:id", [authMiddleware, accessControlMiddleware(Ac
   userController.updateUser(req, res);
 });
 
-router.post("/dashboard/upload-signature", [
-  authMiddleware,
-  accessControlMiddleware(AccessControls.USER_PROFILE_UPDATE), 
-  validate(signatureUploadRules)], (req: Request, res: Response, next) => userController.uploadSignature(req, res).catch((err)=> next(err) ))
+// router.post("/dashboard/upload-signature", [
+//   authMiddleware,
+//   accessControlMiddleware(AccessControls.USER_PROFILE_UPDATE), 
+//   validate(signatureUploadRules)], (req: Request, res: Response, next) => userController.uploadSignature(req, res).catch((err)=> next(err) ))
 
 router.post("/dashboard/upload-profile-pic", [
   authMiddleware,
@@ -65,11 +63,9 @@ router.post("/dashboard/upload-profile-pic", [
   validate(profilePictureUploadRules)], (req: Request, res: Response, next) => userController.profilePictureUpload(req, res).catch((err)=> next(err) )
 );
 
-router.post("/dashboard/set-transaction-pin", [authMiddleware, accessControlMiddleware(AccessControls.TRANSACTION_PIN), validate(setTransactionPinRules)], (req: Request, res: Response, next) => userController.setTransactionPin(req, res).catch((err)=> next(err) )
-);
+// router.post("/dashboard/set-transaction-pin", [authMiddleware, accessControlMiddleware(AccessControls.TRANSACTION_PIN), validate(setTransactionPinRules)], (req: Request, res: Response, next) => userController.setTransactionPin(req, res).catch((err)=> next(err) )
+// );
 
-router.post("/dashboard/update-transaction-pin", [authMiddleware, accessControlMiddleware(AccessControls.TRANSACTION_PIN), validate(updateTransactionPin)], (req: Request, res: Response, next) => userController.updateTransactionPin(req, res).catch((err)=> next(err) )
-);
 
 router.get(
   "/admin/user/:id",

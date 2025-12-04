@@ -69,7 +69,6 @@ class WalletService {
     try {
       const wallet = await this.getWallet(userId);
       const user = await this.userService.userInformation(userId);
-      await this.validatePin(transferData.transactionPin, user.transactionPin);
       await this.checkBalance(userId, transferData.amount);
       await this.debitWallet(userId, transferData.amount);
 

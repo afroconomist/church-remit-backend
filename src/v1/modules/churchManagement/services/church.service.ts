@@ -47,7 +47,7 @@ class ChurchService {
         lastName: church_user_data.userLastName,
         email: church_user_data.userEmail,
         password: church_user_data.userPassword,
-        role: church_user_data.userRole,
+        roleId: church_user_data.userRole,
         isDefaultPassword: false,
         churchId: churchCreationResponse.church_data.id,
       });
