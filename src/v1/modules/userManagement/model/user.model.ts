@@ -16,13 +16,9 @@ export class User extends Model {
   phoneNumber?: string;
   address?: string;
   avatar?: string;
-  region?: string;
-  role?: string;
-  supervisorId?: string;
+  roleId?: string;
   status!: string;
   isDefaultPassword?: boolean;
-  signature!: string;
-  transactionPin!: string;
   refreshToken!: string;
   addedBy?: string;
   churchId?: string;
@@ -42,17 +38,11 @@ export class User extends Model {
     if (this.password) {
       this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
     }
-    if (this.transactionPin) {
-      this.transactionPin = await bcrypt.hash(this.transactionPin, SALT_ROUNDS);
-    }
   }
 
   async $beforeUpdate(): Promise<void> {
     if (this.password) {
       this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
-    }
-    if (this.transactionPin) {
-      this.transactionPin = await bcrypt.hash(this.transactionPin, SALT_ROUNDS);
     }
   }
 

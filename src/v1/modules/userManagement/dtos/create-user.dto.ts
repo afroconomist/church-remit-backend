@@ -10,14 +10,8 @@ export type CreateUser = {
   avatar?: string;
   status?: string;
   isDefaultPassword?: boolean;
-  idType?: string;
-  idNumber?: string;
-  role?: string;
-  supervisorId?: string;
-  transactionPin?: string;
-  region?: string;
+  roleId?: string;
   refreshToken?: string;
-  signature?: string
   addedBy?: string;
   churchId?: string;
   createdAt?: Date;

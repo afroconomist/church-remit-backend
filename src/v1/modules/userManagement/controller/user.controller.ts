@@ -89,15 +89,15 @@ class UserManagementController {
     }    
   };
   
-  uploadSignature = async (req: Request, res: Response) => {
-		const role: any = await this.userService.uploadSignature(
-      req,
-			res
-		);
-		return res
-			.status(httpStatus.CREATED)
-			.send(SuccessResponse("Profile Picture uploaded successfully", role));
-	};
+  // uploadSignature = async (req: Request, res: Response) => {
+	// 	const role: any = await this.userService.uploadSignature(
+  //     req,
+	// 		res
+	// 	);
+	// 	return res
+	// 		.status(httpStatus.CREATED)
+	// 		.send(SuccessResponse("Profile Picture uploaded successfully", role));
+	// };
 
   profilePictureUpload = async (req: Request, res: Response) => {
     const role: any = await this.userService.uploadProfilePicture(
@@ -110,19 +110,19 @@ class UserManagementController {
 };
 
 
-setTransactionPin = async (req: Request, res: Response) => {
-  return await this.userService.setTransactionPin(
-      req,
-      res
-  );
-};
+// setTransactionPin = async (req: Request, res: Response) => {
+//   return await this.userService.setTransactionPin(
+//       req,
+//       res
+//   );
+// };
 
-updateTransactionPin = async (req: Request, res: Response) => {
-  return await this.userService.setTransactionPin(
-      req,
-      res
-  );
-};
+// updateTransactionPin = async (req: Request, res: Response) => {
+//   return await this.userService.setTransactionPin(
+//       req,
+//       res
+//   );
+// };
 
 getUser = async (req: Request, res: Response) => {
     const response = await this.userService.getUser(

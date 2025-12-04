@@ -259,7 +259,7 @@ class AuthService {
       }
 
       const role = await this.roleRepo.findByNameWithRelations(
-        String(user.role)
+        String(user.roleId)
       );
       const returnResponse = {
         user,
