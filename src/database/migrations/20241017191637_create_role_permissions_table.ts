@@ -13,6 +13,5 @@ export async function up(knex: Knex): Promise<void> {
 	);
 }
 
-export async function down(knex: Knex): Promise<void> {
-	return knex.schema.dropTable(DB_TABLES.ROLE_PERMISSIONS);
+export async function down(knex: Knex): Promise<void> {	return knex.schema.dropTable(DB_TABLES.ROLE_PERMISSIONS);
 }
