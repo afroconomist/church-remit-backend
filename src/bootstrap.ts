@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Response } from "express";
 import cors from "cors";
 import AppError from "@shared/error/app.error";
 import Logger from "@shared/utils/logger";
@@ -68,7 +68,7 @@ function registerCustomValidationRules() {
 }
 
 export function setErrorHandler(app: express.Application) {
-	app.use((err, _req, res, _next) => {
+	app.use((err, _req, res: Response, _next) => {
 		const statusCode = err.statusCode || 503;
 		const message =
 			err instanceof AppError
