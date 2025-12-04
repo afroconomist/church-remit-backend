@@ -11,7 +11,6 @@ export async function up(knex: Knex): Promise<void> {
     table.string("avatar").nullable();
     table.string("address").nullable();
     table.string("role").notNullable();
-    table.string("supervisorId").nullable();
     table.string("region").nullable();
     table.boolean("isDefaultPassword").notNullable().defaultTo(true);
     table.string("status").notNullable().defaultTo('active').comment("active = Active Users, inactive = Inactive users/newly created users that has not changed their default password, deactivated = Deactivated users");
