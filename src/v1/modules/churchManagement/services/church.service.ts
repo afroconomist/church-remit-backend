@@ -168,7 +168,7 @@ class ChurchService {
 
   async getAllChurches() {
     try {
-      const { data: churches } = await this.churchRepository.getAll();
+      const churches = await this.churchRepository.getAll();
 
       return {
         success: true,
