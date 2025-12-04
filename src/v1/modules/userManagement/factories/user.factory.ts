@@ -15,8 +15,7 @@ class UserFactory {
     user.addedBy = data.addedBy;
     user.isDefaultPassword = data.isDefaultPassword;
     user.churchId = data.churchId;
-
-
+    user.roleId = data.roleId;
      
     return user;
   }

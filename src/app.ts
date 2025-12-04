@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import "dotenv/config";
 import "module-alias/register";
-import express, { Request, Response, NextFunction } from "express";
+import express from "express";
 import http from "http";
 import {
   bootstrapApp,
@@ -37,10 +37,7 @@ class App {
   }
 
   private registerModules() {
-    this.app.use("/", (_req: Request, res: Response, _next: NextFunction) => {
-      res.status(200).send("Church Remit API is running");
-    });
-    this.app.use(routes.app);
+    // this.app.use(routes.app);
     this.app.use(routes.health);
     this.app.use(RouteVersion.v1, routes.auditTrail);
     this.app.use(RouteVersion.v1, routes.auth);
@@ -48,6 +45,9 @@ class App {
     this.app.use(RouteVersion.v1, routes.accessControl);
     this.app.use(RouteVersion.v1, routes.walletManagement);
     this.app.use(RouteVersion.v1, routes.churchManagement);
+    // this.app.use("*", (_req: Request, res: Response, _next: NextFunction) => {
+    //   res.status(200).send("Church Remit API is running");
+    // });
   }
 
   private registerBullBoard() {

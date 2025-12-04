@@ -66,6 +66,17 @@ class AccessControlManagementService {
 		return RolePermissionFactory.readRolePermissionDto(roleWithPermissions);
 	}
 
+		async getAllRolesPublic() {
+		const roleWithPermissions = await this.roleRepo
+			.getAll()
+			.catch((error) => {
+				logger.error(`Error fetching all roles: ${error.message}`);
+				throw new ServiceUnavailableError();
+			});
+
+		return RoleFactory.readRolesDto(roleWithPermissions);
+	}
+
 	async updateRole(id: string, data: CreateRole) {
 		const roleExist: IRole = await this.roleRepo.findById(id);
 		if (!roleExist) {
@@ -131,6 +142,15 @@ class AccessControlManagementService {
 			throw new ServiceUnavailableError();
 		});
 		return PermissionFactory.readPermissionDto(savedPermission);
+	}
+
+	// New method to check if a role exists by id
+	async checkRoleExists(id: string) {
+		const role = await this.roleRepo.findById(id);
+		if (!role) {
+			throw new NotFoundError();
+		}
+		return true;
 	}
 
 }
