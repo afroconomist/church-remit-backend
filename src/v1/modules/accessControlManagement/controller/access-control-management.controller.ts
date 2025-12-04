@@ -44,7 +44,15 @@ class AccessControlManagementController {
 	getAllRoles = async (res: Response) => {
 		const response = await this.accessControlManagementService.getAllRoles();
 
-		return res.status(httpStatus.OK).send(response);
+		return res.status(httpStatus.OK).send(SuccessResponse("Operation successful", response));
+	};
+
+	getAllRolesPublic = async (res: Response) => {
+		const response = await this.accessControlManagementService.getAllRolesPublic();
+
+		return res
+			.status(httpStatus.OK)
+			.send(SuccessResponse("Operation successful", response));
 	};
 
 	deleteRole = async (req: Request, res: Response) => {
