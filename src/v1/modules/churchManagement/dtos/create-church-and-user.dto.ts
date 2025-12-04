@@ -1,4 +1,4 @@
-export type CreateChurchAndUser = {
+export type CreateChurch = {
   churchName: string;
   churchType: string;
   email: string;
@@ -12,11 +12,4 @@ export type CreateChurchAndUser = {
   baseCurrency: string;
   fiscalYearStart: Date;
   initialFundsToCreate: string[] | string;
-
-  userFirstName?: string;
-  userLastName?: string;
-  userEmail?: string;
-  userPassword?: string;
-  userRole?: string;
-  churchId?: string;
 };

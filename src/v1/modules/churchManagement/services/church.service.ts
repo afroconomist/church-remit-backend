@@ -1,6 +1,6 @@
 import { injectable } from "tsyringe";
 // import { Response, Request } from "express";
-import { CreateChurchAndUser } from "../dtos/create-church-and-user.dto";
+import { CreateChurch } from "../dtos/create-church-and-user.dto";
 import ChurchFactory from "../factories/church.factory";
 import UserFactory from "../../userManagement/factories/user.factory";
 import ChurchRepository from "../repositories/church.repository";
@@ -15,17 +15,40 @@ import { generateCode } from "@shared/utils/functions.util";
 // import { IChurch } from "../model/Church.model";
 import { IUser } from "../../userManagement/model/user.model";
 import AppError from "@shared/error/app.error";
+import AccessControlManagementService from "../../accessControlManagement/services/access-control-management.service";
 
+interface OnboardingPayload {
+  churchName: string;
+  churchType: string;
+  email: string;
+  phoneNumber: string;
+  website: string | null;
+  streetAddress: string;
+  city: string;
+  stateRegion: string;
+  country: string;
+  timeZone: string;
+  baseCurrency: string;
+  fiscalYearStart: Date;
+  initialFundsToCreate: string[] | string;
+  userFirstName: string;
+  userLastName: string;
+  userEmail: string;
+  userPassword: string;
+  userRole: string;
+  churchId: string;
+};
 @injectable()
 class ChurchService {
   constructor(
     private readonly churchRepository: ChurchRepository,
     private readonly userRepository: UserRepository,
     private readonly otpService: OTPService,
-    private readonly mailService: MailService
+    private readonly mailService: MailService,
+    private readonly accessControlManagementService: AccessControlManagementService
   ) {}
 
-  async createChurchAndUser(church_user_data: CreateChurchAndUser) {
+  async createChurchAndUser(church_user_data: OnboardingPayload) {
     try {
       const existingChurchResponse = await this.checkIfChurchExists(
         church_user_data.email
@@ -36,12 +59,16 @@ class ChurchService {
         String(church_user_data.userEmail)
       );
       if (!existingUserResponse?.success) return existingUserResponse;
+      // check user role exists
+      const roleExists = await this.accessControlManagementService.checkRoleExists(
+        church_user_data.userRole
+      );
+      if (!roleExists) return { success: false, message: "Role does not exist" };
 
       const churchCreationResponse = await this.createChurchRecord(
         church_user_data
       );
       if (!churchCreationResponse.success) return churchCreationResponse;
-
       const user = UserFactory.createUser({
         firstName: church_user_data.userFirstName,
         lastName: church_user_data.userLastName,
@@ -86,7 +113,7 @@ class ChurchService {
     }
   }
 
-  private async createChurchRecord(data: CreateChurchAndUser) {
+  private async createChurchRecord(data: CreateChurch) {
     try {
       const church = ChurchFactory.createChurch({
         churchName: data.churchName,

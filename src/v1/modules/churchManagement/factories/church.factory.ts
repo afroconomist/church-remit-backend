@@ -1,8 +1,8 @@
-import { CreateChurchAndUser } from "../dtos/create-church-and-user.dto";
+import { CreateChurch } from "../dtos/create-church-and-user.dto";
 import { IChurch } from "../model/church.model";
 
 class ChurchFactory {
-  static createChurch(data: CreateChurchAndUser) {
+  static createChurch(data: CreateChurch) {
     const church = {} as IChurch;
 
     church.churchName = data.churchName;
