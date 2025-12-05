@@ -20,4 +20,12 @@ router.get("/churches/", (req: Request, res: Response, next) => {
   churchController.getAll(req, res).catch((err) => next(err));
 });
 
+router.get("/churches/type/:churchType", (req: Request, res: Response, next) => {
+  churchController.getChurchesBasedOnTypes(req, res).catch((err) => next(err));
+});
+
+router.get("/churches/verified", (req: Request, res: Response, next) => {
+  churchController.getVerifiedChurches(req, res).catch((err) => next(err));
+});
+
 export default router;

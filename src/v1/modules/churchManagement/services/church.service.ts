@@ -37,7 +37,7 @@ interface OnboardingPayload {
   userPassword: string;
   userRole: string;
   churchId: string;
-};
+}
 @injectable()
 class ChurchService {
   constructor(
@@ -60,10 +60,12 @@ class ChurchService {
       );
       if (!existingUserResponse?.success) return existingUserResponse;
       // check user role exists
-      const roleExists = await this.accessControlManagementService.checkRoleExists(
-        church_user_data.userRole
-      );
-      if (!roleExists) return { success: false, message: "Role does not exist" };
+      const roleExists =
+        await this.accessControlManagementService.checkRoleExists(
+          church_user_data.userRole
+        );
+      if (!roleExists)
+        return { success: false, message: "Role does not exist" };
 
       const churchCreationResponse = await this.createChurchRecord(
         church_user_data
@@ -172,8 +174,39 @@ class ChurchService {
 
       return { churches };
     } catch (error) {
-      logger.error({ error: "Error fetching churches," });
+      logger.error({ error: "Error fetching churches" });
       throw new Error("An unexpected error occurred while fetching churches.");
+    }
+  }
+
+  async getChurchesBasedOnTypes(req: any) {
+    try {
+      const churchType = req.params.churchType;
+      const churchesBasedOnTypes = await this.churchRepository.findAll({
+        churchType,
+      });
+
+      return { churchesBasedOnTypes };
+    } catch (error) {
+      logger.error({ error: "Error fetching churches based on types" });
+      throw new Error(
+        "An unexpected error occurred while fetching churches based on types."
+      );
+    }
+  }
+
+  async getVerifiedChurches() {
+    try {
+      const verifiedChurches = await this.churchRepository.findAll({
+        verified: true,
+      });
+
+      return { verifiedChurches };
+    } catch (error) {
+      logger.error({ error: "Error fetching verified churches" });
+      throw new Error(
+        "An unexpected error occurred while fetching verified churches."
+      );
     }
   }
 }

@@ -25,6 +25,11 @@ export class BaseRepository<T, M extends Model> {
     return await this.model.query().where(filter).first();
   }
 
+  async findAll(filter: ObjectLiteral): Promise<T[]> {
+    const query = this.model.query();
+    return await query.where(filter);
+  }
+
   async save(data: Partial<T>, transaction?: Transaction): Promise<M> {
     return await this.model.query(transaction).insert(data).returning("*");
   }

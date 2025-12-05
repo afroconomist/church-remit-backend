@@ -27,6 +27,33 @@ class ChurchController {
         .json(ErrorResponse("Internal Server Error: ", error.message));
     }
   };
+
+  getChurchesBasedOnTypes = async (req: Request, res: Response) => {
+    try {
+      const churchesBasedOnTypes =
+        await this.churchService.getChurchesBasedOnTypes(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", churchesBasedOnTypes));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getVerifiedChurches = async (_req: Request, res: Response) => {
+    try {
+      const verifiedChurches = await this.churchService.getVerifiedChurches();
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", verifiedChurches));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
 }
 
 export default ChurchController;
