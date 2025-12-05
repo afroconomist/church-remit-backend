@@ -15,9 +15,9 @@ class ChurchController {
       .json(result);
   };
 
-  getAll = async (_req: Request, res: Response) => {
+  getAll = async (req: Request, res: Response) => {
     try {
-      const churches = await this.churchService.getAllChurches();
+      const churches = await this.churchService.getAllChurches(req);
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", churches));
@@ -42,9 +42,11 @@ class ChurchController {
     }
   };
 
-  getVerifiedChurches = async (_req: Request, res: Response) => {
+  getVerifiedChurches = async (req: Request, res: Response) => {
     try {
-      const verifiedChurches = await this.churchService.getVerifiedChurches();
+      const verifiedChurches = await this.churchService.getVerifiedChurches(
+        req
+      );
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", verifiedChurches));

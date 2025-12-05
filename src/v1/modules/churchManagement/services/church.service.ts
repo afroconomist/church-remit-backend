@@ -168,11 +168,32 @@ class ChurchService {
     return { success: true };
   }
 
-  async getAllChurches() {
-    try {
-      const churches = await this.churchRepository.getAll();
+  async getAllChurches(req: any) {
+    const { page = 1, limit = 10 } = req.query;
 
-      return { churches };
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: churches, totalRecords } =
+        await this.churchRepository.getAndCountAll();
+
+      if (churches.length === 0) {
+        return {
+          churches: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        churches,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
     } catch (error) {
       logger.error({ error: "Error fetching churches" });
       throw new Error("An unexpected error occurred while fetching churches.");
@@ -180,13 +201,34 @@ class ChurchService {
   }
 
   async getChurchesBasedOnTypes(req: any) {
-    try {
-      const churchType = req.params.churchType;
-      const churchesBasedOnTypes = await this.churchRepository.findAll({
-        churchType,
-      });
+    const churchType = req.params.churchType;
+    const { page = 1, limit = 10 } = req.query;
 
-      return { churchesBasedOnTypes };
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: churchesBasedOnTypes, totalRecords } =
+        await this.churchRepository.findAndCountAll({
+          churchType,
+        });
+
+      if (churchesBasedOnTypes.length === 0) {
+        return {
+          churches: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        churchesBasedOnTypes,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
     } catch (error) {
       logger.error({ error: "Error fetching churches based on types" });
       throw new Error(
@@ -195,13 +237,34 @@ class ChurchService {
     }
   }
 
-  async getVerifiedChurches() {
-    try {
-      const verifiedChurches = await this.churchRepository.findAll({
-        verified: true,
-      });
+  async getVerifiedChurches(req: any) {
+    const { page = 1, limit = 10 } = req.query;
 
-      return { verifiedChurches };
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: verifiedChurches, totalRecords } =
+        await this.churchRepository.findAndCountAll({
+          verified: true,
+        });
+
+      if (verifiedChurches.length === 0) {
+        return {
+          verifiedChurches: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        verifiedChurches,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
     } catch (error) {
       logger.error({ error: "Error fetching verified churches" });
       throw new Error(

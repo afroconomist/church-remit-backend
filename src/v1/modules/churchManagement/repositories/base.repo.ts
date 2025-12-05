@@ -17,8 +17,17 @@ export class BaseRepository<T, M extends Model> {
     return await query.findById(id);
   }
 
-  async getAll() {
-    return await this.model.query();
+  async getAndCountAll(
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ data: T[]; totalRecords: number }> {
+    const query = this.model.query();
+
+    const totalRecords = await this.model.query().resultSize();
+
+    const data = await query.limit(limit).offset((page - 1) * limit);
+
+    return { data, totalRecords };
   }
 
   async findOne(filter: ObjectLiteral): Promise<T | undefined> {
@@ -28,6 +37,23 @@ export class BaseRepository<T, M extends Model> {
   async findAll(filter: ObjectLiteral): Promise<T[]> {
     const query = this.model.query();
     return await query.where(filter);
+  }
+
+  async findAndCountAll(
+    filter: ObjectLiteral,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ data: T[]; totalRecords: number }> {
+    const query = this.model.query();
+
+    const totalRecords = await this.model.query().where(filter).resultSize();
+
+    const data = await query
+      .where(filter)
+      .limit(limit)
+      .offset((page - 1) * limit);
+
+    return { data, totalRecords };
   }
 
   async save(data: Partial<T>, transaction?: Transaction): Promise<M> {
