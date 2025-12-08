@@ -16,7 +16,7 @@ export function bootstrapApp(app: express.Application) {
 }
 
 function registerThirdPartyModules(app: express.Application) {
-  app.use(cors({ origin: true }));
+  app.use(cors({ origin: "*" }));
 	app.use(express.json({ limit: "50mb" }));
 	app.use(express.urlencoded({ extended: true }));
 }
