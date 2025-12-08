@@ -19,7 +19,7 @@ const accessControlManagementController = container.resolve(
 const router = express.Router();
 
 router.post(
-	"/admin/roles",
+	"/roles",
 	[
 		validate(createRoleRules),
 		authMiddleware,
@@ -31,7 +31,7 @@ router.post(
 );
 
 router.get(
-	"/admin/roles/:id",
+	"/roles/:id",
 	[
 		validate(getRoleRules),
 		authMiddleware,
@@ -43,15 +43,25 @@ router.get(
 );
 
 router.get(
-	"/admin/roles",
-	[authMiddleware, accessControlMiddleware(AccessControls.ROLE_LIST)],
+	"/roles",
+	[
+		// authMiddleware, 
+		// accessControlMiddleware(AccessControls.ROLE_LIST)
+	],
 	(_req: Request, res: Response, next) => {
 		accessControlManagementController.getAllRoles(res).catch(e => next(e));
 	}
 );
 
+router.get(
+	"/public/roles",
+	(_req: Request, res: Response, next) => {
+		accessControlManagementController.getAllRolesPublic(res).catch(e => next(e));
+	}
+);
+
 router.put(
-	"/admin/roles/:id",
+	"/roles/:id",
 	[
 		validate(updateRoleRules),
 		authMiddleware,
@@ -63,7 +73,7 @@ router.put(
 );
 
 router.delete(
-	"/admin/roles/:id",
+	"/roles/:id",
 	[
 		validate(deleteRoleRules),
 		authMiddleware,
@@ -74,15 +84,15 @@ router.delete(
 	}
 );
 
-router.get("/admin/permissions/:id", (req: Request, res: Response, next) => {
+router.get("/permissions/:id", (req: Request, res: Response, next) => {
 	accessControlManagementController.getPermission(req, res).catch(e => next(e));
 });
 
-router.get("/admin/permissions", (_req: Request, res: Response, next) => {
+router.get("/permissions", (_req: Request, res: Response, next) => {
 	accessControlManagementController.getAllPermissions(res).catch(e => next(e));
 });
 
-router.post("/admin/permissions", (req: Request, res: Response, next) => {
+router.post("/permissions", (req: Request, res: Response, next) => {
 	accessControlManagementController.createPermission(req, res).catch(e => next(e));
 });
 

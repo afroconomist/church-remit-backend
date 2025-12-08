@@ -10,16 +10,12 @@ class UserFactory {
     user.middleName = data.middleName;
     user.email = data.email;
     user.phoneNumber = data.phoneNumber;
-    user.role = data.role;
-    user.supervisorId = data.supervisorId;
     user.password = data.password;
     user.address = data.address;
-    user.region = data.region;
     user.addedBy = data.addedBy;
     user.isDefaultPassword = data.isDefaultPassword;
     user.churchId = data.churchId;
-
-
+    user.roleId = data.roleId;
      
     return user;
   }

@@ -1,6 +1,5 @@
 import { ObjectLiteral } from "@shared/types/object-literal.type";
 import { Model, Transaction } from "objection";
-import { Wallet } from "../model/wallet.model";
 
 export class BaseRepository<T, M extends Model> {
   private model: typeof Model | any;
@@ -187,7 +186,7 @@ export class BaseRepository<T, M extends Model> {
     return await query.where(filter);
   }
 
-  async findAllWhere(filter: Record<string, any>): Promise<Wallet[]> {
+  async findAllWhere(filter: Record<string, any>): Promise<any[]> {
     const query = this.model.query();
   
     if (filter.userId && Array.isArray(filter.userId)) {
