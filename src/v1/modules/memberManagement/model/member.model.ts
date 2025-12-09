@@ -7,7 +7,7 @@ const SALT_ROUNDS = 10;
 
 export class Member extends Model {
   static tableName = DB_TABLES.MEMBERS;
-  id!: string;
+  id: string;
   firstName: string;
   lastName: string;
   middleName?: string;
@@ -30,12 +30,12 @@ export class Member extends Model {
   notes?: string;
   avatar?: string;
   password: string;
-  roleId?: string;
-  status!: string;
+  roleId: string;
+  status?: string;
   isDefaultPassword?: boolean;
-  refreshToken!: string;
-  addedBy?: string;
-  churchId?: string;
+  refreshToken?: string;
+  addedBy: string;
+  churchId: string;
 
   static relationMappings = {
     userRole: {

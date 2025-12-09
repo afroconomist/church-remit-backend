@@ -56,7 +56,7 @@ export async function up(knex: Knex): Promise<void> {
           "active = Active members, inactive = Inactive members/newly created members that has not changed their default password, deactivated = Deactivated members"
         );
       table.text("refreshToken").nullable();
-      table.text("addedBy").nullable();
+      table.text("addedBy").notNullable();
       table.uuid("churchId").notNullable();
       table
         .foreign("churchId")
