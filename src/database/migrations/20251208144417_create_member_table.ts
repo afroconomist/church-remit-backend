@@ -11,6 +11,7 @@ export async function up(knex: Knex): Promise<void> {
       table.string("middleName").nullable();
       table.string("email").notNullable().unique();
       table.string("phoneNumber").notNullable();
+      table.string("avatar").nullable();
       table.date("dateOfBirth").nullable();
       table.enu("gender", ["Male", "Female"]).nullable();
       table
