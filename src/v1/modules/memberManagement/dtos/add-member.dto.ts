@@ -1,4 +1,4 @@
-export type addMember = {
+export type AddMember = {
   firstName: string;
   lastName: string;
   middleName?: string;
@@ -20,11 +20,7 @@ export type addMember = {
   baptismDate?: Date;
   notes?: string;
   avatar?: string;
-  password: string;
   roleId: string;
-  status?: string;
-  isDefaultPassword?: boolean;
-  refreshToken?: string;
   addedBy: string;
   churchId: string;
 };

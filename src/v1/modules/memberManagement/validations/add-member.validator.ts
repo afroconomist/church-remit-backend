@@ -21,6 +21,4 @@ export const AddMemberRules = {
   notes: "string",
   avatar: "string",
   roleId: "required|uuid",
-  addedBy: "required|uuid",
-  churchId: "required|uuid",
 };
