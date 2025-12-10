@@ -3,8 +3,8 @@ import { container } from "tsyringe";
 import { addMemberRules } from "../validations/add-member.validator";
 import { validate } from "@shared/middlewares/validator.middleware";
 import MemberController from "../controller/member.controller";
-// import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
-// import { AccessControls } from "../../accessControlManagement/enums/access-control.enum";
+import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
+import { AccessControls } from "../../accessControlManagement/enums/access-control.enum";
 import authMiddleware from "@shared/middlewares/auth.middleware";
 
 const memberController = container.resolve(MemberController);
@@ -15,7 +15,7 @@ router.post(
   "/admin/add-member",
   [
     authMiddleware,
-    // accessControlMiddleware(AccessControls.USER_ONBOARDING),
+    accessControlMiddleware(AccessControls.USER_ONBOARDING),
     validate(addMemberRules),
   ],
   (req: Request, res: Response, next) =>

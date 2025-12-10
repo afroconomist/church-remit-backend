@@ -1,5 +1,5 @@
 export enum AccessControls {
-	USER_ONBOARDING = "user_onboarding",
+	USER_ONBOARDING = "add-member",
 	BULK_USER_ONBOARDING = "bulk_user_onboarding",
 	USER_LIST = "user_list",
 	USER_ACCOUNT_DEACTIVATION = "user_account_deactivation",
