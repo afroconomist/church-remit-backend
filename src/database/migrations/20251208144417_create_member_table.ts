@@ -10,6 +10,7 @@ export async function up(knex: Knex): Promise<void> {
       table.string("lastName").notNullable();
       table.string("middleName").nullable();
       table.string("email").notNullable().unique();
+      table.string("password").notNullable();
       table.string("phoneNumber").notNullable();
       table.string("avatar").nullable();
       table.date("dateOfBirth").nullable();
@@ -45,7 +46,6 @@ export async function up(knex: Knex): Promise<void> {
       table.date("joinDate").nullable();
       table.date("baptismDate").nullable();
       table.string("notes").nullable();
-      table.string("password").notNullable();
       table.string("roleId").notNullable();
       table.boolean("isDefaultPassword").notNullable().defaultTo(true);
       table

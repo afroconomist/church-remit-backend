@@ -1,4 +1,4 @@
-export const AddMemberRules = {
+export const addMemberRules = {
   firstName: "required|string",
   lastName: "required|string",
   middleName: "string",

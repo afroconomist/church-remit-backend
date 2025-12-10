@@ -12,6 +12,7 @@ export class Member extends Model {
   lastName: string;
   middleName?: string;
   email: string;
+  password: string;
   phoneNumber: string;
   dateOfBirth?: Date;
   gender?: string;
@@ -29,7 +30,6 @@ export class Member extends Model {
   baptismDate?: Date;
   notes?: string;
   avatar?: string;
-  password: string;
   roleId: string;
   status?: string;
   isDefaultPassword?: boolean;

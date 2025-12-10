@@ -9,6 +9,7 @@ class MemberFactory {
     member.lastName = data.lastName;
     member.middleName = data.middleName;
     member.email = data.email;
+    member.password = data.password;
     member.phoneNumber = data.phoneNumber;
     member.dateOfBirth = data.dateOfBirth;
     member.gender = data.gender;

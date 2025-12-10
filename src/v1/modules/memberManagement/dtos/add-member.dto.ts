@@ -3,6 +3,7 @@ export type AddMember = {
   lastName: string;
   middleName?: string;
   email: string;
+  password: string;
   phoneNumber: string;
   dateOfBirth?: Date;
   gender?: string;
