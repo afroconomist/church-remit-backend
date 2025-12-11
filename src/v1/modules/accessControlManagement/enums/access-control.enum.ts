@@ -4,7 +4,7 @@ export enum AccessControls {
 	USER_LIST = "view-members",
 	USER_ACCOUNT_DEACTIVATION = "user_account_deactivation",
 	USER_ACCOUNT_REACTIVATION = "user_account_reactivation",
-	USER_PROFILE_UPDATE = "user_profile_update",
+	USER_PROFILE_UPDATE = "edit-member",
 	USER_PASSWORD_RESET = "user_password_reset",
 	ROLE_CREATION = "role_creation",
 	ROLE_LIST = "role_list",

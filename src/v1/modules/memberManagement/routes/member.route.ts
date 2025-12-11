@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import { container } from "tsyringe";
 import { addMemberRules } from "../validations/add-member.validator";
+import { updateMemberRules } from "../validations/update-member.validator";
 import { validate } from "@shared/middlewares/validator.middleware";
 import { loginRules } from "../../userManagement/validations/login.validator";
 import { getSingleUserRules } from "../../userManagement/validations/get-single-user.validator";
@@ -41,6 +42,18 @@ router.get(
   ],
   (req: Request, res: Response, next) => {
     memberController.getMemberProfile(req, res).catch((e) => next(e));
+  }
+);
+
+router.put(
+  "/admin/update-user/:id",
+  [
+    authMiddleware,
+    accessControlMiddleware(AccessControls.USER_PROFILE_UPDATE),
+    validate(updateMemberRules),
+  ],
+  (req: Request, res: Response) => {
+    memberController.updateMember(req, res);
   }
 );
 

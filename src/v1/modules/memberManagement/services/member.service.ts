@@ -1,4 +1,5 @@
 import { injectable } from "tsyringe";
+import { Request } from "express";
 import { AddMember } from "../dtos/add-member.dto";
 import {
   generateCode,
@@ -199,6 +200,50 @@ class MemberService {
       address: member.streetAddress ?? "",
       role: member.roleId ?? "",
     };
+  }
+
+  async updateMember(req: Request) {
+    try {
+      const data = req.body;
+      const member = await this.memberRepository.findById(req.params.id);
+      if (!member) {
+        throw new AppError(400, "Member does not exist");
+      }
+
+      const superAdminExists = await this.userRepository.findById(
+        member.addedBy
+      );
+      if (!superAdminExists)
+        return { success: false, message: "Super admin does not exist" };
+
+      await this.memberRepository.updateById(req.params.id, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        middleName: data.middleName,
+        phoneNumber: data.phoneNumber,
+        dateOfBirth: data.dateOfBirth,
+        maritalStatus: data.maritalStatus,
+        occupation: data.occupation,
+        streetAddress: data.streetAddress,
+        city: data.city,
+        state: data.state,
+        country: data.country,
+        contactName: data.contactName,
+        contactNumber: data.contactNumber,
+        relationship: data.relationship,
+        membershipStatus: data.membershipStatus,
+        joinDate: data.joinDate,
+        baptismDate: data.baptismDate,
+      });
+
+      return {
+        success: true,
+        message: "Member data has been updated successfully",
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to update member");
+      throw new AppError(400, error.message);
+    }
   }
 }
 

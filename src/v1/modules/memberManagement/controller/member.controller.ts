@@ -1,4 +1,4 @@
-import { ErrorResponse } from "@shared/utils/response.util";
+import { SuccessResponse, ErrorResponse } from "@shared/utils/response.util";
 import { Request, Response } from "express";
 import { injectable } from "tsyringe";
 import MemberService from "../services/member.service";
@@ -34,6 +34,23 @@ class MemberController {
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
+  };
+
+  updateMember = async (req: Request, res: Response) => {
+    try {
+      const result: any = await this.memberService.updateMember(req);
+      if (result.success) {
+        return res.send(SuccessResponse(result.message));
+      } else {
+        return res
+          .status(400)
+          .json({ status: result.success, message: result.message });
+      }
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ status: false, message: "Failed to update member account" });
+    }
   };
 }
 
