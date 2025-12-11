@@ -28,6 +28,13 @@ class MemberController {
       res.status(500).json(ErrorResponse("Internal Server: ", error));
     }
   };
+
+  getMemberProfile = async (req: Request, res: Response) => {
+    const result: any = await this.memberService.getMemberProfile(req);
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
 }
 
 export default MemberController;

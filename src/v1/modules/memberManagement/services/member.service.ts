@@ -186,6 +186,20 @@ class MemberService {
       };
     }
   }
+
+  async getMemberProfile(req: any) {
+    const member = await this.memberRepository.findById(req.user.id);
+    return {
+      firstName: member.firstName ?? "",
+      lastName: member.lastName ?? "",
+      middleName: member.middleName ?? "",
+      phoneNumber: member.phoneNumber ?? "",
+      avatar: member.avatar ?? "",
+      email: member.email ?? "",
+      address: member.streetAddress ?? "",
+      role: member.roleId ?? "",
+    };
+  }
 }
 
 export default MemberService;
