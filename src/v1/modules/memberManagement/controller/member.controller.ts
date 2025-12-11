@@ -1,4 +1,4 @@
-// import { ErrorResponse, SuccessResponse } from "@shared/utils/response.util";
+import { ErrorResponse } from "@shared/utils/response.util";
 import { Request, Response } from "express";
 import { injectable } from "tsyringe";
 import MemberService from "../services/member.service";
@@ -16,6 +16,17 @@ class MemberController {
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
+  };
+
+  loginMember = async (req: Request, res) => {
+    try {
+      const result: any = await this.memberService.loginMember(req.body);
+      return res
+        .status(result.status ? httpStatus.OK : httpStatus.BAD_REQUEST)
+        .json(result);
+    } catch (error: any) {
+      res.status(500).json(ErrorResponse("Internal Server: ", error));
+    }
   };
 }
 

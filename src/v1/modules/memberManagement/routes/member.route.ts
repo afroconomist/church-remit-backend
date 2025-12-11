@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { container } from "tsyringe";
 import { addMemberRules } from "../validations/add-member.validator";
 import { validate } from "@shared/middlewares/validator.middleware";
+import { loginRules } from "../../userManagement/validations/login.validator";
 import MemberController from "../controller/member.controller";
 import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
 import { AccessControls } from "../../accessControlManagement/enums/access-control.enum";
@@ -20,6 +21,14 @@ router.post(
   ],
   (req: Request, res: Response, next) =>
     memberController.addMember(req, res).catch((err) => next(err))
+);
+
+router.post(
+  "/auth/login",
+  validate(loginRules),
+  (req: Request, res: Response) => {
+    memberController.loginMember(req, res);
+  }
 );
 
 export default router;

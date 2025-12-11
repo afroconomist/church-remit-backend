@@ -17,6 +17,10 @@ export class BaseRepository<T, M extends Model> {
     return await query.findById(id);
   }
 
+  async updateById(id: string, data: Partial<M>, trx?: Transaction): Promise<M> {
+    return await this.model.query(trx).patchAndFetchById(id, data).returning("*");
+  }
+
   async getAndCountAll(
     page: number = 1,
     limit: number = 10

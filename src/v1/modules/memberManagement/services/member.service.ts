@@ -1,15 +1,21 @@
 import { injectable } from "tsyringe";
 import { AddMember } from "../dtos/add-member.dto";
+import {
+  generateCode,
+  generateJwtToken,
+  generateRefreshToken,
+} from "@shared/utils/functions.util";
 import MemberFactory from "../factories/member.factory";
 import MemberRepository from "../repositories/member.repository";
 import ChurchRepository from "../../churchManagement/repositories/church.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
 import MailService from "../../userManagement/services/mail.service";
-import { generateCode } from "@shared/utils/functions.util";
+import AccessControlManagementService from "../../accessControlManagement/services/access-control-management.service";
+import RoleRepo from "../../accessControlManagement/repositories/role.repo";
+import { bcryptCompareHashedString } from "@shared/utils/hash.util";
 import logger from "@shared/utils/logger";
 // import { IMember } from "../model/member.model";
 import AppError from "@shared/error/app.error";
-import AccessControlManagementService from "../../accessControlManagement/services/access-control-management.service";
 
 @injectable()
 class MemberService {
@@ -18,6 +24,7 @@ class MemberService {
     private readonly churchRepository: ChurchRepository,
     private readonly userRepository: UserRepository,
     private readonly mailService: MailService,
+    private readonly roleRepo: RoleRepo,
     private readonly accessControlManagementService: AccessControlManagementService
   ) {}
 
@@ -105,6 +112,78 @@ class MemberService {
         { error: error.message },
         "Error sending account creation mail"
       );
+    }
+  }
+
+  async loginMember(data: { email: string; password: string }) {
+    try {
+      const member = await this.memberRepository.findOne({ email: data.email });
+      if (!member) {
+        throw new AppError(400, "Member not found");
+      }
+
+      if (member.isDefaultPassword === true) {
+        return {
+          status: false,
+          message: "Please change your password from the default password.",
+          data: { memberId: member.id },
+        };
+      }
+
+      if (member.status === "deactivated") {
+        throw new AppError(
+          400,
+          "Your account has been deactivated. Please contact administrator."
+        );
+      }
+
+      const passwordMatch = await bcryptCompareHashedString(
+        data.password,
+        String(member.password)
+      );
+      if (!passwordMatch) {
+        throw new AppError(400, "Password is incorrect. Kindly check!");
+      }
+
+      const accessToken = await generateJwtToken(member);
+      const refreshToken = await generateRefreshToken(member);
+      await this.memberRepository.updateById(member.id, { refreshToken });
+
+      try {
+        await this.mailService.sendLoginEmail({
+          email: member.email,
+          subject: "Login Notification",
+          name: member.firstName,
+        });
+      } catch (emailError: any) {
+        logger.error(
+          { error: emailError.message },
+          "Failed to send login notification email"
+        );
+      }
+
+      const role = await this.roleRepo.findById(String(member.roleId));
+      const returnResponse = {
+        member,
+        accessToken,
+        permissions: role?.id
+          ? (await this.accessControlManagementService.getRole(role?.id))
+              .permissions
+          : [],
+      };
+
+      return {
+        status: true,
+        message: "Login successful",
+        data: returnResponse,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error logging in");
+      return {
+        status: false,
+        message:
+          error instanceof AppError ? error.message : "Internal server error",
+      };
     }
   }
 }
