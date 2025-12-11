@@ -5,6 +5,7 @@ import ChurchFactory from "../factories/church.factory";
 import UserFactory from "../../userManagement/factories/user.factory";
 import ChurchRepository from "../repositories/church.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
+import MemberRepository from "../../memberManagement/repositories/member.repository";
 import OTPService from "../../userManagement/services/otp.service";
 import MailService from "../../userManagement/services/mail.service";
 import logger from "@shared/utils/logger";
@@ -43,6 +44,7 @@ class ChurchService {
   constructor(
     private readonly churchRepository: ChurchRepository,
     private readonly userRepository: UserRepository,
+    private readonly memberRepository: MemberRepository,
     private readonly otpService: OTPService,
     private readonly mailService: MailService,
     private readonly accessControlManagementService: AccessControlManagementService
@@ -269,6 +271,41 @@ class ChurchService {
       logger.error({ error: "Error fetching verified churches" });
       throw new Error(
         "An unexpected error occurred while fetching verified churches."
+      );
+    }
+  }
+
+  async getChurchMembers(req: any) {
+    const churchId = req.params.churchId;
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: churchMembers, totalRecords } =
+        await this.memberRepository.findAndCountAll({ churchId });
+
+      if (churchMembers.length === 0) {
+        return {
+          members: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        churchMembers,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error) {
+      logger.error({ error: "Error fetching church members" });
+      throw new Error(
+        "An unexpected error occurred while fetching churches members."
       );
     }
   }
