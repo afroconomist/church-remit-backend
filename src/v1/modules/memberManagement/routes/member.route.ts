@@ -4,7 +4,8 @@ import { addMemberRules } from "../validations/add-member.validator";
 import { updateMemberRules } from "../validations/update-member.validator";
 import { validate } from "@shared/middlewares/validator.middleware";
 import { loginRules } from "../../userManagement/validations/login.validator";
-import { getSingleUserRules } from "../../userManagement/validations/get-single-user.validator";
+import { changePasswordRules } from "../validations/change-password.validator";
+import { profilePictureUploadRules } from "../../userManagement/validations/profile-picture.validator";
 import MemberController from "../controller/member.controller";
 import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
 import { AccessControls } from "../../accessControlManagement/enums/access-control.enum";
@@ -26,19 +27,26 @@ router.post(
 );
 
 router.post(
-  "/auth/login",
+  "/members/login",
   validate(loginRules),
-  (req: Request, res: Response) => {
-    memberController.loginMember(req, res);
+  (req: Request, res: Response, next) => {
+    memberController.loginMember(req, res).catch((err) => next(err));
+  }
+);
+
+router.post(
+  "/members/change-password",
+  validate(changePasswordRules),
+  (req: Request, res: Response, next) => {
+    memberController.createPassword(req, res).catch((err) => next(err));
   }
 );
 
 router.get(
-  "/admin/member/:id",
+  "/members/profile",
   [
     authMiddleware,
-    accessControlMiddleware(AccessControls.USER_LIST),
-    validate(getSingleUserRules),
+    // accessControlMiddleware(AccessControls.USER_LIST),
   ],
   (req: Request, res: Response, next) => {
     memberController.getMemberProfile(req, res).catch((e) => next(e));
@@ -46,14 +54,28 @@ router.get(
 );
 
 router.put(
-  "/admin/update-user/:id",
+  "/members/:id/update",
   [
     authMiddleware,
-    accessControlMiddleware(AccessControls.USER_PROFILE_UPDATE),
+    // accessControlMiddleware(AccessControls.USER_PROFILE_UPDATE),
     validate(updateMemberRules),
   ],
-  (req: Request, res: Response) => {
-    memberController.updateMember(req, res);
+  (req: Request, res: Response, next) => {
+    memberController.updateMember(req, res).catch((err) => next(err));
+  }
+);
+
+router.put(
+  "/members/:id/upload-dp",
+  [
+    authMiddleware,
+    // accessControlMiddleware(AccessControls.USER_PROFILE_UPDATE),
+    validate(profilePictureUploadRules),
+  ],
+  (req: Request, res: Response, next) => {
+    memberController
+      .uploadMemberProfilePicture(req, res)
+      .catch((err) => next(err));
   }
 );
 

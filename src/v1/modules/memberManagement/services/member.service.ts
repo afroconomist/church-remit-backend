@@ -188,18 +188,54 @@ class MemberService {
     }
   }
 
-  async getMemberProfile(req: any) {
-    const member = await this.memberRepository.findById(req.user.id);
-    return {
-      firstName: member.firstName ?? "",
-      lastName: member.lastName ?? "",
-      middleName: member.middleName ?? "",
-      phoneNumber: member.phoneNumber ?? "",
-      avatar: member.avatar ?? "",
-      email: member.email ?? "",
-      address: member.streetAddress ?? "",
-      role: member.roleId ?? "",
-    };
+  async changePasswordOnFirstLogin(data: {
+    memberId: string;
+    password: string;
+  }) {
+    try {
+      const member = await this.memberRepository.findOne({ id: data.memberId });
+      if (!member) {
+        throw new AppError(400, "Member not found");
+      }
+
+      if (member.isDefaultPassword == false) {
+        throw new AppError(
+          400,
+          "Can`t perform this action!. Your password has been changed already."
+        );
+      }
+      const id = member.id;
+
+      await this.memberRepository.updateById(id, {
+        password: data.password,
+        status: "active",
+        isDefaultPassword: false,
+      });
+
+      const message: string =
+        "Your Password has been changed successfully. Kindly proceed to Login";
+      const token = {
+        token: await generateJwtToken(member),
+      };
+      return { success: true, message: message, data: token };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error changing password");
+    }
+  }
+
+  async getMemberProfile(id: string) {
+    try {
+      const member = await this.memberRepository.findById(id);
+      if (!member) return { success: false, message: "Member does not exist" };
+
+      return {
+        success: true,
+        message: "Member profile retrieved successfully",
+        data: member,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error getting member");
+    }
   }
 
   async updateMember(req: Request) {
@@ -210,11 +246,11 @@ class MemberService {
         throw new AppError(400, "Member does not exist");
       }
 
-      const superAdminExists = await this.userRepository.findById(
-        member.addedBy
-      );
-      if (!superAdminExists)
-        return { success: false, message: "Super admin does not exist" };
+      // const superAdminExists = await this.userRepository.findById(
+      //   member.addedBy
+      // );
+      // if (!superAdminExists)
+      //   return { success: false, message: "Super admin does not exist" };
 
       await this.memberRepository.updateById(req.params.id, {
         firstName: data.firstName,
@@ -242,6 +278,27 @@ class MemberService {
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Failed to update member");
+      throw new AppError(400, error.message);
+    }
+  }
+
+  async uploadMemberProfilePicture(req: Request) {
+    try {
+      const member = await this.memberRepository.findById(req.params.id);
+      if (!member) {
+        throw new AppError(400, "Member does not exist");
+      }
+
+      await this.memberRepository.updateById(req.params.id, {
+        avatar: req.body.avatar,
+      });
+
+      return {
+        success: true,
+        message: "Member profile picture has been updated successfully",
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to update member profile picture");
       throw new AppError(400, error.message);
     }
   }

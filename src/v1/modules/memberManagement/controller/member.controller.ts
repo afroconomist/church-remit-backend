@@ -29,11 +29,38 @@ class MemberController {
     }
   };
 
+  createPassword = async (req: Request, res) => {
+    try {
+      const result: any = await this.memberService.changePasswordOnFirstLogin(
+        req.body
+      );
+      if (result.success) {
+        return res.send(SuccessResponse(result.message, result.data));
+      } else {
+        return res
+          .status(400)
+          .json({ status: result.success, message: result.message });
+      }
+    } catch (error: any) {
+      res.status(500).json(ErrorResponse("Internal Server: ", error));
+    }
+  };
+
   getMemberProfile = async (req: Request, res: Response) => {
-    const result: any = await this.memberService.getMemberProfile(req);
-    return res
-      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
-      .json(result);
+    try {
+      const result: any = await this.memberService.getMemberProfile(
+        req.user.id
+      );
+      if (result.success) {
+        return res.send(SuccessResponse(result.message, result.data));
+      } else {
+        return res
+          .status(400)
+          .json({ status: result.success, message: result.message });
+      }
+    } catch (error: any) {
+      res.status(500).json(ErrorResponse("Internal Server: ", error));
+    }
   };
 
   updateMember = async (req: Request, res: Response) => {
@@ -50,6 +77,25 @@ class MemberController {
       return res
         .status(500)
         .json({ status: false, message: "Failed to update member account" });
+    }
+  };
+
+  uploadMemberProfilePicture = async (req: Request, res: Response) => {
+    try {
+      const result: any = await this.memberService.uploadMemberProfilePicture(
+        req
+      );
+      if (result.success) {
+        return res.send(SuccessResponse(result.message));
+      } else {
+        return res
+          .status(400)
+          .json({ status: result.success, message: result.message });
+      }
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ status: false, message: "Failed to update member profile picture" });
     }
   };
 }
