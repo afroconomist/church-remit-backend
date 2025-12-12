@@ -63,4 +63,8 @@ export class BaseRepository<T, M extends Model> {
   async save(data: Partial<T>, transaction?: Transaction): Promise<M> {
     return await this.model.query(transaction).insert(data).returning("*");
   }
+
+  async deleteById(id: string) {
+    return await this.model.query().deleteById(id);
+  }
 }

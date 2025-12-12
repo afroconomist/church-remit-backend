@@ -10,6 +10,8 @@ import MemberFactory from "../factories/member.factory";
 import MemberRepository from "../repositories/member.repository";
 import ChurchRepository from "../../churchManagement/repositories/church.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
+import ReasonRepository from "../../userManagement/repositories/reason.repository";
+import ActionReasonFactory from "../../userManagement/factories/action_reason.factory";
 import MailService from "../../userManagement/services/mail.service";
 import AccessControlManagementService from "../../accessControlManagement/services/access-control-management.service";
 import RoleRepo from "../../accessControlManagement/repositories/role.repo";
@@ -26,7 +28,8 @@ class MemberService {
     private readonly userRepository: UserRepository,
     private readonly mailService: MailService,
     private readonly roleRepo: RoleRepo,
-    private readonly accessControlManagementService: AccessControlManagementService
+    private readonly accessControlManagementService: AccessControlManagementService,
+    private readonly reasonRepository: ReasonRepository
   ) {}
 
   async addMember(member_data: AddMember, superAdminId: string) {
@@ -223,19 +226,24 @@ class MemberService {
     }
   }
 
-  async getMemberProfile(id: string) {
-    try {
-      const member = await this.memberRepository.findById(id);
-      if (!member) return { success: false, message: "Member does not exist" };
+  async getMemberProfile(req: any) {
+    const member = await this.memberRepository.findById(req.user.id);
+    if (!member) return { success: false, message: "Member does not exist" };
 
-      return {
-        success: true,
-        message: "Member profile retrieved successfully",
-        data: member,
-      };
-    } catch (error: any) {
-      logger.error({ error: error.message }, "Error getting member");
-    }
+    return {
+      success: true,
+      message: "Member profile retrieved successfully",
+      member: {
+        firstName: member.firstName ?? "",
+        lastName: member.lastName ?? "",
+        middleName: member.middleName ?? "",
+        phoneNumber: member.phoneNumber ?? "",
+        avatar: member.avatar ?? "",
+        email: member.email ?? "",
+        address: member.streetAddress ?? "",
+        role: member.roleId ?? "",
+      },
+    };
   }
 
   async updateMember(req: Request) {
@@ -298,8 +306,70 @@ class MemberService {
         message: "Member profile picture has been updated successfully",
       };
     } catch (error: any) {
-      logger.error({ error: error.message }, "Failed to update member profile picture");
+      logger.error(
+        { error: error.message },
+        "Failed to update member profile picture"
+      );
       throw new AppError(400, error.message);
+    }
+  }
+
+  async getMember(id: string) {
+    const member = await this.memberRepository.findById(id);
+    if (!member) {
+      throw new AppError(400, "Member does not exist");
+    }
+
+    const [addedBy, reason, role] = await Promise.all([
+      member.addedBy ? this.memberRepository.findById(member.addedBy) : null,
+      this.reasonRepository.findWhere({ userId: member.id }),
+      this.roleRepo.findByNameWithRelations(String(member.roleId)),
+    ]);
+
+    const permissions = role
+      ? (await this.accessControlManagementService.getRole(role.id)).permissions
+      : [];
+
+    return {
+      ...member,
+      addedBy: addedBy ? `${addedBy.firstName} ${addedBy.lastName}` : "",
+      reasons: reason || [],
+      permissions,
+    };
+  }
+
+  async deleteMember(req: Request) {
+    const id = req.params.id;
+    const member = await this.memberRepository.findById(id);
+    if (!member) {
+      throw new AppError(400, "Member does not exist");
+    }
+    const linkedAgents = await this.memberRepository.findOne({
+      supervisorId: member.id,
+    });
+    if (linkedAgents) {
+      throw new AppError(
+        400,
+        "Member cannot be deleted because they are assigned as a supervisor to other members."
+      );
+    }
+
+    await this.memberRepository.deleteById(member.id);
+    const data = {
+      memberId: member.id,
+      action: "delete-member",
+      reason: req.body.reason,
+    };
+    if (req.body.reason) await this.createReason(data);
+    return "Member account deleted successfully";
+  }
+
+  async createReason(data: any) {
+    try {
+      const reason = ActionReasonFactory.createReason(data);
+      await this.reasonRepository.save(reason);
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error creating reason");
     }
   }
 }

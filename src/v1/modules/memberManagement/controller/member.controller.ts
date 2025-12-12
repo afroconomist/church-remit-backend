@@ -47,20 +47,10 @@ class MemberController {
   };
 
   getMemberProfile = async (req: Request, res: Response) => {
-    try {
-      const result: any = await this.memberService.getMemberProfile(
-        req.user.id
-      );
-      if (result.success) {
-        return res.send(SuccessResponse(result.message, result.data));
-      } else {
-        return res
-          .status(400)
-          .json({ status: result.success, message: result.message });
-      }
-    } catch (error: any) {
-      res.status(500).json(ErrorResponse("Internal Server: ", error));
-    }
+    const result: any = await this.memberService.getMemberProfile(req);
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
   };
 
   updateMember = async (req: Request, res: Response) => {
@@ -93,10 +83,25 @@ class MemberController {
           .json({ status: result.success, message: result.message });
       }
     } catch (error) {
-      return res
-        .status(500)
-        .json({ status: false, message: "Failed to update member profile picture" });
+      return res.status(500).json({
+        status: false,
+        message: "Failed to update member profile picture",
+      });
     }
+  };
+
+  getMember = async (req: Request, res: Response) => {
+    const response = await this.memberService.getMember(req.params.id);
+
+    return res
+      .status(httpStatus.OK)
+      .send(SuccessResponse("Operation successful", response));
+  };
+
+  deleteMember = async (req: Request, res: Response) => {
+    const response = await this.memberService.deleteMember(req);
+
+    return res.status(httpStatus.OK).send(SuccessResponse(response));
   };
 }
 

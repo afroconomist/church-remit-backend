@@ -6,6 +6,8 @@ import { validate } from "@shared/middlewares/validator.middleware";
 import { loginRules } from "../../userManagement/validations/login.validator";
 import { changePasswordRules } from "../validations/change-password.validator";
 import { profilePictureUploadRules } from "../../userManagement/validations/profile-picture.validator";
+import { deleteReasonRules } from "../../userManagement/validations/delete-reason.validator";
+import { getSingleUserRules } from "../../userManagement/validations/get-single-user.validator";
 import MemberController from "../controller/member.controller";
 import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
 import { AccessControls } from "../../accessControlManagement/enums/access-control.enum";
@@ -76,6 +78,30 @@ router.put(
     memberController
       .uploadMemberProfilePicture(req, res)
       .catch((err) => next(err));
+  }
+);
+
+router.get(
+  "/admin/member/:id/view-info",
+  [
+    authMiddleware,
+    accessControlMiddleware(AccessControls.USER_LIST),
+    validate(getSingleUserRules),
+  ],
+  (req: Request, res: Response, next) => {
+    memberController.getMember(req, res).catch((e) => next(e));
+  }
+);
+
+router.delete(
+  "/admin/member/:id/remove",
+  [
+    authMiddleware,
+    accessControlMiddleware(AccessControls.USER_LIST),
+    validate(deleteReasonRules),
+  ],
+  (req: Request, res: Response, next) => {
+    memberController.deleteMember(req, res).catch((e) => next(e));
   }
 );
 
