@@ -18,6 +18,21 @@ class MemberController {
       .json(result);
   };
 
+  uploadBulkMembers = async (req: Request, res: Response) => {
+    const result: any = await this.memberService.uploadBulkMembers(req);
+    if (result.success) {
+      return res.status(200).json({
+        status: result.success,
+        message: result.message,
+        data: result.data,
+      });
+    } else {
+      return res
+        .status(400)
+        .json({ status: result.success, message: result.message });
+    }
+  };
+
   loginMember = async (req: Request, res) => {
     try {
       const result: any = await this.memberService.loginMember(req.body);

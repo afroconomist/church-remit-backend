@@ -1,8 +1,12 @@
 import express, { Request, Response } from "express";
 import { container } from "tsyringe";
 import { addMemberRules } from "../validations/add-member.validator";
+import { uploadBulkMembersRules } from "../validations/create-bulk-members.validator";
 import { updateMemberRules } from "../validations/update-member.validator";
-import { validate } from "@shared/middlewares/validator.middleware";
+import {
+  validate,
+  validateArray,
+} from "@shared/middlewares/validator.middleware";
 import { loginRules } from "../../userManagement/validations/login.validator";
 import { changePasswordRules } from "../validations/change-password.validator";
 import { profilePictureUploadRules } from "../../userManagement/validations/profile-picture.validator";
@@ -26,6 +30,16 @@ router.post(
   ],
   (req: Request, res: Response, next) =>
     memberController.addMember(req, res).catch((err) => next(err))
+);
+
+router.post(
+  "/admin/upload-bulk-members",
+  [
+    authMiddleware,
+    accessControlMiddleware(AccessControls.BULK_USER_ONBOARDING),
+    validateArray(uploadBulkMembersRules),
+  ],
+  (req: Request, res: Response) => memberController.uploadBulkMembers(req, res)
 );
 
 router.post(

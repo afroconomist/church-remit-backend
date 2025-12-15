@@ -17,8 +17,23 @@ export class BaseRepository<T, M extends Model> {
     return await query.findById(id);
   }
 
-  async updateById(id: string, data: Partial<M>, trx?: Transaction): Promise<M> {
-    return await this.model.query(trx).patchAndFetchById(id, data).returning("*");
+  async findByEmails(emails: string[]): Promise<any[]> {
+    return this.model.query().whereIn("email", emails);
+  }
+
+  async findByIdsAndRole(ids: string[]): Promise<any[]> {
+    return this.model.query().whereIn("id", ids);
+  }
+
+  async updateById(
+    id: string,
+    data: Partial<M>,
+    trx?: Transaction
+  ): Promise<M> {
+    return await this.model
+      .query(trx)
+      .patchAndFetchById(id, data)
+      .returning("*");
   }
 
   async getAndCountAll(
@@ -62,6 +77,10 @@ export class BaseRepository<T, M extends Model> {
 
   async save(data: Partial<T>, transaction?: Transaction): Promise<M> {
     return await this.model.query(transaction).insert(data).returning("*");
+  }
+
+  async saveMany(users: any[]): Promise<any[]> {
+    return await this.model.query().insert(users).returning("*");
   }
 
   async deleteById(id: string) {

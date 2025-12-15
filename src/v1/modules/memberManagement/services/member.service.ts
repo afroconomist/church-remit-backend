@@ -17,7 +17,7 @@ import AccessControlManagementService from "../../accessControlManagement/servic
 import RoleRepo from "../../accessControlManagement/repositories/role.repo";
 import { bcryptCompareHashedString } from "@shared/utils/hash.util";
 import logger from "@shared/utils/logger";
-// import { IMember } from "../model/member.model";
+import { IMember } from "../model/member.model";
 import AppError from "@shared/error/app.error";
 
 @injectable()
@@ -371,6 +371,193 @@ class MemberService {
     } catch (error: any) {
       logger.error({ error: error.message }, "Error creating reason");
     }
+  }
+
+  async uploadBulkMembers(req: any) {
+    const members = req.body;
+    const notAdded: any[] = [];
+    const added: any[] = [];
+    let addedBy = req.user.id;
+
+    try {
+      const existingMembersMap = await this.getExistingMembers(members);
+      const supervisorsMap = await this.getSupervisors(members);
+      const { membersDataArray, mailDataArray } = this.processMembers(
+        members,
+        existingMembersMap,
+        supervisorsMap,
+        added,
+        notAdded,
+        addedBy
+      );
+
+      await this.saveMembers(membersDataArray);
+      await this.sendNotificationEmails(mailDataArray);
+
+      return {
+        success: true,
+        message: "Members upload successful",
+        data: { added, notAdded },
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: JSON.stringify(error) },
+        "MemberService [BulkMemberOnboarding]: Error Creating Members"
+      );
+    }
+  }
+
+  private async getExistingMembers(members: any[]): Promise<Map<string, any>> {
+    const emails = members.map((member) => member.email);
+    return await this.getExistingMembersMap(emails);
+  }
+
+  private async getSupervisors(members: any[]): Promise<Map<string, any>> {
+    const supervisorIds = Array.from(
+      new Set(members.map((member) => member.supervisorId))
+    );
+    return await this.getSupervisorsMap(supervisorIds);
+  }
+
+  private processMembers(
+    members: any[],
+    existingMembersMap: Map<string, any>,
+    supervisorsMap: Map<string, any>,
+    added: any[],
+    notAdded: any[],
+    addedBy: string
+  ) {
+    const membersDataArray: IMember[] = [];
+    const mailDataArray: {
+      subject: string;
+      name: string;
+      email: string;
+      password: string;
+      link: string;
+    }[] = [];
+
+    members.forEach((member) => {
+      if (this.isExistingMember(member, existingMembersMap, notAdded)) return;
+      if (!this.hasValidSupervisor(member, supervisorsMap, notAdded)) return;
+
+      const password = generateCode(5);
+      member.addedBy = addedBy;
+      this.addMemberAndMailData(
+        member,
+        password,
+        membersDataArray,
+        mailDataArray,
+        added,
+        notAdded
+      );
+    });
+
+    return { membersDataArray, mailDataArray };
+  }
+
+  private async saveMembers(membersDataArray: IMember[]): Promise<IMember[]> {
+    if (membersDataArray.length) {
+      return await this.memberRepository.saveMany(membersDataArray);
+    }
+    return [];
+  }
+
+  private async sendNotificationEmails(mailDataArray: any[]): Promise<void> {
+    if (mailDataArray.length)
+      await this.mailService.sendBulkUserAccountMail(mailDataArray);
+  }
+
+  private async getExistingMembersMap(
+    emails: string[]
+  ): Promise<Map<string, any>> {
+    const existingMembers = await this.memberRepository.findByEmails(emails);
+    return new Map(existingMembers.map((member) => [member.email, member]));
+  }
+
+  private async getSupervisorsMap(
+    supervisorIds: string[]
+  ): Promise<Map<string, any>> {
+    const supervisors = await this.memberRepository.findByIdsAndRole(
+      supervisorIds
+    );
+    return new Map(
+      supervisors.map((supervisor) => [supervisor.id, supervisor])
+    );
+  }
+
+  private addMemberAndMailData(
+    member: any,
+    password: string,
+    memmbersDataArray: IMember[],
+    mailDataArray: any[],
+    added: any[],
+    notAdded: any[]
+  ) {
+    try {
+      const newMember = MemberFactory.addMember(
+        this.createMemberData(member, password)
+      );
+      memmbersDataArray.push(newMember);
+      mailDataArray.push({
+        subject: "Member Account Creation",
+        name: member.name,
+        email: member.email,
+        password: password,
+        link: `${process.env.FRONTEND_BASEURL}/login`,
+      });
+
+      added.push({
+        email: member.email,
+        status: "Member created successfully",
+      });
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error creating member");
+      notAdded.push({ email: member.email, reason: `Error: ${error.message}` });
+    }
+  }
+
+  private isExistingMember(
+    member: any,
+    existingMembersMap: Map<string, any>,
+    notAdded: any[]
+  ): boolean {
+    if (existingMembersMap.has(member.email)) {
+      notAdded.push({
+        email: member.email,
+        reason: "Account with this email already exists",
+      });
+      return true;
+    }
+    return false;
+  }
+
+  private hasValidSupervisor(
+    member: any,
+    supervisorsMap: Map<string, any>,
+    notAdded: any[]
+  ): boolean {
+    const supervisor = supervisorsMap.get(member.supervisorId);
+    if (!supervisor) {
+      notAdded.push({
+        email: member.email,
+        reason: "Supervisor does not exist",
+      });
+      return false;
+    }
+    return true;
+  }
+
+  private createMemberData(member: any, password: string) {
+    return {
+      firstName: member.firstName,
+      lastName: member.lastName,
+      email: member.email,
+      password: password,
+      phoneNumber: member.phoneNumber,
+      roleId: member.roleId,
+      addedBy: member.addedBy,
+      churchId: member.churchId,
+    };
   }
 }
 
