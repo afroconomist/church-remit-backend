@@ -74,7 +74,7 @@ export const generateJwtToken = async (user: any) => {
 		{
 			user: {
 				id: user.id,
-				accessGroup: user.role,
+				accessGroup: user.roleId,
 				email: user.email,
 				name: `${user.firstName} ${user.lastName}`,
 				phoneNumber: user.phoneNumber,
@@ -93,7 +93,7 @@ export const generateRefreshToken = async (user: any) => {
 		{
 			user: {
 				id: user.id,
-				accessGroup: user.role,
+				accessGroup: user.roleId,
 				email: user.email,
 				name: `${user.firstName} ${user.lastName}`,
 				phoneNumber: user.phoneNumber,

@@ -56,6 +56,19 @@ class ChurchController {
         .json(ErrorResponse("Internal Server Error: ", error.message));
     }
   };
+
+  getChurchMembers = async (req: Request, res: Response) => {
+    try {
+      const churchMembers = await this.churchService.getChurchMembers(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", churchMembers));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
 }
 
 export default ChurchController;

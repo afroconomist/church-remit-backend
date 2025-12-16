@@ -41,6 +41,7 @@ class App {
     this.app.use(RouteVersion.v1, routes.accessControl);
     this.app.use(RouteVersion.v1, routes.walletManagement);
     this.app.use(RouteVersion.v1, routes.churchManagement);
+    this.app.use(RouteVersion.v1, routes.memberManagement);
     // this.app.use("*", (_req: Request, res: Response, _next: NextFunction) => {
     //   res.status(200).send("Church Remit API is running");
     // });

@@ -1,0 +1,27 @@
+export type AddMember = {
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  email: string;
+  password: string;
+  phoneNumber: string;
+  dateOfBirth?: Date;
+  gender?: string;
+  maritalStatus?: string;
+  occupation?: string;
+  streetAddress?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  contactName?: string;
+  contactNumber?: string;
+  relationship?: string;
+  membershipStatus?: string;
+  joinDate?: Date;
+  baptismDate?: Date;
+  notes?: string;
+  avatar?: string;
+  roleId: string;
+  addedBy: string;
+  churchId: string;
+};
