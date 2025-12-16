@@ -1,15 +1,26 @@
 import { injectable } from "tsyringe";
+import { Request } from "express";
 import { AddMember } from "../dtos/add-member.dto";
+import {
+  generateCode,
+  generateJwtToken,
+  generateRefreshToken,
+} from "@shared/utils/functions.util";
+
 import MemberFactory from "../factories/member.factory";
 import MemberRepository from "../repositories/member.repository";
 import ChurchRepository from "../../churchManagement/repositories/church.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
+
+import ReasonRepository from "../../userManagement/repositories/reason.repository";
+import ActionReasonFactory from "../../userManagement/factories/action_reason.factory";
 import MailService from "../../userManagement/services/mail.service";
-import { generateCode } from "@shared/utils/functions.util";
-import logger from "@shared/utils/logger";
-// import { IMember } from "../model/member.model";
-import AppError from "@shared/error/app.error";
 import AccessControlManagementService from "../../accessControlManagement/services/access-control-management.service";
+import RoleRepo from "../../accessControlManagement/repositories/role.repo";
+import { bcryptCompareHashedString } from "@shared/utils/hash.util";
+import logger from "@shared/utils/logger";
+import { IMember } from "../model/member.model";
+import AppError from "@shared/error/app.error";
 
 @injectable()
 class MemberService {
@@ -18,7 +29,9 @@ class MemberService {
     private readonly churchRepository: ChurchRepository,
     private readonly userRepository: UserRepository,
     private readonly mailService: MailService,
-    private readonly accessControlManagementService: AccessControlManagementService
+    private readonly roleRepo: RoleRepo,
+    private readonly accessControlManagementService: AccessControlManagementService,
+    private readonly reasonRepository: ReasonRepository
   ) {}
 
   async addMember(member_data: AddMember, superAdminId: string) {
@@ -106,6 +119,447 @@ class MemberService {
         "Error sending account creation mail"
       );
     }
+  }
+
+  async loginMember(data: { email: string; password: string }) {
+    try {
+      const member = await this.memberRepository.findOne({ email: data.email });
+      if (!member) {
+        throw new AppError(400, "Member not found");
+      }
+
+      if (member.isDefaultPassword === true) {
+        return {
+          status: false,
+          message: "Please change your password from the default password.",
+          data: { memberId: member.id },
+        };
+      }
+
+      if (member.status === "deactivated") {
+        throw new AppError(
+          400,
+          "Your account has been deactivated. Please contact administrator."
+        );
+      }
+
+      const passwordMatch = await bcryptCompareHashedString(
+        data.password,
+        String(member.password)
+      );
+      if (!passwordMatch) {
+        throw new AppError(400, "Password is incorrect. Kindly check!");
+      }
+
+      const accessToken = await generateJwtToken(member);
+      const refreshToken = await generateRefreshToken(member);
+      await this.memberRepository.updateById(member.id, { refreshToken });
+
+      try {
+        await this.mailService.sendLoginEmail({
+          email: member.email,
+          subject: "Login Notification",
+          name: member.firstName,
+        });
+      } catch (emailError: any) {
+        logger.error(
+          { error: emailError.message },
+          "Failed to send login notification email"
+        );
+      }
+
+      const role = await this.roleRepo.findById(String(member.roleId));
+      const returnResponse = {
+        member,
+        accessToken,
+        permissions: role?.id
+          ? (await this.accessControlManagementService.getRole(role?.id))
+              .permissions
+          : [],
+      };
+
+      return {
+        status: true,
+        message: "Login successful",
+        data: returnResponse,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error logging in");
+      return {
+        status: false,
+        message:
+          error instanceof AppError ? error.message : "Internal server error",
+      };
+    }
+  }
+
+  async changePasswordOnFirstLogin(data: {
+    memberId: string;
+    password: string;
+  }) {
+    try {
+      const member = await this.memberRepository.findOne({ id: data.memberId });
+      if (!member) {
+        throw new AppError(400, "Member not found");
+      }
+
+      if (member.isDefaultPassword == false) {
+        throw new AppError(
+          400,
+          "Can`t perform this action!. Your password has been changed already."
+        );
+      }
+      const id = member.id;
+
+      await this.memberRepository.updateById(id, {
+        password: data.password,
+        status: "active",
+        isDefaultPassword: false,
+      });
+
+      const message: string =
+        "Your Password has been changed successfully. Kindly proceed to Login";
+      const token = {
+        token: await generateJwtToken(member),
+      };
+      return { success: true, message: message, data: token };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error changing password");
+    }
+  }
+
+  async getMemberProfile(req: any) {
+    const member = await this.memberRepository.findById(req.user.id);
+    if (!member) return { success: false, message: "Member does not exist" };
+
+    return {
+      success: true,
+      message: "Member profile retrieved successfully",
+      member: {
+        firstName: member.firstName ?? "",
+        lastName: member.lastName ?? "",
+        middleName: member.middleName ?? "",
+        phoneNumber: member.phoneNumber ?? "",
+        avatar: member.avatar ?? "",
+        email: member.email ?? "",
+        address: member.streetAddress ?? "",
+        role: member.roleId ?? "",
+      },
+    };
+  }
+
+  async updateMember(req: Request) {
+    try {
+      const data = req.body;
+      const member = await this.memberRepository.findById(req.params.id);
+      if (!member) {
+        throw new AppError(400, "Member does not exist");
+      }
+
+      // const superAdminExists = await this.userRepository.findById(
+      //   member.addedBy
+      // );
+      // if (!superAdminExists)
+      //   return { success: false, message: "Super admin does not exist" };
+
+      await this.memberRepository.updateById(req.params.id, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        middleName: data.middleName,
+        phoneNumber: data.phoneNumber,
+        dateOfBirth: data.dateOfBirth,
+        maritalStatus: data.maritalStatus,
+        occupation: data.occupation,
+        streetAddress: data.streetAddress,
+        city: data.city,
+        state: data.state,
+        country: data.country,
+        contactName: data.contactName,
+        contactNumber: data.contactNumber,
+        relationship: data.relationship,
+        membershipStatus: data.membershipStatus,
+        joinDate: data.joinDate,
+        baptismDate: data.baptismDate,
+      });
+
+      return {
+        success: true,
+        message: "Member data has been updated successfully",
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to update member");
+      throw new AppError(400, error.message);
+    }
+  }
+
+  async uploadMemberProfilePicture(req: Request) {
+    try {
+      const member = await this.memberRepository.findById(req.params.id);
+      if (!member) {
+        throw new AppError(400, "Member does not exist");
+      }
+
+      await this.memberRepository.updateById(req.params.id, {
+        avatar: req.body.avatar,
+      });
+
+      return {
+        success: true,
+        message: "Member profile picture has been updated successfully",
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Failed to update member profile picture"
+      );
+      throw new AppError(400, error.message);
+    }
+  }
+
+  async getMember(id: string) {
+    const member = await this.memberRepository.findById(id);
+    if (!member) {
+      throw new AppError(400, "Member does not exist");
+    }
+
+    const [addedBy, reason, role] = await Promise.all([
+      member.addedBy ? this.memberRepository.findById(member.addedBy) : null,
+      this.reasonRepository.findWhere({ userId: member.id }),
+      this.roleRepo.findByNameWithRelations(String(member.roleId)),
+    ]);
+
+    const permissions = role
+      ? (await this.accessControlManagementService.getRole(role.id)).permissions
+      : [];
+
+    return {
+      ...member,
+      addedBy: addedBy ? `${addedBy.firstName} ${addedBy.lastName}` : "",
+      reasons: reason || [],
+      permissions,
+    };
+  }
+
+  async deleteMember(req: Request) {
+    const id = req.params.id;
+    const member = await this.memberRepository.findById(id);
+    if (!member) {
+      throw new AppError(400, "Member does not exist");
+    }
+    const linkedAgents = await this.memberRepository.findOne({
+      supervisorId: member.id,
+    });
+    if (linkedAgents) {
+      throw new AppError(
+        400,
+        "Member cannot be deleted because they are assigned as a supervisor to other members."
+      );
+    }
+
+    await this.memberRepository.deleteById(member.id);
+    const data = {
+      memberId: member.id,
+      action: "delete-member",
+      reason: req.body.reason,
+    };
+    if (req.body.reason) await this.createReason(data);
+    return "Member account deleted successfully";
+  }
+
+  async createReason(data: any) {
+    try {
+      const reason = ActionReasonFactory.createReason(data);
+      await this.reasonRepository.save(reason);
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error creating reason");
+    }
+  }
+
+  async uploadBulkMembers(req: any) {
+    const members = req.body;
+    const notAdded: any[] = [];
+    const added: any[] = [];
+    let addedBy = req.user.id;
+
+    try {
+      const existingMembersMap = await this.getExistingMembers(members);
+      const supervisorsMap = await this.getSupervisors(members);
+      const { membersDataArray, mailDataArray } = this.processMembers(
+        members,
+        existingMembersMap,
+        supervisorsMap,
+        added,
+        notAdded,
+        addedBy
+      );
+
+      await this.saveMembers(membersDataArray);
+      await this.sendNotificationEmails(mailDataArray);
+
+      return {
+        success: true,
+        message: "Members upload successful",
+        data: { added, notAdded },
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: JSON.stringify(error) },
+        "MemberService [BulkMemberOnboarding]: Error Creating Members"
+      );
+    }
+  }
+
+  private async getExistingMembers(members: any[]): Promise<Map<string, any>> {
+    const emails = members.map((member) => member.email);
+    return await this.getExistingMembersMap(emails);
+  }
+
+  private async getSupervisors(members: any[]): Promise<Map<string, any>> {
+    const supervisorIds = Array.from(
+      new Set(members.map((member) => member.supervisorId))
+    );
+    return await this.getSupervisorsMap(supervisorIds);
+  }
+
+  private processMembers(
+    members: any[],
+    existingMembersMap: Map<string, any>,
+    supervisorsMap: Map<string, any>,
+    added: any[],
+    notAdded: any[],
+    addedBy: string
+  ) {
+    const membersDataArray: IMember[] = [];
+    const mailDataArray: {
+      subject: string;
+      name: string;
+      email: string;
+      password: string;
+      link: string;
+    }[] = [];
+
+    members.forEach((member) => {
+      if (this.isExistingMember(member, existingMembersMap, notAdded)) return;
+      if (!this.hasValidSupervisor(member, supervisorsMap, notAdded)) return;
+
+      const password = generateCode(5);
+      member.addedBy = addedBy;
+      this.addMemberAndMailData(
+        member,
+        password,
+        membersDataArray,
+        mailDataArray,
+        added,
+        notAdded
+      );
+    });
+
+    return { membersDataArray, mailDataArray };
+  }
+
+  private async saveMembers(membersDataArray: IMember[]): Promise<IMember[]> {
+    if (membersDataArray.length) {
+      return await this.memberRepository.saveMany(membersDataArray);
+    }
+    return [];
+  }
+
+  private async sendNotificationEmails(mailDataArray: any[]): Promise<void> {
+    if (mailDataArray.length)
+      await this.mailService.sendBulkUserAccountMail(mailDataArray);
+  }
+
+  private async getExistingMembersMap(
+    emails: string[]
+  ): Promise<Map<string, any>> {
+    const existingMembers = await this.memberRepository.findByEmails(emails);
+    return new Map(existingMembers.map((member) => [member.email, member]));
+  }
+
+  private async getSupervisorsMap(
+    supervisorIds: string[]
+  ): Promise<Map<string, any>> {
+    const supervisors = await this.memberRepository.findByIdsAndRole(
+      supervisorIds
+    );
+    return new Map(
+      supervisors.map((supervisor) => [supervisor.id, supervisor])
+    );
+  }
+
+  private addMemberAndMailData(
+    member: any,
+    password: string,
+    memmbersDataArray: IMember[],
+    mailDataArray: any[],
+    added: any[],
+    notAdded: any[]
+  ) {
+    try {
+      const newMember = MemberFactory.addMember(
+        this.createMemberData(member, password)
+      );
+      memmbersDataArray.push(newMember);
+      mailDataArray.push({
+        subject: "Member Account Creation",
+        name: member.name,
+        email: member.email,
+        password: password,
+        link: `${process.env.FRONTEND_BASEURL}/login`,
+      });
+
+      added.push({
+        email: member.email,
+        status: "Member created successfully",
+      });
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error creating member");
+      notAdded.push({ email: member.email, reason: `Error: ${error.message}` });
+    }
+  }
+
+  private isExistingMember(
+    member: any,
+    existingMembersMap: Map<string, any>,
+    notAdded: any[]
+  ): boolean {
+    if (existingMembersMap.has(member.email)) {
+      notAdded.push({
+        email: member.email,
+        reason: "Account with this email already exists",
+      });
+      return true;
+    }
+    return false;
+  }
+
+  private hasValidSupervisor(
+    member: any,
+    supervisorsMap: Map<string, any>,
+    notAdded: any[]
+  ): boolean {
+    const supervisor = supervisorsMap.get(member.supervisorId);
+    if (!supervisor) {
+      notAdded.push({
+        email: member.email,
+        reason: "Supervisor does not exist",
+      });
+      return false;
+    }
+    return true;
+  }
+
+  private createMemberData(member: any, password: string) {
+    return {
+      firstName: member.firstName,
+      lastName: member.lastName,
+      email: member.email,
+      password: password,
+      phoneNumber: member.phoneNumber,
+      roleId: member.roleId,
+      addedBy: member.addedBy,
+      churchId: member.churchId,
+    };
   }
 }
 
