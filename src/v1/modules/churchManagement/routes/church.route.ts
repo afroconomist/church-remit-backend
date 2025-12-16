@@ -33,4 +33,11 @@ router.get("/churches/verified", (req: Request, res: Response, next) => {
   churchController.getVerifiedChurches(req, res).catch((err) => next(err));
 });
 
+router.get(
+  "/churches/:churchId/members",
+  (req: Request, res: Response, next) => {
+    churchController.getChurchMembers(req, res).catch((err) => next(err));
+  }
+);
+
 export default router;

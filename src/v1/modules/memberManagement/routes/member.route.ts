@@ -12,6 +12,7 @@ import { changePasswordRules } from "../validations/change-password.validator";
 import { profilePictureUploadRules } from "../../userManagement/validations/profile-picture.validator";
 import { deleteReasonRules } from "../../userManagement/validations/delete-reason.validator";
 import { getSingleUserRules } from "../../userManagement/validations/get-single-user.validator";
+
 import MemberController from "../controller/member.controller";
 import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
 import { AccessControls } from "../../accessControlManagement/enums/access-control.enum";
