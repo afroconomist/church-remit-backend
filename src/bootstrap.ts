@@ -16,6 +16,7 @@ export function bootstrapApp(app: express.Application) {
 }
 
 function registerThirdPartyModules(app: express.Application) {
+  app.use(cors({ origin: "*" }));
    app.use(
     cors({
       origin: "*", // allow any domain for now

@@ -37,7 +37,7 @@ interface OnboardingPayload {
   userPassword: string;
   userRole: string;
   churchId: string;
-};
+}
 @injectable()
 class ChurchService {
   constructor(
@@ -60,10 +60,12 @@ class ChurchService {
       );
       if (!existingUserResponse?.success) return existingUserResponse;
       // check user role exists
-      const roleExists = await this.accessControlManagementService.checkRoleExists(
-        church_user_data.userRole
-      );
-      if (!roleExists) return { success: false, message: "Role does not exist" };
+      const roleExists =
+        await this.accessControlManagementService.checkRoleExists(
+          church_user_data.userRole
+        );
+      if (!roleExists)
+        return { success: false, message: "Role does not exist" };
 
       const churchCreationResponse = await this.createChurchRecord(
         church_user_data
@@ -96,12 +98,13 @@ class ChurchService {
       };
       this.mailService.sendOTPMail(options);
 
+      const { password, ...newUser } = createdUser;
       return {
         success: true,
         message: "Church and user account has been created successfully",
         otp_message: `Kindly check your email address ${user.email} for OTP`,
         church_data: churchCreationResponse.church_data,
-        user_data: createdUser,
+        user_data: newUser,
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Error creating church and user");
@@ -166,18 +169,108 @@ class ChurchService {
     return { success: true };
   }
 
-  async getAllChurches() {
-    try {
-      const churches = await this.churchRepository.getAll();
+  async getAllChurches(req: any) {
+    const { page = 1, limit = 10 } = req.query;
 
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: churches, totalRecords } =
+        await this.churchRepository.getAndCountAll();
+
+      if (churches.length === 0) {
+        return {
+          churches: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
       return {
-        success: true,
-        message: "Churches have been retrieved successfully",
         churches,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
       };
     } catch (error) {
-      logger.error({ error: "Error fetching churches," });
+      logger.error({ error: "Error fetching churches" });
       throw new Error("An unexpected error occurred while fetching churches.");
+    }
+  }
+
+  async getChurchesBasedOnTypes(req: any) {
+    const churchType = req.params.churchType;
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: churchesBasedOnTypes, totalRecords } =
+        await this.churchRepository.findAndCountAll({
+          churchType,
+        });
+
+      if (churchesBasedOnTypes.length === 0) {
+        return {
+          churches: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        churchesBasedOnTypes,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error) {
+      logger.error({ error: "Error fetching churches based on types" });
+      throw new Error(
+        "An unexpected error occurred while fetching churches based on types."
+      );
+    }
+  }
+
+  async getVerifiedChurches(req: any) {
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: verifiedChurches, totalRecords } =
+        await this.churchRepository.findAndCountAll({
+          verified: true,
+        });
+
+      if (verifiedChurches.length === 0) {
+        return {
+          verifiedChurches: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        verifiedChurches,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error) {
+      logger.error({ error: "Error fetching verified churches" });
+      throw new Error(
+        "An unexpected error occurred while fetching verified churches."
+      );
     }
   }
 }

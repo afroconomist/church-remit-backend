@@ -15,11 +15,41 @@ class ChurchController {
       .json(result);
   };
 
-  // Add req: Request as the first parameter
-  getAll = async (_req: Request, res: Response) => {
+  getAll = async (req: Request, res: Response) => {
     try {
-      const churches = await this.churchService.getAllChurches();
-      return res.status(httpStatus.OK).send(SuccessResponse("Operation successful", churches));
+      const churches = await this.churchService.getAllChurches(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", churches));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getChurchesBasedOnTypes = async (req: Request, res: Response) => {
+    try {
+      const churchesBasedOnTypes =
+        await this.churchService.getChurchesBasedOnTypes(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", churchesBasedOnTypes));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getVerifiedChurches = async (req: Request, res: Response) => {
+    try {
+      const verifiedChurches = await this.churchService.getVerifiedChurches(
+        req
+      );
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", verifiedChurches));
     } catch (error: any) {
       return res
         .status(httpStatus.INTERNAL_SERVER_ERROR)
