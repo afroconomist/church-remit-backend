@@ -98,12 +98,13 @@ class ChurchService {
       };
       this.mailService.sendOTPMail(options);
 
+      const { password, ...newUser } = createdUser;
       return {
         success: true,
         message: "Church and user account has been created successfully",
         otp_message: `Kindly check your email address ${user.email} for OTP`,
         church_data: churchCreationResponse.church_data,
-        user_data: createdUser,
+        user_data: newUser,
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Error creating church and user");
