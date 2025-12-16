@@ -258,9 +258,13 @@ class AuthService {
         );
       }
 
-      const role = await this.roleRepo.findById(String(user.roleId));
+      const role = await this.roleRepo.findByNameWithRelations(
+        String(user.roleId)
+      );
+
+      const { password, ...loggedInUser } = user;
       const returnResponse = {
-        user,
+        user: loggedInUser,
         accessToken,
         permissions: role?.id
           ? (await this.accessControlManagementService.getRole(role?.id))
