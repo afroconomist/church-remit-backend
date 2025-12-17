@@ -16,4 +16,6 @@ export enum DB_TABLES {
   POLICY_BENEFICIARY = "policy_beneficiaries",
   CHURCHES = "churches",
   MEMBERS = "members",
+  FAMILIES = "families",
+  FAMILY_MEMBERS = "family_members",
 }
