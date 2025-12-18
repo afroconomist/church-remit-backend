@@ -62,9 +62,8 @@ class ChurchService {
       );
       if (!existingUserResponse?.success) return existingUserResponse;
       // check user role exists
-      const roleId = appConfig.role;
       const roleExists =
-        await this.accessControlManagementService.checkRoleExists(roleId);
+        await this.accessControlManagementService.checkRoleExists(appConfig.role.super_admin);
       if (!roleExists)
         return { success: false, message: "Role does not exist" };
 
@@ -77,7 +76,7 @@ class ChurchService {
         lastName: church_user_data.userLastName,
         email: church_user_data.userEmail,
         password: church_user_data.userPassword,
-        roleId,
+        roleId: appConfig.role.super_admin,
         isDefaultPassword: false,
         churchId: churchCreationResponse.church_data.id,
       });

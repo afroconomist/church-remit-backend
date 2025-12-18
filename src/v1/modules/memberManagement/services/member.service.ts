@@ -21,6 +21,7 @@ import { bcryptCompareHashedString } from "@shared/utils/hash.util";
 import logger from "@shared/utils/logger";
 import { IMember } from "../model/member.model";
 import AppError from "@shared/error/app.error";
+import appConfig from "@config/app.config";
 
 @injectable()
 class MemberService {
@@ -48,7 +49,7 @@ class MemberService {
 
       const roleExists =
         await this.accessControlManagementService.checkRoleExists(
-          member_data.roleId
+          appConfig.role.member
         );
       if (!roleExists)
         return { success: false, message: "Role does not exist" };
@@ -63,6 +64,7 @@ class MemberService {
       const member = MemberFactory.addMember({
         ...member_data,
         password: memberPassword,
+        roleId: appConfig.role.member,
         addedBy: superAdminId,
         churchId: String(superAdminExists.churchId),
       });

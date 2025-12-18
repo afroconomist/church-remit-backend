@@ -50,7 +50,10 @@ const appConfig = {
 	  session: String(process.env.SESSION),
 	  refresh_token_session: String(process.env.REFRESH_TOKEN_SESSION)
 	},
-	role: String(process.env.SUPER_ADMIN),
+	role: {
+		super_admin: String(process.env.SUPER_ADMIN),
+		member: String(process.env.MEMBER),
+	}
 	
 };
 

@@ -20,5 +20,4 @@ export const addMemberRules = {
   baptismDate: "date",
   notes: "string",
   avatar: "string",
-  roleId: "required|uuid",
 };
