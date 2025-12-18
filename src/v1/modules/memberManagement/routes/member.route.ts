@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import { container } from "tsyringe";
 import { addMemberRules } from "../validations/add-member.validator";
+import { assignRoleToMemberRules } from "../validations/assign-role-to-member.validator";
 import { uploadBulkMembersRules } from "../validations/create-bulk-members.validator";
 import { updateMemberRules } from "../validations/update-member.validator";
 import {
@@ -31,6 +32,18 @@ router.post(
   ],
   (req: Request, res: Response, next) =>
     memberController.addMember(req, res).catch((err) => next(err))
+);
+
+router.put(
+  "/admin/member/:id/assign-role",
+  [
+    authMiddleware,
+    accessControlMiddleware(AccessControls.ROLE_ASSIGNMENT),
+    validate(assignRoleToMemberRules),
+  ],
+  (req: Request, res: Response, next) => {
+    memberController.assignRoleToMember(req, res).catch((e) => next(e));
+  }
 );
 
 router.post(

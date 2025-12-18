@@ -16,5 +16,4 @@ export const createChurchAndUserRules = {
   userLastName: "required|string",
   userEmail: "required|string",
   userPassword: "required|string",
-  userRole: "required|string",
 };

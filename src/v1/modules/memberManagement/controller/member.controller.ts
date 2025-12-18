@@ -18,6 +18,24 @@ class MemberController {
       .json(result);
   };
 
+  assignRoleToMember = async (req: Request, res: Response) => {
+    try {
+      const result: any = await this.memberService.assignRoleToMember(req);
+      if (result.success) {
+        return res.send(SuccessResponse(result.message));
+      } else {
+        return res
+          .status(400)
+          .json({ status: result.success, message: result.message });
+      }
+    } catch (error) {
+      return res.status(500).json({
+        status: false,
+        message: "Failed to assign role to member",
+      });
+    }
+  };
+
   uploadBulkMembers = async (req: Request, res: Response) => {
     const result: any = await this.memberService.uploadBulkMembers(req);
     if (result.success) {

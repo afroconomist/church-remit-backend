@@ -121,6 +121,32 @@ class MemberService {
     }
   }
 
+  async assignRoleToMember(req: Request) {
+    try {
+      const member = await this.memberRepository.findById(req.params.id);
+      if (!member) {
+        throw new AppError(400, "Member does not exist");
+      }
+
+      const role = await this.roleRepo.findById(req.body.roleId);
+      if (!role) {
+        throw new AppError(400, "Role does not exist");
+      }
+
+      await this.memberRepository.updateById(req.params.id, {
+        roleId: req.body.roleId,
+      });
+
+      return {
+        success: true,
+        message: `${role.name} Role has been successfully assigned to member`,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to assign role to member");
+      throw new AppError(400, error.message);
+    }
+  }
+
   async loginMember(data: { email: string; password: string }) {
     try {
       const member = await this.memberRepository.findOne({ email: data.email });

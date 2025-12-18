@@ -17,6 +17,7 @@ import { generateCode } from "@shared/utils/functions.util";
 import { IUser } from "../../userManagement/model/user.model";
 import AppError from "@shared/error/app.error";
 import AccessControlManagementService from "../../accessControlManagement/services/access-control-management.service";
+import appConfig from "@config/app.config";
 
 interface OnboardingPayload {
   churchName: string;
@@ -36,7 +37,6 @@ interface OnboardingPayload {
   userLastName: string;
   userEmail: string;
   userPassword: string;
-  userRole: string;
   churchId: string;
 }
 @injectable()
@@ -62,10 +62,9 @@ class ChurchService {
       );
       if (!existingUserResponse?.success) return existingUserResponse;
       // check user role exists
+      const roleId = appConfig.role;
       const roleExists =
-        await this.accessControlManagementService.checkRoleExists(
-          church_user_data.userRole
-        );
+        await this.accessControlManagementService.checkRoleExists(roleId);
       if (!roleExists)
         return { success: false, message: "Role does not exist" };
 
@@ -78,7 +77,7 @@ class ChurchService {
         lastName: church_user_data.userLastName,
         email: church_user_data.userEmail,
         password: church_user_data.userPassword,
-        roleId: church_user_data.userRole,
+        roleId,
         isDefaultPassword: false,
         churchId: churchCreationResponse.church_data.id,
       });

@@ -49,7 +49,8 @@ const appConfig = {
 	  secret: String(process.env.JWT_SECRET),
 	  session: String(process.env.SESSION),
 	  refresh_token_session: String(process.env.REFRESH_TOKEN_SESSION)
-	}
+	},
+	role: String(process.env.SUPER_ADMIN),
 	
 };
 
