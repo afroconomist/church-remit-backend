@@ -1,5 +1,6 @@
 import { DB_TABLES } from "@shared/enums/db-tables.enum";
 import { Model, ModelObject } from "objection";
+import { Family } from "./family.model";
 
 export class FamilyMember extends Model {
   static tableName = DB_TABLES.FAMILY_MEMBERS;
@@ -11,7 +12,18 @@ export class FamilyMember extends Model {
   memberAddress: string;
   memberRelationship: string;
   primary?: boolean;
-  familyId: string;
+  family: string;
+
+  static relationMappings = {
+    memberFamily: {
+      relation: Model.BelongsToOneRelation,
+      modelClass: Family,
+      join: {
+        from: "family_members.family",
+        to: "families.id",
+      },
+    },
+  };
 }
 
 export type IFamilyMember = ModelObject<FamilyMember>;

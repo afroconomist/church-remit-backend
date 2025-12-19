@@ -6,5 +6,5 @@ export type AddFamilyMember = {
   memberAddress: string;
   memberRelationship: string;
   primary?: boolean;
-  familyId: string;
+  family: string;
 };

@@ -21,4 +21,6 @@ export enum AccessControls {
 	QUOTE_LIST = "quotes_list",
 	TRANSACTION_PIN = "transaction_pin",
 	WALLET = "wallet",
+	FAMILY_CREATION = "create-family",
+	ADD_LINK_FAMILY_MEMBER = "link-members-to-family",
 }

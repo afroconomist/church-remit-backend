@@ -21,14 +21,14 @@ export async function up(knex: Knex): Promise<void> {
         ])
         .notNullable();
       table.boolean("primary").notNullable().defaultTo(false);
-      table.uuid("familyId").notNullable();
+      table.uuid("family").notNullable();
       table
-        .foreign("familyId")
+        .foreign("family")
         .references("id")
         .inTable(DB_TABLES.FAMILIES)
         .onDelete("CASCADE")
         .onUpdate("CASCADE");
-      table.index("familyId");
+      table.index("family");
 
       table.timestamps(true, true, true);
     }

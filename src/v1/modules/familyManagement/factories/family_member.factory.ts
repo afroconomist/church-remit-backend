@@ -12,7 +12,7 @@ class FamilyMemberFactory {
     familyMember.memberAddress = data.memberAddress;
     familyMember.memberRelationship = data.memberRelationship;
     familyMember.primary = data.primary;
-    familyMember.familyId = data.familyId;
+    familyMember.family = data.family;
 
     return familyMember;
   }
