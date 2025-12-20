@@ -1,4 +1,5 @@
 import { injectable } from "tsyringe";
+import { Request } from "express";
 import FamilyFactory from "../factories/family.factory";
 import FamilyRepository from "../repositories/family.repository";
 import { AddFamilyMember } from "../dtos/add-family-member.dto";
@@ -109,6 +110,95 @@ class FamilyAndMemberService {
           "An unexpected error occurred while adding family member"
       );
     }
+  }
+
+  async getFamilyMembers(req: Request) {
+    try {
+      const familyMembers = await this.familyMemberRepository.findAll({
+        family: req.params.familyId,
+      });
+
+      return { familyMembers };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching family members" });
+      throw new Error(
+        "An unexpected error occurred while fetching family members."
+      );
+    }
+  }
+
+  async editFamilyMember(req: Request) {
+    try {
+      const data = req.body;
+      const familyMember = await this.familyMemberRepository.findById(
+        req.params.memberId
+      );
+      if (!familyMember)
+        return {
+          success: false,
+          message: "Family member is not added to any family",
+        };
+
+      await this.familyMemberRepository.updateById(req.params.memberId, {
+        memberPhoneNumber: data.memberPhoneNumber,
+        memberRelationship: data.memberRelationship,
+      });
+
+      return {
+        success: true,
+        message: "Family member has been updated successfully",
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to edit family member");
+      throw new AppError(400, error.message);
+    }
+  }
+
+  async editFamily(req: Request) {
+    try {
+      const family = await this.familyRepository.findById(req.params.familyId);
+      if (!family) return { success: false, message: "Family does not exist" };
+
+      await this.familyRepository.updateById(req.params.familyId, {
+        familyAddress: req.body.address,
+      });
+
+      await this.familyMemberRepository.findAllAndUpdate(
+        {
+          family: req.params.familyId,
+        },
+        {
+          memberAddress: req.body.address,
+        }
+      );
+
+      return {
+        success: true,
+        message: "Family has been edited successfully",
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error editing family");
+      throw new AppError(
+        400,
+        error.message || "An unexpected error occurred while editing family"
+      );
+    }
+  }
+
+  async removeFamilyMember(req: Request) {
+    const memberId = req.params.memberId;
+    const familyMember = await this.familyMemberRepository.findById(memberId);
+    if (!familyMember) {
+      throw new AppError(400, "Family member does not exist");
+    }
+
+    if (familyMember.primary) {
+      throw new AppError(403, "Primary member can not be removed");
+    }
+
+    await this.familyMemberRepository.deleteById(familyMember.id);
+
+    return "Family member has been removed successfully";
   }
 }
 
