@@ -18,4 +18,5 @@ export enum DB_TABLES {
   MEMBERS = "members",
   FAMILIES = "families",
   FAMILY_MEMBERS = "family_members",
+  LEAVES = "leaves",
 }

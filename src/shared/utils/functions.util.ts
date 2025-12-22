@@ -162,3 +162,26 @@ export const generateTransactionReference = async (): Promise<string> => {
   const transactionReference = timestamp + randomDigits;
   return transactionReference;
 };
+
+const MS_IN_A_DAY = 1000 * 60 * 60 * 24;
+
+export function normalizeDate(date: Date): Date {
+  return new Date(Date.UTC(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  ));
+}
+
+export function calculateLeaveDays(
+  startDate: Date,
+  endDate: Date
+): number {
+  const start = normalizeDate(startDate);
+  const end = normalizeDate(endDate);
+
+  const diff = (end.getTime() - start.getTime()) / MS_IN_A_DAY;
+
+  // +1 for inclusive dates
+  return diff + 1;
+}
