@@ -6,12 +6,10 @@ import {
   generateJwtToken,
   generateRefreshToken,
 } from "@shared/utils/functions.util";
-
 import MemberFactory from "../factories/member.factory";
 import MemberRepository from "../repositories/member.repository";
 import ChurchRepository from "../../churchManagement/repositories/church.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
-
 import ReasonRepository from "../../userManagement/repositories/reason.repository";
 import ActionReasonFactory from "../../userManagement/factories/action_reason.factory";
 import MailService from "../../userManagement/services/mail.service";
@@ -21,7 +19,6 @@ import { bcryptCompareHashedString } from "@shared/utils/hash.util";
 import logger from "@shared/utils/logger";
 import { IMember } from "../model/member.model";
 import AppError from "@shared/error/app.error";
-import appConfig from "@config/app.config";
 
 @injectable()
 class MemberService {
@@ -47,12 +44,8 @@ class MemberService {
       if (!churchExists)
         return { success: false, message: "Church does not exist" };
 
-      const roleExists =
-        await this.accessControlManagementService.checkRoleExists(
-          appConfig.role.member
-        );
-      if (!roleExists)
-        return { success: false, message: "Role does not exist" };
+      const role = await this.roleRepo.findByName("member");
+      if (!role) return { success: false, message: "Role not found" };
 
       const email: string = member_data.email;
       const memberExists = await this.memberRepository.findOne({ email });
@@ -64,7 +57,7 @@ class MemberService {
       const member = MemberFactory.addMember({
         ...member_data,
         password: memberPassword,
-        roleId: appConfig.role.member,
+        roleId: role.id,
         addedBy: superAdminId,
         churchId: String(superAdminExists.churchId),
       });

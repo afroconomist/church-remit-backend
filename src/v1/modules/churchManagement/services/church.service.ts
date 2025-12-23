@@ -1,23 +1,17 @@
 import { injectable } from "tsyringe";
-// import { Response, Request } from "express";
 import { CreateChurch } from "../dtos/create-church-and-user.dto";
 import ChurchFactory from "../factories/church.factory";
 import UserFactory from "../../userManagement/factories/user.factory";
 import ChurchRepository from "../repositories/church.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
 import MemberRepository from "../../memberManagement/repositories/member.repository";
+import RoleRepo from "../../accessControlManagement/repositories/role.repo";
 import OTPService from "../../userManagement/services/otp.service";
 import MailService from "../../userManagement/services/mail.service";
 import logger from "@shared/utils/logger";
 import { generateCode } from "@shared/utils/functions.util";
-// import { ErrorResponse, SuccessResponse } from "@shared/utils/response.util";
-// import httpStatus from "http-status";
-// import ServiceUnavailableError from "@shared/error/service-unavailable.error";
-// import { IChurch } from "../model/Church.model";
 import { IUser } from "../../userManagement/model/user.model";
 import AppError from "@shared/error/app.error";
-import AccessControlManagementService from "../../accessControlManagement/services/access-control-management.service";
-import appConfig from "@config/app.config";
 
 interface OnboardingPayload {
   churchName: string;
@@ -47,7 +41,7 @@ class ChurchService {
     private readonly memberRepository: MemberRepository,
     private readonly otpService: OTPService,
     private readonly mailService: MailService,
-    private readonly accessControlManagementService: AccessControlManagementService
+    private readonly roleRepo: RoleRepo
   ) {}
 
   async createChurchAndUser(church_user_data: OnboardingPayload) {
@@ -61,11 +55,9 @@ class ChurchService {
         String(church_user_data.userEmail)
       );
       if (!existingUserResponse?.success) return existingUserResponse;
-      // check user role exists
-      const roleExists =
-        await this.accessControlManagementService.checkRoleExists(appConfig.role.super_admin);
-      if (!roleExists)
-        return { success: false, message: "Role does not exist" };
+      
+      const role = await this.roleRepo.findByName("super-admin");
+      if (!role) return { success: false, message: "Role not found" };
 
       const churchCreationResponse = await this.createChurchRecord(
         church_user_data
@@ -76,7 +68,7 @@ class ChurchService {
         lastName: church_user_data.userLastName,
         email: church_user_data.userEmail,
         password: church_user_data.userPassword,
-        roleId: appConfig.role.super_admin,
+        roleId: role.id,
         isDefaultPassword: false,
         churchId: churchCreationResponse.church_data.id,
       });

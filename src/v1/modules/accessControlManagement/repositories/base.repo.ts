@@ -61,8 +61,8 @@ export class BaseRepository<T, M extends Model> {
 		return await this.model.query().deleteById(id);
 	}
 
-	async findByName(name: string) {
-		return await this.model.query().findOne({ name });
+	async findByName(slug: string): Promise<M> {
+		return await this.model.query().findOne({ slug });
 	}
 
 	async findByNameWithRelations(slug: string, relations: string[] = []) {
