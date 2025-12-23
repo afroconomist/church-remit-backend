@@ -71,7 +71,7 @@ class MemberService {
 
       return {
         success: true,
-        message: "Church and user account has been created successfully",
+        message: "Member has been added successfully",
         welcome_mail: `Kindly check your email address ${member.email} for welcome mail`,
         added_member_data: addedMember,
       };
@@ -129,7 +129,7 @@ class MemberService {
       }
 
       await this.memberRepository.updateById(req.params.id, {
-        roleId: req.body.roleId,
+        roleId: role.id,
       });
 
       return {
