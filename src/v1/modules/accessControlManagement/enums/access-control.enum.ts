@@ -21,4 +21,12 @@ export enum AccessControls {
 	QUOTE_LIST = "quotes_list",
 	TRANSACTION_PIN = "transaction_pin",
 	WALLET = "wallet",
+	FAMILY_CREATION = "create-family",
+	EDIT_FAMILY = "edit-family",
+	ADD_LINK_FAMILY_MEMBER = "link-members-to-family",
+	VIEW_FAMILY = "view-members",
+	REMOVE_FAMILY = "delete-family",
+	APPROVE_LEAVE = "approve-leave",
+	REJECT_LEAVE = "reject-leave",
+	VIEW_LEAVE_REQUESTS = "view-leave-requests",
 }

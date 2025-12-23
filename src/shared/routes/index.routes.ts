@@ -7,6 +7,8 @@ import accessControlRoute from "../../v1/modules/accessControlManagement/routes/
 import walletRoute from "../../v1/modules/walletService/routes/wallet.route";
 import churchRoute from "../../v1/modules/churchManagement/routes/church.route";
 import memberRoute from "../../v1/modules/memberManagement/routes/member.route";
+import familyRoute from "../../v1/modules/familyManagement/routes/family-and-member.route";
+import leaveRoute from "../../v1/modules/leaveManagement/routes/leave.route";
 
 export default {
   app: appRoute,
@@ -18,4 +20,6 @@ export default {
   walletManagement: walletRoute,
   churchManagement: churchRoute,
   memberManagement: memberRoute,
+  familyManagement: familyRoute,
+  leaveManagement: leaveRoute,
 };
