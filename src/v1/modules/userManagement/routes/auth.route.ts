@@ -26,18 +26,10 @@ router.post(
 );
 
 router.post(
-  "/auth/forgot-password",
+  "/auth/request-password-reset",
   validate(passwordResetRules),
   (req: Request, res: Response) => {
-    authController.forgetPassword(req, res);
-  }
-);
-
-router.post(
-  "/auth/reset-password",
-  validate(passwordResetRules),
-  (req: Request, res: Response) => {
-    authController.forgetPassword(req, res);
+    authController.requestPasswordReset(req, res);
   }
 );
 
@@ -45,7 +37,7 @@ router.post(
   "/auth/reset-password",
   validate(resetPasswordRules),
   (req: Request, res: Response) => {
-    authController.passwordReset(req, res);
+    authController.resetPassword(req, res);
   }
 );
 

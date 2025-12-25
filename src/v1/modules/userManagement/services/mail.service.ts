@@ -88,6 +88,23 @@ class MailService {
     }
   }
 
+  async passwordResetMail(options: any): Promise<void> {
+    const data = {
+      name: options.name,
+      email: options.email,
+      subject: options.subject,
+      link: options.link,
+    };
+    try {
+      await this.sendMail(data, options, "password_reset");
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Failed to send password reset link"
+      );
+    }
+  }
+
   async policyCreationMail(options: any): Promise<void> {
     const data = {
       name: options.name,

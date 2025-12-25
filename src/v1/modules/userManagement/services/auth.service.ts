@@ -21,7 +21,7 @@ import appConfig from "@config/app.config";
 class AuthService {
   constructor(
     private readonly userRepository: UserRepository,
-    private readonly OtpRepository: OtpRepository,
+    private readonly otpRepository: OtpRepository,
     private readonly otpService: OTPService,
     private readonly mailService: MailService,
     private readonly roleRepo: RoleRepo,
@@ -35,13 +35,13 @@ class AuthService {
         throw new AppError(400, "User not found");
       }
 
-      const checkUnUsedOTP = await this.OtpRepository.findOne({
+      const checkUnUsedOTP = await this.otpRepository.findOne({
         userId: user.id,
         status: "pending",
       });
       if (checkUnUsedOTP && data.token === checkUnUsedOTP.token) {
         const id = checkUnUsedOTP.id;
-        await this.OtpRepository.updateById(id, {
+        await this.otpRepository.updateById(id, {
           status: "success",
         });
       } else {
@@ -67,7 +67,7 @@ class AuthService {
         throw new AppError(400, "User not found");
       }
 
-      const isVerified = await this.OtpRepository.findOne({
+      const isVerified = await this.otpRepository.findOne({
         userId: user.id,
         status: "success",
       });
@@ -102,7 +102,7 @@ class AuthService {
     }
   }
 
-  async forgetPassword(data: { email: string }) {
+  async requestPasswordReset(data: { email: string }) {
     try {
       const user = await this.userRepository.findOne({ email: data.email });
       if (!user) {
@@ -111,53 +111,68 @@ class AuthService {
       // generate a password reset link
       const token = generateCode(6);
       await this.otpService.sendOTP({ user, token, otpType: "password-reset" });
+
+      const link = `${process.env.FRONTEND_BASEURL}/auth/reset-password?token=${token}`;
+
+      try {
+        await this.mailService.passwordResetMail({
+          name: user.firstName,
+          email: user.email,
+          subject: "Password Reset",
+          link,
+        });
+      } catch (emailError: any) {
+        logger.error(
+          { error: emailError.message },
+          "Failed to send password reset email"
+        );
+      }
+
       return {
         success: true,
-        message: `Kindly check your email address ${user.email} for OTP`,
+        message: `Kindly check your email address ${user.email} for password reset link`,
       };
     } catch (error: any) {
-      logger.error({ error: error.message }, "Error resetting password");
+      logger.error({ error: error.message }, "Error requesting reset password");
     }
   }
 
-  async resetPassword(data: {
-    email: string;
-    password: string;
-    token: string;
-  }) {
+  async resetPassword(req: any) {
+    const { token } = req.query;
+    const { email, password } = req.body;
+
     try {
-      const user = await this.userRepository.findOne({ email: data.email });
+      const user = await this.userRepository.findOne({ email: email });
       if (!user) {
         throw new AppError(400, "User not found");
       }
 
-      const checkOtp = await this.OtpRepository.findOne({
+      const checkOtp = await this.otpRepository.findOne({
         userId: user.id,
-        token: data.token,
+        token,
         status: "pending",
       });
 
       if (!checkOtp) {
         return {
           success: false,
-          message: "Invalid OTP",
+          message: "Invalid link",
         };
       }
 
       const currentTime = new Date();
       const expirationTime = new Date(checkOtp.expiringDatetime);
       if (isAfter(currentTime, expirationTime)) {
-        throw new AppError(400, "OTP has expired");
+        throw new AppError(400, "link has expired");
       }
 
       const id = checkOtp.id;
 
       try {
         await this.userRepository.updateById(checkOtp.userId, {
-          isDefaultPassword: false,
-          password: data.password,
+          password,
         });
-        await this.OtpRepository.updateById(id, { status: "used" });
+        await this.otpRepository.updateById(id, { status: "success" });
       } catch (error: any) {
         logger.error({ error: error.message }, "Error comfirming otp");
       }
@@ -167,7 +182,7 @@ class AuthService {
         message: "Password has been reset successfully",
       };
     } catch (error: any) {
-      logger.error({ error: error.message }, "Error resetting otp");
+      logger.error({ error: error.message }, "Error resetting password");
     }
   }
 
@@ -225,7 +240,7 @@ class AuthService {
         );
       }
 
-      const notVerified = await this.OtpRepository.findOne({
+      const notVerified = await this.otpRepository.findOne({
         userId: user.id,
         status: "pending",
       });
