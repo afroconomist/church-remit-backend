@@ -2,7 +2,7 @@ export type AddFamilyMember = {
   memberName: string;
   memberEmail: string;
   memberPhoneNumber?: string;
-  memberDOB: Date;
+  memberDOB?: Date;
   memberAddress: string;
   memberRelationship: string;
   primary?: boolean;

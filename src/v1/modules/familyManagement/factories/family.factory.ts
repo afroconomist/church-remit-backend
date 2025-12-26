@@ -7,6 +7,7 @@ class FamilyFactory {
 
     family.primaryMember = data.primaryMember;
     family.familyAddress = data.familyAddress;
+    family.church = data.church;
 
     return family;
   }

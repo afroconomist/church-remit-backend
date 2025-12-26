@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { v4 as uuid } from "uuid";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { createObjectCsvStringifier } from 'csv-writer';
+import { createObjectCsvStringifier } from "csv-writer";
 import appConfig from "@config/app.config";
 
 dotenv.config();
@@ -16,7 +16,10 @@ export const GetRandomID = (maxLength: number = 30): string => {
 export const GetUUID = (): string => uuid();
 
 export const createSha512Hash = (data: any, key: string) => {
-  const hash = crypto.createHmac("sha512", key).update(JSON.stringify(data)).digest("hex");
+  const hash = crypto
+    .createHmac("sha512", key)
+    .update(JSON.stringify(data))
+    .digest("hex");
 
   return hash;
 };
@@ -40,8 +43,14 @@ export const convertKeysToCamelCase = (obj: Object) => {
   return camelCasedObj;
 };
 
-export const formatAmountForDisplay = (amount: number, currency: string): string => {
-  return new Intl.NumberFormat("en-NG", { style: "currency", currency: currency }).format(amount);
+export const formatAmountForDisplay = (
+  amount: number,
+  currency: string
+): string => {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: currency,
+  }).format(amount);
 };
 
 export function generateCode(length: number) {
@@ -71,18 +80,18 @@ export const generateJwtToken = async (user: any) => {
   const secret_key: any = appConfig.jwt_token.secret;
   const session = appConfig.jwt_token.session;
   const token = jwt.sign(
-		{
-			user: {
-				id: user.id,
-				accessGroup: user.roleId,
-				email: user.email,
-				name: `${user.firstName} ${user.lastName}`,
-				phoneNumber: user.phoneNumber,
-			},
-		},
-		secret_key,
-		{ expiresIn: session }
-	);
+    {
+      user: {
+        id: user.id,
+        accessGroup: user.roleId,
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        phoneNumber: user.phoneNumber,
+      },
+    },
+    secret_key,
+    { expiresIn: session }
+  );
   return token;
 };
 
@@ -90,18 +99,18 @@ export const generateRefreshToken = async (user: any) => {
   const secret_key: any = appConfig.jwt_token.secret;
   const session = appConfig.jwt_token.refresh_token_session;
   const token = jwt.sign(
-		{
-			user: {
-				id: user.id,
-				accessGroup: user.roleId,
-				email: user.email,
-				name: `${user.firstName} ${user.lastName}`,
-				phoneNumber: user.phoneNumber,
-			},
-		},
-		secret_key,
-		{ expiresIn: session }
-	);
+    {
+      user: {
+        id: user.id,
+        accessGroup: user.roleId,
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        phoneNumber: user.phoneNumber,
+      },
+    },
+    secret_key,
+    { expiresIn: session }
+  );
   return token;
 };
 
@@ -117,7 +126,6 @@ export async function exportCSVData(headers: any, data: any) {
 }
 
 export const getAgeByDate = (dateString: string) => {
-
   const dob = new Date(dateString);
   const currentDate = new Date();
   const birthYear = dob.getFullYear();
@@ -152,7 +160,8 @@ export function format_number(number: number, locale = "en-US") {
 }
 
 export function isValidUUID(uuid) {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 }
 
@@ -166,17 +175,12 @@ export const generateTransactionReference = async (): Promise<string> => {
 const MS_IN_A_DAY = 1000 * 60 * 60 * 24;
 
 export function normalizeDate(date: Date): Date {
-  return new Date(Date.UTC(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  ));
+  return new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+  );
 }
 
-export function calculateLeaveDays(
-  startDate: Date,
-  endDate: Date
-): number {
+export function calculateLeaveDays(startDate: Date, endDate: Date): number {
   const start = normalizeDate(startDate);
   const end = normalizeDate(endDate);
 

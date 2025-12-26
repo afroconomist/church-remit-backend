@@ -11,19 +11,49 @@ class FamilyAndMemberController {
   ) {}
 
   createfamily = async (req: Request, res: Response) => {
-    const result: any = await this.familyAndMemberService.createFamily(
-      req.body
-    );
+    const result: any = await this.familyAndMemberService.createFamily(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
   };
 
+  getFamilies = async (req: Request, res: Response) => {
+    try {
+      const families =
+        await this.familyAndMemberService.getFamilies(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", families));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
   addFamilyMember = async (req: Request, res: Response) => {
-    const result: any = await this.familyAndMemberService.addFamilyMember(
-      req.body,
-      req.params.familyId
-    );
+    const result: any = await this.familyAndMemberService.addFamilyMember(req);
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
+
+  getUnlinkedMembers = async (req: Request, res: Response) => {
+    try {
+      const unlinkedMembers =
+        await this.familyAndMemberService.getUnlinkedMembers(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", unlinkedMembers));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  linkToFamily = async (req: Request, res: Response) => {
+    const result: any = await this.familyAndMemberService.linkToFamily(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);

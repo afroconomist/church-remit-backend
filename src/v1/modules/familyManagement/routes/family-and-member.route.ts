@@ -4,6 +4,7 @@ import { createFamilyRules } from "../validations/create-family.validator";
 import { editFamilyMemberRules } from "../validations/edit-family-member.validator";
 import { editFamilyRules } from "../validations/edit-family.validator";
 import { addFamilyMemberRules } from "../validations/add-family-member.validator";
+import { linkToFamilyRules } from "../validations/link-to-family.validator";
 import { validate } from "@shared/middlewares/validator.middleware";
 import FamilyAndMemberController from "../controller/family-and-member.controller";
 import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
@@ -25,6 +26,13 @@ router.post(
     familyAndMemberController.createfamily(req, res).catch((err) => next(err))
 );
 
+router.get(
+  "/admin/:churchId/families",
+  [authMiddleware, accessControlMiddleware(AccessControls.VIEW_FAMILY)],
+  (req: Request, res: Response, next) =>
+    familyAndMemberController.getFamilies(req, res).catch((err) => next(err))
+);
+
 router.post(
   "/admin/family/:familyId/add-member",
   [
@@ -35,6 +43,28 @@ router.post(
   (req: Request, res: Response, next) =>
     familyAndMemberController
       .addFamilyMember(req, res)
+      .catch((err) => next(err))
+);
+
+router.get(
+  "/admin/:churchId/unlinked-members",
+  [authMiddleware, accessControlMiddleware(AccessControls.USER_LIST)],
+  (req: Request, res: Response, next) =>
+    familyAndMemberController
+      .getUnlinkedMembers(req, res)
+      .catch((err) => next(err))
+);
+
+router.post(
+  "/admin/family/:familyId/link-member",
+  [
+    authMiddleware,
+    accessControlMiddleware(AccessControls.ADD_LINK_FAMILY_MEMBER),
+    validate(linkToFamilyRules),
+  ],
+  (req: Request, res: Response, next) =>
+    familyAndMemberController
+      .linkToFamily(req, res)
       .catch((err) => next(err))
 );
 

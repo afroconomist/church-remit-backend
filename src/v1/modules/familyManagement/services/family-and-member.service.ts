@@ -2,62 +2,72 @@ import { injectable } from "tsyringe";
 import { Request } from "express";
 import FamilyFactory from "../factories/family.factory";
 import FamilyRepository from "../repositories/family.repository";
-import { AddFamilyMember } from "../dtos/add-family-member.dto";
 import FamilyMemberFactory from "../factories/family_member.factory";
 import FamilyMemberRepository from "../repositories/family_member.repository";
+import MemberRepository from "../../memberManagement/repositories/member.repository";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
-
-interface FamilyAndPrimaryMemberPayload {
-  primaryMember: string;
-  familyAddress: string;
-  primaryMemberEmail: string;
-  primaryMemberPhoneNumber?: string;
-  primaryMemberDOB: Date;
-  primaryMemberRelationship: string;
-}
+import { getAgeByDate } from "@shared/utils/functions.util";
 
 @injectable()
 class FamilyAndMemberService {
   constructor(
     private readonly familyRepository: FamilyRepository,
-    private readonly familyMemberRepository: FamilyMemberRepository
+    private readonly familyMemberRepository: FamilyMemberRepository,
+    private readonly memberRepository: MemberRepository
   ) {}
 
-  async createFamily(
-    family_and_primary_member_data: FamilyAndPrimaryMemberPayload
-  ) {
+  async createFamily(req: Request) {
+    const { primaryMember, familyAddress, churchMemberId } = req.body;
+
     try {
-      const primaryMember = await this.familyMemberRepository.findOne({
-        memberEmail: family_and_primary_member_data.primaryMemberEmail,
+      const churchMember = await this.memberRepository.findById(churchMemberId);
+      if (!churchMember) {
+        throw new AppError(400, "Church member does not exist");
+      }
+
+      if (!churchMember.dateOfBirth) {
+        throw new Error("Date of birth is compulsory to create a family");
+      }
+
+      const ageOfMember = getAgeByDate(String(churchMember.dateOfBirth));
+      if (ageOfMember < 18) {
+        throw new Error("Primary member must be above 18");
+      }
+
+      const primaryMemberExists = await this.familyMemberRepository.findOne({
+        memberEmail: churchMember.email,
       });
-      if (primaryMember)
+      if (primaryMemberExists)
         return {
           success: true,
           message: "Primary member already exists for another family",
         };
 
       const family = FamilyFactory.createFamily({
-        primaryMember: `${family_and_primary_member_data.primaryMember} Family`,
-        familyAddress: family_and_primary_member_data.familyAddress,
+        primaryMember: `${primaryMember} Family`,
+        familyAddress: familyAddress,
+        church: churchMember.churchId,
       });
       const createdFamily = await this.familyRepository.save(family);
 
       const newPrimaryMember = FamilyMemberFactory.addFamilyMember({
-        memberName: family_and_primary_member_data.primaryMember,
-        memberEmail: family_and_primary_member_data.primaryMemberEmail,
-        memberPhoneNumber:
-          family_and_primary_member_data.primaryMemberPhoneNumber,
-        memberDOB: family_and_primary_member_data.primaryMemberDOB,
-        memberAddress: family_and_primary_member_data.familyAddress,
-        memberRelationship:
-          family_and_primary_member_data.primaryMemberRelationship,
+        memberName: primaryMember,
+        memberEmail: churchMember.email,
+        memberPhoneNumber: churchMember.phoneNumber,
+        memberDOB: churchMember.dateOfBirth,
+        memberAddress: familyAddress,
+        memberRelationship: "Parent",
         primary: true,
         family: createdFamily.id,
       });
       const primaryMemberAdded = await this.familyMemberRepository.save(
         newPrimaryMember
       );
+
+      await this.memberRepository.updateById(churchMember.id, {
+        linkedToFamily: true,
+      });
 
       return {
         success: true,
@@ -74,13 +84,59 @@ class FamilyAndMemberService {
     }
   }
 
-  async addFamilyMember(family_member_data: AddFamilyMember, familyId: string) {
+  async getFamilies(req: any) {
+    const churchId = req.params.churchId;
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
     try {
-      const family = await this.familyRepository.findById(familyId);
+      const { data: families, totalRecords } =
+        await this.familyRepository.findAndCountAll({
+          church: churchId,
+        });
+
+      if (families.length === 0) {
+        return {
+          families: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        families,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error) {
+      logger.error({ error: "Error fetching families" });
+      throw new Error("An unexpected error occurred while fetching families.");
+    }
+  }
+
+  async addFamilyMember(req: Request) {
+    const { memberName, memberRelationship, churchMemberId } = req.body;
+
+    try {
+      const churchMember = await this.memberRepository.findById(churchMemberId);
+      if (!churchMember) {
+        throw new AppError(400, "Church member does not exist");
+      }
+
+      if (!churchMember.dateOfBirth) {
+        throw new Error("Date of birth is compulsory to be added to a family");
+      }
+
+      const family = await this.familyRepository.findById(req.params.familyId);
       if (!family) return { success: false, message: "Family does not exist" };
 
       const addedFamilyMember = await this.familyMemberRepository.findOne({
-        memberEmail: family_member_data.memberEmail,
+        memberEmail: churchMember.email,
       });
       if (addedFamilyMember)
         return {
@@ -88,14 +144,53 @@ class FamilyAndMemberService {
           message: "Family member has been added already",
         };
 
+      const ageOfMember = getAgeByDate(String(churchMember.dateOfBirth));
+      if (ageOfMember < 18) {
+        const parent = await this.familyMemberRepository.findOne({
+          family: family.id,
+          memberRelationship: "Parent",
+        });
+        if (!parent)
+          return { success: false, message: "Parent does not exist" };
+
+        const child = FamilyMemberFactory.addFamilyMember({
+          memberName,
+          memberEmail: churchMember.email,
+          memberPhoneNumber: parent.memberPhoneNumber,
+          memberDOB: churchMember.dateOfBirth,
+          memberAddress: family.familyAddress,
+          memberRelationship: "Child",
+          family: family.id,
+        });
+        const childAdded = await this.familyMemberRepository.save(child);
+
+        await this.memberRepository.updateById(churchMember.id, {
+          linkedToFamily: true,
+        });
+
+        return {
+          success: true,
+          message: "Family member has been added successfully",
+          child: childAdded,
+        };
+      }
+
       const familyMember = FamilyMemberFactory.addFamilyMember({
-        ...family_member_data,
+        memberName,
+        memberEmail: churchMember.email,
+        memberPhoneNumber: churchMember.phoneNumber,
+        memberDOB: churchMember.dateOfBirth,
         memberAddress: family.familyAddress,
-        family: familyId,
+        memberRelationship,
+        family: family.id,
       });
       const familyMemberAdded = await this.familyMemberRepository.save(
         familyMember
       );
+
+      await this.memberRepository.updateById(churchMember.id, {
+        linkedToFamily: true,
+      });
 
       return {
         success: true,
@@ -108,6 +203,131 @@ class FamilyAndMemberService {
         400,
         error.message ||
           "An unexpected error occurred while adding family member"
+      );
+    }
+  }
+
+  async getUnlinkedMembers(req: any) {
+    const churchId = req.params.churchId;
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: unlinkedMembers, totalRecords } =
+        await this.memberRepository.findAndCountAll({
+          churchId,
+          linkedToFamily: false,
+        });
+
+      if (unlinkedMembers.length === 0) {
+        return {
+          members: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        unlinkedMembers,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error) {
+      logger.error({ error: "Error fetching unlinked members" });
+      throw new Error(
+        "An unexpected error occurred while fetching unlinked members."
+      );
+    }
+  }
+
+  async linkToFamily(req: Request) {
+    try {
+      const { churchMemberId, memberRelationship } = req.body;
+      const churchMember = await this.memberRepository.findById(churchMemberId);
+      if (!churchMember) {
+        throw new AppError(400, "Church member does not exist");
+      }
+
+      if (!churchMember.dateOfBirth) {
+        throw new Error("Date of birth is compulsory to be linked to a family");
+      }
+
+      const family = await this.familyRepository.findById(req.params.familyId);
+      if (!family) return { success: false, message: "Family does not exist" };
+
+      const linkedFamilyMember = await this.familyMemberRepository.findOne({
+        memberEmail: churchMember.email,
+      });
+      if (linkedFamilyMember)
+        return {
+          success: true,
+          message: "Family member has been linked to a family already",
+        };
+
+      const ageOfMember = getAgeByDate(String(churchMember.dateOfBirth));
+      if (ageOfMember < 18) {
+        const parent = await this.familyMemberRepository.findOne({
+          family: family.id,
+          memberRelationship: "Parent",
+        });
+        if (!parent)
+          return { success: false, message: "Parent does not exist" };
+
+        const child = FamilyMemberFactory.addFamilyMember({
+          memberName: `${churchMember.firstName} ${churchMember.lastName}`,
+          memberEmail: churchMember.email,
+          memberPhoneNumber: parent.memberPhoneNumber,
+          memberDOB: churchMember.dateOfBirth,
+          memberAddress: family.familyAddress,
+          memberRelationship: "Child",
+          family: family.id,
+        });
+        const childAdded = await this.familyMemberRepository.save(child);
+
+        await this.memberRepository.updateById(churchMember.id, {
+          linkedToFamily: true,
+        });
+
+        return {
+          success: true,
+          message: "Family member has been added successfully",
+          child: childAdded,
+        };
+      }
+
+      const familyMember = FamilyMemberFactory.addFamilyMember({
+        memberName: `${churchMember.firstName} ${churchMember.lastName}`,
+        memberEmail: churchMember.email,
+        memberPhoneNumber: churchMember.phoneNumber,
+        memberDOB: churchMember.dateOfBirth,
+        memberAddress: family.familyAddress,
+        memberRelationship,
+        family: family.id,
+      });
+      const newFamilyMember = await this.familyMemberRepository.save(
+        familyMember
+      );
+
+      await this.memberRepository.updateById(churchMember.id, {
+        linkedToFamily: true,
+      });
+
+      return {
+        success: true,
+        message: "Family member has been linked to a family successfully",
+        familyMember: newFamilyMember,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error linking member to family");
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while linking member to family"
       );
     }
   }

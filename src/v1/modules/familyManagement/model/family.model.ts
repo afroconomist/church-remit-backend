@@ -7,6 +7,7 @@ export class Family extends Model {
   id: string;
   primaryMember: string;
   familyAddress: string;
+  church: string;
 
   static relationMappings = {
     familyMembers: {

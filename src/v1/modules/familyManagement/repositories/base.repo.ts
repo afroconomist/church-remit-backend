@@ -53,6 +53,23 @@ export class BaseRepository<T, M extends Model> {
     return await query.where(filter);
   }
 
+  async findAndCountAll(
+    filter: ObjectLiteral,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ data: T[]; totalRecords: number }> {
+    const query = this.model.query();
+
+    const totalRecords = await this.model.query().where(filter).resultSize();
+
+    const data = await query
+      .where(filter)
+      .limit(limit)
+      .offset((page - 1) * limit);
+
+    return { data, totalRecords };
+  }
+
   async save(data: Partial<T>, transaction?: Transaction): Promise<M> {
     return await this.model.query(transaction).insert(data).returning("*");
   }

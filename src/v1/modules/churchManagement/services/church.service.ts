@@ -296,7 +296,7 @@ class ChurchService {
     } catch (error) {
       logger.error({ error: "Error fetching church members" });
       throw new Error(
-        "An unexpected error occurred while fetching churches members."
+        "An unexpected error occurred while fetching church members."
       );
     }
   }
