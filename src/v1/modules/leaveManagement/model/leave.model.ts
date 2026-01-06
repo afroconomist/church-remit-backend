@@ -13,6 +13,7 @@ export class Leave extends Model {
   reason: string;
   status: string;
   memberId: string;
+  church: string;
 
   static relationMappings = {
     userRole: {

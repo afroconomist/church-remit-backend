@@ -12,6 +12,7 @@ class LeaveFactory {
     leave.endDate = data.endDate;
     leave.reason = data.reason;
     leave.memberId = data.memberId;
+    leave.church = data.church;
 
     return leave;
   }

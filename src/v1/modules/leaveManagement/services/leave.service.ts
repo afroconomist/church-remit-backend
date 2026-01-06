@@ -48,6 +48,7 @@ class LeaveService {
         ...leave_data,
         staffName: `${staffExists.firstName} ${staffExists.lastName}`,
         memberId: staffExists.id,
+        church: staffExists.churchId,
       });
       const submittedLeaveRequest = await this.leaveRepository.save(leave);
 
@@ -117,6 +118,7 @@ class LeaveService {
   }
 
   async getLeavesBasedOnStatus(req: any) {
+    const churchId = req.params.churchId;
     const { status, page = 1, limit = 10 } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
@@ -124,7 +126,7 @@ class LeaveService {
 
     try {
       const { data: leavesBasedOnStatus, totalRecords } =
-        await this.leaveRepository.findAndCountAll({ status });
+        await this.leaveRepository.findAndCountAll({ status, churchId });
 
       if (leavesBasedOnStatus.length === 0) {
         return {

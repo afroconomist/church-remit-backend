@@ -9,6 +9,8 @@ import churchRoute from "../../v1/modules/churchManagement/routes/church.route";
 import memberRoute from "../../v1/modules/memberManagement/routes/member.route";
 import familyRoute from "../../v1/modules/familyManagement/routes/family-and-member.route";
 import leaveRoute from "../../v1/modules/leaveManagement/routes/leave.route";
+import staffRoute from "../../v1/modules/staffManagement/routes/staff.route";
+import volunteerRoute from "../../v1/modules/volunteerManagement/routes/volunteer-role-and-volunteer.route";
 
 export default {
   app: appRoute,
@@ -22,4 +24,6 @@ export default {
   memberManagement: memberRoute,
   familyManagement: familyRoute,
   leaveManagement: leaveRoute,
+  staffManagement: staffRoute,
+  volunteerManagement: volunteerRoute,
 };

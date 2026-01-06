@@ -29,4 +29,10 @@ export enum AccessControls {
 	APPROVE_LEAVE = "approve-leave",
 	REJECT_LEAVE = "reject-leave",
 	VIEW_LEAVE_REQUESTS = "view-leave-requests",
+	VIEW_STAFF = "view-staff",
+	VOLUNTEER_ROLE_CREATION = "create-volunteer-shift",
+	VOLUNTEER_ADDITION = "add-volunteer",
+	VOLUNTEER_ROLES = "view-volunteer-schedule",
+	VOLUNTEER_LIST = "view-volunteers",
+	VOLUNTEER_ASSIGNMENT = "assign-volunteers",
 }
