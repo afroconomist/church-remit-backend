@@ -35,4 +35,9 @@ export enum AccessControls {
 	VOLUNTEER_ROLES = "view-volunteer-schedule",
 	VOLUNTEER_LIST = "view-volunteers",
 	VOLUNTEER_ASSIGNMENT = "assign-volunteers",
+	EVENT_CREATION = "create-event",
+	EVENT_LIST = "view-events",
+	EVENT_REGISTRATION = "manage-event-registration",
+	EVENT_UPDATE = "edit-event",
+	EVENT_DELETION = "delete-event",
 }
