@@ -7,7 +7,7 @@ export class Leave extends Model {
   id: string;
   staffName: string;
   leaveType: string;
-  totalDays: string;
+  totalDays: number;
   startDate: Date;
   endDate: Date;
   reason: string;
