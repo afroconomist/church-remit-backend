@@ -11,6 +11,7 @@ import familyRoute from "../../v1/modules/familyManagement/routes/family-and-mem
 import leaveRoute from "../../v1/modules/leaveManagement/routes/leave.route";
 import staffRoute from "../../v1/modules/staffManagement/routes/staff.route";
 import volunteerRoute from "../../v1/modules/volunteerManagement/routes/volunteer-role-and-volunteer.route";
+import eventRoute from "../../v1/modules/eventManagement/routes/event.route";
 
 export default {
   app: appRoute,
@@ -26,4 +27,5 @@ export default {
   leaveManagement: leaveRoute,
   staffManagement: staffRoute,
   volunteerManagement: volunteerRoute,
+  eventManagement: eventRoute,
 };

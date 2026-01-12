@@ -33,7 +33,7 @@ router.put(
 );
 
 router.get(
-  "/staff/leave",
+  "/:churchId/staff/leave",
   [authMiddleware, accessControlMiddleware(AccessControls.VIEW_LEAVE_REQUESTS)],
   (req: Request, res: Response, next) =>
     leaveController.getLeavesBasedOnStatus(req, res).catch((err) => next(err))

@@ -40,7 +40,7 @@ class LeaveService {
       }
 
       const calculatedDays = calculateLeaveDays(startDate, endDate);
-      if (Number(leave_data.totalDays) !== calculatedDays) {
+      if (leave_data.totalDays !== calculatedDays) {
         throw new Error(`Total days mismatch. Expected ${calculatedDays}`);
       }
 
@@ -126,7 +126,10 @@ class LeaveService {
 
     try {
       const { data: leavesBasedOnStatus, totalRecords } =
-        await this.leaveRepository.findAndCountAll({ status, churchId });
+        await this.leaveRepository.findAndCountAll({
+          status,
+          church: churchId,
+        });
 
       if (leavesBasedOnStatus.length === 0) {
         return {
