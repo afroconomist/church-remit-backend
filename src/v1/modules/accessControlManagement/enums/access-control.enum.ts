@@ -40,4 +40,10 @@ export enum AccessControls {
 	EVENT_REGISTRATION = "manage-event-registration",
 	EVENT_UPDATE = "edit-event",
 	EVENT_DELETION = "delete-event",
+	PRAYER_WARRIOR_CREATION = "add-prayer-warrior",
+	PRAYER_REQUEST_LIST = "view-prayer-requests",
+	PRAYER_WARRIOR_LIST = "view-prayer-warriors",
+	PRAYER_ASSIGNMENT = "assign-prayer-request",
+	PRAYER_ASSIGNMENT_LIST = "manage-prayer-assignments",
+	PRAYER_ANSWERED = "mark-prayer-answered",
 }
