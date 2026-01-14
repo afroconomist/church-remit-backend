@@ -23,8 +23,9 @@ export enum DB_TABLES {
   VOLUNTEERS = "volunteers",
   EVENTS = "events",
   EVENT_AGENDAS = "event_agendas",
-  EVENT_ATTENDEES = "event-attendees",
+  EVENT_ATTENDEES = "event_attendees",
   EVENT_VOLUNTEERS = "event_volunteers",
   EVENT_REVIEWS = "event_reviews",
   PRAYERS = "prayers",
+  PRAYER_WARRIORS = "prayer_warriors",
 }

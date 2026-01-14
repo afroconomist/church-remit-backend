@@ -21,6 +21,13 @@ class StaffController {
     }
   };
 
+  getStaffMemberProfile = async (req: Request, res: Response) => {
+    const result: any = await this.staffService.getStaffMemberProfile(req);
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
+
   getPendingLeave = async (req: Request, res: Response) => {
     try {
       const pendingLeave = await this.staffService.getPendingLeave(req);

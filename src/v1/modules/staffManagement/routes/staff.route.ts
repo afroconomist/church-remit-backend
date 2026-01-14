@@ -11,9 +11,16 @@ const router = express.Router();
 
 router.get(
   "/admin/:churchId/staff",
-  [authMiddleware, accessControlMiddleware(AccessControls.VIEW_STAFF)],
+  [authMiddleware, accessControlMiddleware(AccessControls.STAFF_LIST)],
   (req: Request, res: Response, next) =>
     staffController.getStaffMembers(req, res).catch((err) => next(err))
+);
+
+router.get(
+  "/staff/:staffMemberId/profile",
+  [authMiddleware, accessControlMiddleware(AccessControls.STAFF_LIST)],
+  (req: Request, res: Response, next) =>
+    staffController.getStaffMemberProfile(req, res).catch((err) => next(err))
 );
 
 router.get(

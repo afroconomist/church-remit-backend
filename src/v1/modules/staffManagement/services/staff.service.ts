@@ -3,7 +3,7 @@ import { injectable } from "tsyringe";
 import MemberRepository from "../../memberManagement/repositories/member.repository";
 import LeaveRepository from "../../leaveManagement/repositories/leave.repository";
 import logger from "@shared/utils/logger";
-// import AppError from "@shared/error/app.error";
+import AppError from "@shared/error/app.error";
 
 @injectable()
 class StaffService {
@@ -45,6 +45,19 @@ class StaffService {
         "An unexpected error occurred while fetching staff members."
       );
     }
+  }
+
+  async getStaffMemberProfile(req: any) {
+    const staffMember = await this.memberRepository.findById(
+      req.params.staffMemberId
+    );
+    if (!staffMember) throw new AppError(400, "Staff member does not exist");
+
+    return {
+      success: true,
+      message: "Staff member profile retrieved successfully",
+      staffMember,
+    };
   }
 
   async getPendingLeave(req: any) {

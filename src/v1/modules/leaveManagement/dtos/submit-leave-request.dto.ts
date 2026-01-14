@@ -5,6 +5,9 @@ export type SubmitLeaveRequest = {
   startDate: Date;
   endDate: Date;
   reason: string;
+  submittedAt?: Date;
+  approvedAt?: Date;
+  approvedBy?: string;
   memberId: string;
   church: string;
 };
