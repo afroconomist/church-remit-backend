@@ -12,6 +12,9 @@ export class Leave extends Model {
   endDate: Date;
   reason: string;
   status: string;
+  submittedAt?: Date;
+  approvedAt?: Date;
+  approvedBy?: string;
   memberId: string;
   church: string;
 

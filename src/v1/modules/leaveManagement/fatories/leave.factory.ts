@@ -11,6 +11,9 @@ class LeaveFactory {
     leave.startDate = data.startDate;
     leave.endDate = data.endDate;
     leave.reason = data.reason;
+    leave.submittedAt = data.submittedAt;
+    leave.approvedAt = data.approvedAt;
+    leave.approvedBy = data.approvedBy;
     leave.memberId = data.memberId;
     leave.church = data.church;
 

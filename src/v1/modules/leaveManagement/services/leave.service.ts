@@ -47,6 +47,7 @@ class LeaveService {
       const leave = LeaveFactory.submitLeaveRequest({
         ...leave_data,
         staffName: `${staffExists.firstName} ${staffExists.lastName}`,
+        submittedAt: new Date(),
         memberId: staffExists.id,
         church: staffExists.churchId,
       });
@@ -76,6 +77,8 @@ class LeaveService {
 
       await this.leaveRepository.updateById(submittedLeave.id, {
         status: "Approved",
+        approvedBy: "Super Admin",
+        approvedAt: new Date(),
       });
 
       return {
