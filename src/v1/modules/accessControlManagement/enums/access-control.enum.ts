@@ -46,4 +46,12 @@ export enum AccessControls {
 	PRAYER_ASSIGNMENT = "assign-prayer-request",
 	PRAYER_ASSIGNMENT_LIST = "manage-prayer-assignments",
 	PRAYER_ANSWERED = "mark-prayer-answered",
+	GROUP_CREATION = "create-small-group",
+	GROUP_LIST = "view-small-groups",
+	GROUP_UPDATE = "edit-small-group",
+	GROUP_DELETION = "delete-small-group",
+	GROUP_MEMBERS = "manage-group-members",
+	GROUP_LEADER_ASSIGNMENT = "assign-group-leader",
+	GROUP_JOIN_REQUEST = "request-to-join-group",
+	GROUP_SEARCH = "search-small-groups",
 }

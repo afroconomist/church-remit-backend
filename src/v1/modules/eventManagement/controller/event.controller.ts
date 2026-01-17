@@ -173,7 +173,7 @@ class EventController {
     } catch (error) {
       return res
         .status(500)
-        .json({ status: false, message: "Failed to edit event info" });
+        .json({ status: false, message: "Failed to update event info" });
     }
   };
 
@@ -196,7 +196,7 @@ class EventController {
     } catch (error) {
       return res
         .status(500)
-        .json({ status: false, message: "Failed to edit agenda info" });
+        .json({ status: false, message: "Failed to update agenda info" });
     }
   };
 

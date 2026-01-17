@@ -76,7 +76,7 @@ class StaffService {
 
       if (pendingLeaves.length === 0) {
         return {
-          leaves: [],
+          pendingLeaves: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,

@@ -54,7 +54,7 @@ class EventService {
         startTime: data.startTime,
         endTime: data.endTime,
         maximumCapacity: data.maximumCapacity,
-        maximumCapacityTracker: data.maximumCapacity,
+        maximumCapacityTracker: 0,
         registration: data.registration,
         church: String(superAdmin.churchId),
       });
@@ -109,6 +109,16 @@ class EventService {
       const churchEvent = await this.eventRepository.findById(eventId);
       if (!churchEvent) throw new AppError(400, "Church event does not exist");
 
+      if (
+        churchEvent.maximumCapacity === churchEvent.maximumCapacityTracker &&
+        churchEvent.maximumCapacity !== 0
+      ) {
+        return {
+          status: false,
+          message: `Maximum capacity of ${churchEvent.maximumCapacity} event attendees have been met`,
+        };
+      }
+
       const attendee = EventAttendeeFactory.registerForEvent({
         name: data.name,
         churchEvent: churchEvent.id,
@@ -118,7 +128,7 @@ class EventService {
       );
 
       await this.eventRepository.updateById(churchEvent.id, {
-        maximumCapacity: churchEvent.maximumCapacity - 1,
+        maximumCapacityTracker: churchEvent.maximumCapacityTracker + 1,
       });
 
       return {
@@ -235,7 +245,7 @@ class EventService {
 
       if (eventReviews.length === 0) {
         return {
-          leaves: [],
+          eventReviews: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,
@@ -272,7 +282,7 @@ class EventService {
 
       if (churchEvents.length === 0) {
         return {
-          leaves: [],
+          churchEvents: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,
@@ -309,7 +319,7 @@ class EventService {
 
       if (registeredAttendees.length === 0) {
         return {
-          leaves: [],
+          registeredAttendees: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,
@@ -348,7 +358,7 @@ class EventService {
 
       if (eventAgendas.length === 0) {
         return {
-          leaves: [],
+          eventAgendas: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,
@@ -387,7 +397,7 @@ class EventService {
 
       if (eventVolunteers.length === 0) {
         return {
-          leaves: [],
+          eventVolunteers: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,
@@ -465,7 +475,7 @@ class EventService {
 
       return {
         success: true,
-        message: "Event info has been edited successfully",
+        message: "Event info has been updated successfully",
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Failed to edit event");
@@ -501,7 +511,7 @@ class EventService {
 
       return {
         success: true,
-        message: "Agenda info has been edited successfully",
+        message: "Agenda info has been updated successfully",
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Failed to edit agenda");

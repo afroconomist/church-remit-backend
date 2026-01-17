@@ -13,6 +13,7 @@ import staffRoute from "../../v1/modules/staffManagement/routes/staff.route";
 import volunteerRoute from "../../v1/modules/volunteerManagement/routes/volunteer-role-and-volunteer.route";
 import eventRoute from "../../v1/modules/eventManagement/routes/event.route";
 import prayerRoute from "../../v1/modules/prayerManagement/routes/prayer-and-warrior.route";
+import groupRoute from "../../v1/modules/groupManagement/routes/group.route";
 
 export default {
   app: appRoute,
@@ -30,4 +31,5 @@ export default {
   volunteerManagement: volunteerRoute,
   eventManagement: eventRoute,
   prayerManagement: prayerRoute,
+  groupManagement: groupRoute,
 };
