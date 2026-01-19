@@ -25,21 +25,21 @@ router.post(
     validate(createNewEventRules),
   ],
   (req: Request, res: Response, next) =>
-    eventController.createNewEvent(req, res).catch((err) => next(err))
+    eventController.createNewEvent(req, res).catch((err) => next(err)),
 );
 
 router.post(
   "/events/:eventId/schedule",
   [authMiddleware, validate(addAgendaRules)],
   (req: Request, res: Response, next) =>
-    eventController.addAgenda(req, res).catch((err) => next(err))
+    eventController.addAgenda(req, res).catch((err) => next(err)),
 );
 
 router.post(
   "/events/:eventId/register",
   [authMiddleware, validate(registerForEventRules)],
   (req: Request, res: Response, next) =>
-    eventController.registerForEvent(req, res).catch((err) => next(err))
+    eventController.registerForEvent(req, res).catch((err) => next(err)),
 );
 
 router.put(
@@ -48,63 +48,63 @@ router.put(
   (req: Request, res: Response, next) =>
     eventController
       .approveRegisteredAttendees(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.post(
   "/events/:eventId/volunteer",
   [authMiddleware, validate(volunteerForEventRules)],
   (req: Request, res: Response, next) =>
-    eventController.volunteerForEvent(req, res).catch((err) => next(err))
+    eventController.volunteerForEvent(req, res).catch((err) => next(err)),
 );
 
 router.post(
   "/events/:eventId/submit-review",
   [authMiddleware, validate(submitReviewRules)],
   (req: Request, res: Response, next) =>
-    eventController.submitEventReview(req, res).catch((err) => next(err))
+    eventController.submitEventReview(req, res).catch((err) => next(err)),
 );
 
 router.get(
   "/events/:eventId/reviews",
   [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
   (req: Request, res: Response, next) =>
-    eventController.getEventReviews(req, res).catch((err) => next(err))
+    eventController.getEventReviews(req, res).catch((err) => next(err)),
 );
 
 router.get(
   "/:churchId/events",
   [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
   (req: Request, res: Response, next) =>
-    eventController.getAllChurchEvents(req, res).catch((err) => next(err))
+    eventController.getAllChurchEvents(req, res).catch((err) => next(err)),
 );
 
 router.get(
   "/events/:eventId/registered-attendees",
   [authMiddleware, accessControlMiddleware(AccessControls.EVENT_REGISTRATION)],
   (req: Request, res: Response, next) =>
-    eventController.getRegisteredAttendees(req, res).catch((err) => next(err))
+    eventController.getRegisteredAttendees(req, res).catch((err) => next(err)),
 );
 
 router.get(
   "/events/:eventId/agendas",
   [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
   (req: Request, res: Response, next) =>
-    eventController.getEventAgendas(req, res).catch((err) => next(err))
+    eventController.getEventAgendas(req, res).catch((err) => next(err)),
 );
 
 router.get(
   "/events/:eventId/volunteers",
   [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
   (req: Request, res: Response, next) =>
-    eventController.getEventVolunteers(req, res).catch((err) => next(err))
+    eventController.getEventVolunteers(req, res).catch((err) => next(err)),
 );
 
 router.put(
   "/events/:attendeeId/check-in",
   [authMiddleware, accessControlMiddleware(AccessControls.EVENT_REGISTRATION)],
   (req: Request, res: Response, next) =>
-    eventController.checkInAttendees(req, res).catch((err) => next(err))
+    eventController.checkInAttendees(req, res).catch((err) => next(err)),
 );
 
 router.put(
@@ -115,14 +115,14 @@ router.put(
     validate(editEventRules),
   ],
   (req: Request, res: Response, next) =>
-    eventController.editEvent(req, res).catch((err) => next(err))
+    eventController.editEvent(req, res).catch((err) => next(err)),
 );
 
 router.delete(
   "/events/:eventId/delete",
   [authMiddleware, accessControlMiddleware(AccessControls.EVENT_DELETION)],
   (req: Request, res: Response, next) =>
-    eventController.deleteEvent(req, res).catch((err) => next(err))
+    eventController.deleteEvent(req, res).catch((err) => next(err)),
 );
 
 router.put(
@@ -133,14 +133,21 @@ router.put(
     validate(editAgendaRules),
   ],
   (req: Request, res: Response, next) =>
-    eventController.editAgenda(req, res).catch((err) => next(err))
+    eventController.editAgenda(req, res).catch((err) => next(err)),
 );
 
 router.delete(
   "/events/:agendaId/delete-agenda",
   [authMiddleware, accessControlMiddleware(AccessControls.EVENT_DELETION)],
   (req: Request, res: Response, next) =>
-    eventController.deleteAgenda(req, res).catch((err) => next(err))
+    eventController.deleteAgenda(req, res).catch((err) => next(err)),
+);
+
+router.get(
+  "/events/:eventId/info",
+  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
+  (req: Request, res: Response, next) =>
+    eventController.getEvent(req, res).catch((err) => next(err)),
 );
 
 export default router;

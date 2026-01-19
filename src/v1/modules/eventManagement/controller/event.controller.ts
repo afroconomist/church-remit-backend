@@ -11,7 +11,7 @@ class EventController {
   createNewEvent = async (req: Request, res: Response) => {
     const result: any = await this.eventService.createNewEvent(
       req.body,
-      req.user.id
+      req.user.id,
     );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -21,7 +21,7 @@ class EventController {
   addAgenda = async (req: Request, res: Response) => {
     const result: any = await this.eventService.addAgenda(
       req.body,
-      req.params.eventId
+      req.params.eventId,
     );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -31,7 +31,7 @@ class EventController {
   registerForEvent = async (req: Request, res: Response) => {
     const result: any = await this.eventService.registerForEvent(
       req.body,
-      req.params.eventId
+      req.params.eventId,
     );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -41,7 +41,7 @@ class EventController {
   approveRegisteredAttendees = async (req: Request, res: Response) => {
     try {
       const result: any = await this.eventService.approveRegisteredAttendees(
-        req
+        req,
       );
       if (result.success) {
         return res.send(SuccessResponse(result.message));
@@ -60,7 +60,7 @@ class EventController {
   volunteerForEvent = async (req: Request, res: Response) => {
     const result: any = await this.eventService.volunteerForEvent(
       req.body,
-      req.params.eventId
+      req.params.eventId,
     );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -70,7 +70,7 @@ class EventController {
   submitEventReview = async (req: Request, res: Response) => {
     const result: any = await this.eventService.submitEventReview(
       req.body,
-      req.params.eventId
+      req.params.eventId,
     );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -204,6 +204,13 @@ class EventController {
     const response = await this.eventService.deleteAgenda(req);
 
     return res.status(httpStatus.OK).send(SuccessResponse(response));
+  };
+
+  getEvent = async (req: Request, res: Response) => {
+    const result: any = await this.eventService.getEvent(req);
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
   };
 }
 
