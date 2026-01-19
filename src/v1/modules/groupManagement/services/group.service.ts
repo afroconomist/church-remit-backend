@@ -229,14 +229,14 @@ class GroupService {
 
   async getAllChurchGroups(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
       const { data: churchGroups, totalRecords } =
-        await this.groupRepository.findAndCountAll({ church: churchId });
+        await this.groupRepository.findAndCountAll({ church: churchId }, page, limit);
 
       if (churchGroups.length === 0) {
         return {
@@ -264,7 +264,7 @@ class GroupService {
 
   async getChurchGroupsBasedOnCategory(req: any) {
     const churchId = req.params.churchId;
-    const { category, page = 1, limit = 10 } = req.query;
+    const { category, page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -274,7 +274,7 @@ class GroupService {
         await this.groupRepository.findAndCountAll({
           category,
           church: churchId,
-        });
+        }, page, limit);
 
       if (churchGroupsBasedOnCategory.length === 0) {
         return {
@@ -431,7 +431,7 @@ class GroupService {
 
   async getGroupMembers(req: any) {
     const groupId = req.params.groupId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -441,7 +441,7 @@ class GroupService {
         await this.groupMemberRepository.findAndCountAll({
           status: "Approved",
           group: groupId,
-        });
+        }, page, limit);
 
       if (groupMembers.length === 0) {
         return {
@@ -469,7 +469,7 @@ class GroupService {
 
   async getGroupMeetings(req: any) {
     const groupId = req.params.groupId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -478,7 +478,7 @@ class GroupService {
       const { data: groupMeetings, totalRecords } =
         await this.groupMeetingAttendanceRepository.findAndCountAll({
           group: groupId,
-        });
+        }, page, limit);
 
       if (groupMeetings.length === 0) {
         return {
@@ -506,7 +506,7 @@ class GroupService {
 
   async getGroupJoinRequests(req: any) {
     const groupId = req.params.groupId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -516,7 +516,7 @@ class GroupService {
         await this.groupMemberRepository.findAndCountAll({
           status: "Pending",
           group: groupId,
-        });
+        }, page, limit);
 
       if (groupJoinRequests.length === 0) {
         return {

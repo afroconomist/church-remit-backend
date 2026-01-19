@@ -108,7 +108,7 @@ class PrayerAndWarriorService {
 
   async getAllPrayerRequests(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -117,7 +117,7 @@ class PrayerAndWarriorService {
       const { data: prayerRequests, totalRecords } =
         await this.prayerRepository.findAndCountAll({
           church: churchId,
-        });
+        }, page, limit);
 
       if (prayerRequests.length === 0) {
         return {
@@ -145,7 +145,7 @@ class PrayerAndWarriorService {
 
   async getPrayerWarriors(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -154,7 +154,7 @@ class PrayerAndWarriorService {
       const { data: prayerWarriors, totalRecords } =
         await this.prayerWarriorRepository.findAndCountAll({
           church: churchId,
-        });
+        }, page, limit);
 
       if (prayerWarriors.length === 0) {
         return {
@@ -218,7 +218,7 @@ class PrayerAndWarriorService {
 
   async getPrayerWarriorAssignments(req: any) {
     const prayerWarriorId = req.params.prayerWarriorId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -227,7 +227,7 @@ class PrayerAndWarriorService {
       const { data: prayerWarriorAssignments, totalRecords } =
         await this.prayerRepository.findAndCountAll({
           prayerWarrior: prayerWarriorId,
-        });
+        }, page, limit);
 
       if (prayerWarriorAssignments.length === 0) {
         return {

@@ -162,14 +162,14 @@ class ChurchService {
   }
 
   async getAllChurches(req: any) {
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
       const { data: churches, totalRecords } =
-        await this.churchRepository.getAndCountAll();
+        await this.churchRepository.getAndCountAll(page, limit);
 
       if (churches.length === 0) {
         return {
@@ -195,7 +195,7 @@ class ChurchService {
 
   async getChurchesBasedOnTypes(req: any) {
     const churchType = req.params.churchType;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -204,7 +204,7 @@ class ChurchService {
       const { data: churchesBasedOnTypes, totalRecords } =
         await this.churchRepository.findAndCountAll({
           churchType,
-        });
+        }, page, limit);
 
       if (churchesBasedOnTypes.length === 0) {
         return {
@@ -231,7 +231,7 @@ class ChurchService {
   }
 
   async getVerifiedChurches(req: any) {
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -240,7 +240,7 @@ class ChurchService {
       const { data: verifiedChurches, totalRecords } =
         await this.churchRepository.findAndCountAll({
           verified: true,
-        });
+        }, page, limit);
 
       if (verifiedChurches.length === 0) {
         return {
@@ -268,14 +268,14 @@ class ChurchService {
 
   async getChurchMembers(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
       const { data: churchMembers, totalRecords } =
-        await this.memberRepository.findAndCountAll({ churchId });
+        await this.memberRepository.findAndCountAll({ churchId }, page, limit);
 
       if (churchMembers.length === 0) {
         return {

@@ -14,14 +14,14 @@ class StaffService {
 
   async getStaffMembers(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
       const { data: staffMembers, totalRecords } =
-        await this.memberRepository.findAndCountAll({ churchId });
+        await this.memberRepository.findAndCountAll({ churchId }, page, limit);
 
       if (staffMembers.length === 0) {
         return {
@@ -62,7 +62,7 @@ class StaffService {
 
   async getPendingLeave(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -72,7 +72,7 @@ class StaffService {
         await this.leaveRepository.findAndCountAll({
           status: "Pending",
           church: churchId,
-        });
+        }, page, limit);
 
       if (pendingLeaves.length === 0) {
         return {

@@ -125,7 +125,7 @@ class LeaveService {
 
   async getLeavesBasedOnStatus(req: any) {
     const churchId = req.params.churchId;
-    const { status, page = 1, limit = 10 } = req.query;
+    const { status, page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -135,7 +135,7 @@ class LeaveService {
         await this.leaveRepository.findAndCountAll({
           status,
           church: churchId,
-        });
+        }, page, limit);
 
       if (leavesBasedOnStatus.length === 0) {
         return {

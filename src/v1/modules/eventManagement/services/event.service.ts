@@ -232,7 +232,7 @@ class EventService {
 
   async getEventReviews(req: any) {
     const eventId = req.params.eventId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -241,7 +241,7 @@ class EventService {
       const { data: eventReviews, totalRecords } =
         await this.eventReviewRepository.findAndCountAll({
           churchEvent: eventId,
-        });
+        }, page, limit);
 
       if (eventReviews.length === 0) {
         return {
@@ -271,14 +271,14 @@ class EventService {
 
   async getAllChurchEvents(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
       const { data: churchEvents, totalRecords } =
-        await this.eventRepository.findAndCountAll({ church: churchId });
+        await this.eventRepository.findAndCountAll({ church: churchId }, page, limit);
 
       if (churchEvents.length === 0) {
         return {
@@ -306,7 +306,7 @@ class EventService {
 
   async getRegisteredAttendees(req: any) {
     const eventId = req.params.eventId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -315,7 +315,7 @@ class EventService {
       const { data: registeredAttendees, totalRecords } =
         await this.eventAttendeeRepository.findAndCountAll({
           churchEvent: eventId,
-        });
+        }, page, limit);
 
       if (registeredAttendees.length === 0) {
         return {
@@ -345,7 +345,7 @@ class EventService {
 
   async getEventAgendas(req: any) {
     const eventId = req.params.eventId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -354,7 +354,7 @@ class EventService {
       const { data: eventAgendas, totalRecords } =
         await this.eventAgendaRepository.findAndCountAll({
           churchEvent: eventId,
-        });
+        }, page, limit);
 
       if (eventAgendas.length === 0) {
         return {
@@ -384,7 +384,7 @@ class EventService {
 
   async getEventVolunteers(req: any) {
     const eventId = req.params.eventId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -393,7 +393,7 @@ class EventService {
       const { data: eventVolunteers, totalRecords } =
         await this.eventVolunteerRepository.findAndCountAll({
           churchEvent: eventId,
-        });
+        }, page, limit);
 
       if (eventVolunteers.length === 0) {
         return {
