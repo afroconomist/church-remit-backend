@@ -79,7 +79,7 @@ class VolunteerAndRoleService {
 
   async getAllVolunteerRoles(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -88,7 +88,7 @@ class VolunteerAndRoleService {
       const { data: volunteerRoles, totalRecords } =
         await this.volunteerRoleRepository.findAndCountAll({
           church: churchId,
-        });
+        }, page, limit);
 
       if (volunteerRoles.length === 0) {
         return {
@@ -116,7 +116,7 @@ class VolunteerAndRoleService {
 
   async getAllVolunteers(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -125,7 +125,7 @@ class VolunteerAndRoleService {
       const { data: volunteers, totalRecords } =
         await this.volunteerRepository.findAndCountAll({
           church: churchId,
-        });
+        }, page, limit);
 
       if (volunteers.length === 0) {
         return {

@@ -55,8 +55,8 @@ export class BaseRepository<T, M extends Model> {
 
   async findAndCountAll(
     filter: ObjectLiteral,
-    page: number = 1,
-    limit: number = 10
+    page: number,
+    limit: number
   ): Promise<{ data: T[]; totalRecords: number }> {
     const query = this.model.query();
 

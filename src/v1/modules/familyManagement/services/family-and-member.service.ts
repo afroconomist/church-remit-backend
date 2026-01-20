@@ -86,7 +86,7 @@ class FamilyAndMemberService {
 
   async getFamilies(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -95,7 +95,7 @@ class FamilyAndMemberService {
       const { data: families, totalRecords } =
         await this.familyRepository.findAndCountAll({
           church: churchId,
-        });
+        }, page, limit);
 
       if (families.length === 0) {
         return {
@@ -209,7 +209,7 @@ class FamilyAndMemberService {
 
   async getUnlinkedMembers(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -219,7 +219,7 @@ class FamilyAndMemberService {
         await this.memberRepository.findAndCountAll({
           churchId,
           linkedToFamily: false,
-        });
+        }, page, limit);
 
       if (unlinkedMembers.length === 0) {
         return {

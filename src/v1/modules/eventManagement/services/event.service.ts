@@ -30,7 +30,7 @@ class EventService {
     private readonly eventAttendeeRepository: EventAttendeeRepository,
     private readonly eventVolunteerRepository: EventVolunteerRepository,
     private readonly eventReviewRepository: EventReviewRepository,
-    private readonly userRepository: UserRepository
+    private readonly userRepository: UserRepository,
   ) {}
 
   async createNewEvent(data: CreateNewEvent, superAdminId: string) {
@@ -54,7 +54,7 @@ class EventService {
         startTime: data.startTime,
         endTime: data.endTime,
         maximumCapacity: data.maximumCapacity,
-        maximumCapacityTracker: data.maximumCapacity,
+        maximumCapacityTracker: 0,
         registration: data.registration,
         church: String(superAdmin.churchId),
       });
@@ -69,7 +69,8 @@ class EventService {
       logger.error({ error: error.message }, "Error creating new event");
       throw new AppError(
         400,
-        error.message || "An unexpected error occurred while creating new event"
+        error.message ||
+          "An unexpected error occurred while creating new event",
       );
     }
   }
@@ -99,7 +100,7 @@ class EventService {
       logger.error({ error: error.message }, "Error adding agenda");
       throw new AppError(
         400,
-        error.message || "An unexpected error occurred while adding agenda"
+        error.message || "An unexpected error occurred while adding agenda",
       );
     }
   }
@@ -109,16 +110,26 @@ class EventService {
       const churchEvent = await this.eventRepository.findById(eventId);
       if (!churchEvent) throw new AppError(400, "Church event does not exist");
 
+      if (
+        churchEvent.maximumCapacity === churchEvent.maximumCapacityTracker &&
+        churchEvent.maximumCapacity !== 0
+      ) {
+        return {
+          status: false,
+          message: `Maximum capacity of ${churchEvent.maximumCapacity} event attendees have been met`,
+        };
+      }
+
       const attendee = EventAttendeeFactory.registerForEvent({
         name: data.name,
         churchEvent: churchEvent.id,
       });
       const registeredAttendee = await this.eventAttendeeRepository.save(
-        attendee
+        attendee,
       );
 
       await this.eventRepository.updateById(churchEvent.id, {
-        maximumCapacity: churchEvent.maximumCapacity - 1,
+        maximumCapacityTracker: churchEvent.maximumCapacityTracker + 1,
       });
 
       return {
@@ -131,7 +142,7 @@ class EventService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while registering for event"
+          "An unexpected error occurred while registering for event",
       );
     }
   }
@@ -139,7 +150,7 @@ class EventService {
   async approveRegisteredAttendees(req: any) {
     try {
       const attendee = await this.eventAttendeeRepository.findById(
-        req.params.attendeeId
+        req.params.attendeeId,
       );
       if (!attendee) throw new AppError(400, "Attendee does not exist");
 
@@ -172,7 +183,7 @@ class EventService {
         churchEvent: churchEvent.id,
       });
       const eventVolunteer = await this.eventVolunteerRepository.save(
-        volunteer
+        volunteer,
       );
 
       return {
@@ -185,7 +196,7 @@ class EventService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while volunteering for event"
+          "An unexpected error occurred while volunteering for event",
       );
     }
   }
@@ -210,32 +221,36 @@ class EventService {
     } catch (error: any) {
       logger.error(
         { error: error.message },
-        "Error submitting review for event"
+        "Error submitting review for event",
       );
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while submitting review for event"
+          "An unexpected error occurred while submitting review for event",
       );
     }
   }
 
   async getEventReviews(req: any) {
     const eventId = req.params.eventId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
       const { data: eventReviews, totalRecords } =
-        await this.eventReviewRepository.findAndCountAll({
-          churchEvent: eventId,
-        });
+        await this.eventReviewRepository.findAndCountAll(
+          {
+            churchEvent: eventId,
+          },
+          page,
+          limit,
+        );
 
       if (eventReviews.length === 0) {
         return {
-          leaves: [],
+          eventReviews: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,
@@ -254,25 +269,29 @@ class EventService {
         error: "Error fetching reviews for this event",
       });
       throw new Error(
-        "An unexpected error occurred while fetching reviews for this event."
+        "An unexpected error occurred while fetching reviews for this event.",
       );
     }
   }
 
   async getAllChurchEvents(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
       const { data: churchEvents, totalRecords } =
-        await this.eventRepository.findAndCountAll({ church: churchId });
+        await this.eventRepository.findAndCountAll(
+          { church: churchId },
+          page,
+          limit,
+        );
 
       if (churchEvents.length === 0) {
         return {
-          leaves: [],
+          churchEvents: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,
@@ -289,27 +308,31 @@ class EventService {
     } catch (error: any) {
       logger.error({ error: "Error fetching all church events" });
       throw new Error(
-        "An unexpected error occurred while fetching all church events."
+        "An unexpected error occurred while fetching all church events.",
       );
     }
   }
 
   async getRegisteredAttendees(req: any) {
     const eventId = req.params.eventId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
       const { data: registeredAttendees, totalRecords } =
-        await this.eventAttendeeRepository.findAndCountAll({
-          churchEvent: eventId,
-        });
+        await this.eventAttendeeRepository.findAndCountAll(
+          {
+            churchEvent: eventId,
+          },
+          page,
+          limit,
+        );
 
       if (registeredAttendees.length === 0) {
         return {
-          leaves: [],
+          registeredAttendees: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,
@@ -328,27 +351,31 @@ class EventService {
         error: "Error fetching registered attendees for this event",
       });
       throw new Error(
-        "An unexpected error occurred while fetching registered attendees for this event."
+        "An unexpected error occurred while fetching registered attendees for this event.",
       );
     }
   }
 
   async getEventAgendas(req: any) {
     const eventId = req.params.eventId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
       const { data: eventAgendas, totalRecords } =
-        await this.eventAgendaRepository.findAndCountAll({
-          churchEvent: eventId,
-        });
+        await this.eventAgendaRepository.findAndCountAll(
+          {
+            churchEvent: eventId,
+          },
+          page,
+          limit,
+        );
 
       if (eventAgendas.length === 0) {
         return {
-          leaves: [],
+          eventAgendas: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,
@@ -367,27 +394,31 @@ class EventService {
         error: "Error fetching agendas for this event",
       });
       throw new Error(
-        "An unexpected error occurred while fetching agendas for this event."
+        "An unexpected error occurred while fetching agendas for this event.",
       );
     }
   }
 
   async getEventVolunteers(req: any) {
     const eventId = req.params.eventId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
       const { data: eventVolunteers, totalRecords } =
-        await this.eventVolunteerRepository.findAndCountAll({
-          churchEvent: eventId,
-        });
+        await this.eventVolunteerRepository.findAndCountAll(
+          {
+            churchEvent: eventId,
+          },
+          page,
+          limit,
+        );
 
       if (eventVolunteers.length === 0) {
         return {
-          leaves: [],
+          eventVolunteers: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,
@@ -406,7 +437,7 @@ class EventService {
         error: "Error fetching volunteers for this event",
       });
       throw new Error(
-        "An unexpected error occurred while fetching volunteers for this event."
+        "An unexpected error occurred while fetching volunteers for this event.",
       );
     }
   }
@@ -414,7 +445,7 @@ class EventService {
   async checkInAttendees(req: Request) {
     try {
       const attendee = await this.eventAttendeeRepository.findById(
-        req.params.attendeeId
+        req.params.attendeeId,
       );
       if (!attendee) throw new AppError(400, "Attendee does not exist");
 
@@ -438,7 +469,7 @@ class EventService {
         error: "Error checking in attendee",
       });
       throw new Error(
-        "An unexpected error occurred while checking in attendee."
+        "An unexpected error occurred while checking in attendee.",
       );
     }
   }
@@ -447,7 +478,7 @@ class EventService {
     try {
       const data = req.body;
       const churchEvent = await this.eventRepository.findById(
-        req.params.eventId
+        req.params.eventId,
       );
       if (!churchEvent) throw new AppError(400, "Church event does not exist");
 
@@ -465,7 +496,7 @@ class EventService {
 
       return {
         success: true,
-        message: "Event info has been edited successfully",
+        message: "Event info has been updated successfully",
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Failed to edit event");
@@ -486,7 +517,7 @@ class EventService {
     try {
       const data = req.body;
       const agenda = await this.eventAgendaRepository.findById(
-        req.params.agendaId
+        req.params.agendaId,
       );
       if (!agenda) throw new AppError(400, "Agenda does not exist");
 
@@ -501,7 +532,7 @@ class EventService {
 
       return {
         success: true,
-        message: "Agenda info has been edited successfully",
+        message: "Agenda info has been updated successfully",
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Failed to edit agenda");
@@ -511,13 +542,20 @@ class EventService {
 
   async deleteAgenda(req: Request) {
     const agenda = await this.eventAgendaRepository.findById(
-      req.params.agendaId
+      req.params.agendaId,
     );
     if (!agenda) throw new AppError(400, "Agenda does not exist");
 
     await this.eventAgendaRepository.deleteById(agenda.id);
 
     return "Agenda has been deleted successfully";
+  }
+
+  async getEvent(req: Request) {
+    const churchEvent = await this.eventRepository.findById(req.params.eventId);
+    if (!churchEvent) throw new AppError(400, "Church event does not exist");
+
+    return { success: true, churchEvent };
   }
 }
 

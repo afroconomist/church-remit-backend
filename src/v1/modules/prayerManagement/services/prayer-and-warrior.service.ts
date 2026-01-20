@@ -5,7 +5,7 @@ import PrayerRepository from "../repositories/prayer.repository";
 import PrayerWarriorFactory from "../factories/prayer_warrior.factory";
 import PrayerWarriorRepository from "../repositories/prayer_warrior.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
-import MemberRepository from "../../memberManagement/repositories/member.repository";
+// import MemberRepository from "../../memberManagement/repositories/member.repository";
 import { SubmitPrayerRequest } from "../dtos/submit-prayer-request.dto";
 import { AddPrayerWarrior } from "../dtos/add-prayer-warrior.dto";
 import logger from "@shared/utils/logger";
@@ -16,13 +16,13 @@ class PrayerAndWarriorService {
   constructor(
     private readonly prayerRepository: PrayerRepository,
     private readonly prayerWarriorRepository: PrayerWarriorRepository,
-    private readonly userRepository: UserRepository,
-    private readonly memberRepository: MemberRepository
-  ) {}
+    private readonly userRepository: UserRepository
+  ) // private readonly memberRepository: MemberRepository
+  {}
 
   async submitPrayerRequest(data: SubmitPrayerRequest, memberId: string) {
     try {
-      const member = await this.memberRepository.findById(memberId);
+      const member = await this.userRepository.findById(memberId);
       if (!member) throw new AppError(400, "Member does not exist");
 
       if (
@@ -36,7 +36,7 @@ class PrayerAndWarriorService {
           urgency: data.urgency,
           privacySetting: data.privacySetting,
           submittedBy: `${member.firstName} ${member.lastName}`,
-          church: member.churchId,
+          church: String(member.churchId),
         });
         const submittedPrayerRequest = await this.prayerRepository.save(
           prayerRequest
@@ -55,7 +55,7 @@ class PrayerAndWarriorService {
         category: data.category,
         urgency: data.urgency,
         privacySetting: data.privacySetting,
-        church: member.churchId,
+        church: String(member.churchId),
       });
       const submittedPrayerRequest = await this.prayerRepository.save(
         prayerRequest
@@ -108,7 +108,7 @@ class PrayerAndWarriorService {
 
   async getAllPrayerRequests(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -117,7 +117,7 @@ class PrayerAndWarriorService {
       const { data: prayerRequests, totalRecords } =
         await this.prayerRepository.findAndCountAll({
           church: churchId,
-        });
+        }, page, limit);
 
       if (prayerRequests.length === 0) {
         return {
@@ -145,7 +145,7 @@ class PrayerAndWarriorService {
 
   async getPrayerWarriors(req: any) {
     const churchId = req.params.churchId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -154,7 +154,7 @@ class PrayerAndWarriorService {
       const { data: prayerWarriors, totalRecords } =
         await this.prayerWarriorRepository.findAndCountAll({
           church: churchId,
-        });
+        }, page, limit);
 
       if (prayerWarriors.length === 0) {
         return {
@@ -218,7 +218,7 @@ class PrayerAndWarriorService {
 
   async getPrayerWarriorAssignments(req: any) {
     const prayerWarriorId = req.params.prayerWarriorId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -227,7 +227,7 @@ class PrayerAndWarriorService {
       const { data: prayerWarriorAssignments, totalRecords } =
         await this.prayerRepository.findAndCountAll({
           prayerWarrior: prayerWarriorId,
-        });
+        }, page, limit);
 
       if (prayerWarriorAssignments.length === 0) {
         return {

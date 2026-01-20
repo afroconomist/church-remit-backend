@@ -3,7 +3,8 @@ import { Request } from "express";
 import { SubmitLeaveRequest } from "../dtos/submit-leave-request.dto";
 import LeaveFactory from "../fatories/leave.factory";
 import LeaveRepository from "../repositories/leave.repository";
-import MemberRepository from "../../memberManagement/repositories/member.repository";
+// import MemberRepository from "../../memberManagement/repositories/member.repository";
+import UserRepository from "../../userManagement/repositories/user.repository";
 // import MailService from "../../userManagement/services/mail.service";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
@@ -16,12 +17,14 @@ import {
 class LeaveService {
   constructor(
     private readonly leaveRepository: LeaveRepository,
-    private readonly memberRepository: MemberRepository // private readonly mailService: MailService
-  ) {}
+    private readonly userRepository: UserRepository
+  ) // private readonly memberRepository: MemberRepository,
+  // private readonly mailService: MailService,
+  {}
 
   async submitLeaveRequest(leave_data: SubmitLeaveRequest, staff: string) {
     try {
-      const staffExists = await this.memberRepository.findById(staff);
+      const staffExists = await this.userRepository.findById(staff);
       if (!staffExists) throw new AppError(400, "Staff does not exist");
 
       const startDate = new Date(leave_data.startDate);
@@ -49,7 +52,7 @@ class LeaveService {
         staffName: `${staffExists.firstName} ${staffExists.lastName}`,
         submittedAt: new Date(),
         memberId: staffExists.id,
-        church: staffExists.churchId,
+        church: String(staffExists.churchId),
       });
       const submittedLeaveRequest = await this.leaveRepository.save(leave);
 
@@ -122,7 +125,7 @@ class LeaveService {
 
   async getLeavesBasedOnStatus(req: any) {
     const churchId = req.params.churchId;
-    const { status, page = 1, limit = 10 } = req.query;
+    const { status, page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -132,7 +135,7 @@ class LeaveService {
         await this.leaveRepository.findAndCountAll({
           status,
           church: churchId,
-        });
+        }, page, limit);
 
       if (leavesBasedOnStatus.length === 0) {
         return {
