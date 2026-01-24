@@ -106,7 +106,7 @@ class GroupController {
     } catch (error) {
       return res
         .status(500)
-        .json({ status: false, message: "Failed to approve attendee" });
+        .json({ status: false, message: "Failed to approve new member" });
     }
   };
 
@@ -126,7 +126,7 @@ class GroupController {
     } catch (error) {
       return res
         .status(500)
-        .json({ status: false, message: "Failed to approve attendee" });
+        .json({ status: false, message: "Failed to assign member to new role" });
     }
   };
 
@@ -143,7 +143,7 @@ class GroupController {
     } catch (error) {
       return res
         .status(500)
-        .json({ status: false, message: "Failed to edit event info" });
+        .json({ status: false, message: "Failed to edit group info" });
     }
   };
 

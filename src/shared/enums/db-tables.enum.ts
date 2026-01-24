@@ -33,4 +33,11 @@ export enum DB_TABLES {
   GROUP_CHAT = "group_chat",
   GROUP_MEETING_ATTENDANCES = "group_meeting_attendances",
   SACRAMENTS = "sacraments",
+  COURSES = "courses",
+  COURSE_MODULES = "course_modules",
+  COURSE_MODULE_LESSONS = "course_module_lessons",
+  STUDENTS = "students",
+  STUDENT_COURSE_PROGRESSES = "student_course_progresses",
+  STUDENT_MODULE_PROGRESSES = "student_module_progresses",
+  STUDENT_LESSON_PROGRESSES = "student_lesson_progresses",
 }

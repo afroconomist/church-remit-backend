@@ -54,4 +54,8 @@ export enum AccessControls {
 	GROUP_LEADER_ASSIGNMENT = "assign-group-leader",
 	GROUP_JOIN_REQUEST = "request-to-join-group",
 	GROUP_SEARCH = "search-small-groups",
+	COURSE_CREATION = "create-training-course",
+	COURSE_LIST = "view-training-courses",
+	COURSE_UPDATE = "edit-training-course",
+	COURSE_DELETION = "delete-training-course",
 }
