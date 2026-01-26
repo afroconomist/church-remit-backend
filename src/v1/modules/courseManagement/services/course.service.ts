@@ -1,0 +1,557 @@
+import { injectable } from "tsyringe";
+import CourseFactory from "../factories/course.factory";
+import CourseRepository from "../repositories/course.repository";
+import StudentFactory from "../factories/student.factory";
+import StudentRepository from "../repositories/student.repository";
+import CourseModuleFactory from "../factories/course_module.factory";
+import CourseModuleRepository from "../repositories/course_module.repository";
+import CourseModuleLessonFactory from "../factories/course_module_lesson.factory";
+import CourseModuleLessonRepository from "../repositories/course_module_lesson.repository";
+import StudentCourseProgressFactory from "../factories/student_course_progress.factory";
+import StudentCourseProgressRepository from "../repositories/student_course_progress.repository";
+import StudentModuleProgressFactory from "../factories/student_module_progress.factory";
+import StudentModuleProgressRepository from "../repositories/student_module_progress.repository";
+import UserRepository from "../../userManagement/repositories/user.repository";
+import logger from "@shared/utils/logger";
+import AppError from "@shared/error/app.error";
+import { transaction } from "objection";
+import { Course } from "../model/course.model";
+
+interface CreateCoursePayload {
+  courseTitle: string;
+  description: Text;
+  category: string;
+  totalDuration: string;
+  passingScore: number;
+  courseModules: {
+    moduleTitle: string;
+    duration: string;
+  }[];
+  enrollmentType: string;
+  mandatoryCourse?: boolean;
+}
+
+interface AddCourseModules {
+  courseModules: {
+    moduleTitle: string;
+    duration: string;
+  }[];
+}
+
+interface AddCourseModuleLesson {
+  courseModuleLessons: {
+    lessonTitle: string;
+    content: string;
+    duration: string;
+  }[];
+}
+
+@injectable()
+class CourseService {
+  constructor(
+    private readonly courseRepository: CourseRepository,
+    private readonly studentRepository: StudentRepository,
+    private readonly courseModuleRepository: CourseModuleRepository,
+    private readonly courseModuleLessonRepository: CourseModuleLessonRepository,
+    private readonly studentCourseProgressRepository: StudentCourseProgressRepository,
+    private readonly studentModuleProgressRepository: StudentModuleProgressRepository,
+    private readonly userRepository: UserRepository,
+  ) {}
+
+  async createCourse(data: CreateCoursePayload, superAdminId: string) {
+    try {
+      const superAdmin = await this.userRepository.findById(superAdminId);
+      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+
+      const { newCourse, newCourseModules } = await transaction(
+        Course.knex(),
+        async (trx) => {
+          const course = CourseFactory.createCourse({
+            courseTitle: data.courseTitle,
+            description: data.description,
+            category: data.category,
+            totalDuration: data.totalDuration,
+            passingScore: data.passingScore,
+            enrollmentType: data.enrollmentType,
+            mandatoryCourse: data.mandatoryCourse,
+            modules: data.courseModules.length,
+            churchId: String(superAdmin.churchId),
+          });
+
+          const newCourse = await this.courseRepository.save(course, trx);
+
+          const courseModules = data.courseModules.map((module, index) =>
+            CourseModuleFactory.addCourseModule({
+              moduleTitle: module.moduleTitle,
+              duration: module.duration,
+              order: index + 1,
+              courseId: newCourse.id,
+            }),
+          );
+
+          const newCourseModules = await this.courseModuleRepository.saveBulk(
+            courseModules,
+            trx,
+          );
+
+          return { newCourse, newCourseModules };
+        },
+      );
+
+      return {
+        success: true,
+        message: "Course and modules has been created successfully",
+        course: newCourse,
+        courseModules: newCourseModules,
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Error creating new course and modules",
+      );
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while creating new course and modules",
+      );
+    }
+  }
+
+  async addCourseModules(data: AddCourseModules, courseId: string) {
+    try {
+      const course = await this.courseRepository.findById(courseId);
+      if (!course) throw new AppError(400, "Course does not exist");
+
+      const maxOrder = Number(course.modules);
+      const startOrder = (maxOrder ?? 0) + 1;
+      const courseModules = data.courseModules.map((module, index) =>
+        CourseModuleFactory.addCourseModule({
+          moduleTitle: module.moduleTitle,
+          duration: module.duration,
+          order: startOrder + index,
+          courseId: course.id,
+        }),
+      );
+
+      const newCourseModules = await this.courseModuleRepository.saveBulk(
+        courseModules,
+      );
+
+      await this.courseRepository.updateById(course.id, {
+        modules: Number(course.modules) + data.courseModules.length,
+      });
+
+      return {
+        success: true,
+        message: "New modules has been added to course successfully",
+        courseModules: newCourseModules,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error adding course modules");
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while adding course modules",
+      );
+    }
+  }
+
+  async addCourseModuleLessons(
+    data: AddCourseModuleLesson,
+    courseModuleId: string,
+  ) {
+    try {
+      const courseModule = await this.courseModuleRepository.findById(
+        courseModuleId,
+      );
+      if (!courseModule)
+        throw new AppError(400, "Course module does not exist");
+
+      const maxOrder = Number(courseModule.lessons);
+      const startOrder = (maxOrder ?? 0) + 1;
+      const courseModuleLessons = data.courseModuleLessons.map(
+        (moduleLesson, index) =>
+          CourseModuleLessonFactory.addCourseModuleLesson({
+            lessonTitle: moduleLesson.lessonTitle,
+            content: moduleLesson.content,
+            duration: moduleLesson.duration,
+            order: startOrder + index,
+            moduleId: courseModule.id,
+          }),
+      );
+
+      const newCourseModuleLessons =
+        await this.courseModuleLessonRepository.saveBulk(courseModuleLessons);
+
+      await this.courseModuleRepository.updateById(courseModule.id, {
+        lessons: Number(courseModule.lessons) + data.courseModuleLessons.length,
+      });
+
+      return {
+        success: true,
+        message: "New lessons has been added to course module successfully",
+        courseModuleLessons: newCourseModuleLessons,
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Error adding course module lessons",
+      );
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while adding course module lessons",
+      );
+    }
+  }
+
+  async enrollStudent(memberId: string) {
+    try {
+      const member = await this.userRepository.findById(memberId);
+      if (!member) throw new AppError(400, "Church member does not exist");
+
+      const student = StudentFactory.enrollStudent({
+        studentName: `${member.firstName} ${member.lastName}`,
+        role: "Sunday School Teacher",
+        department: "Youth Ministry",
+        memberId: member.id,
+        churchId: String(member.churchId),
+      });
+      const enrolledStudent = await this.studentRepository.save(student);
+
+      return {
+        success: true,
+        message: "Student has been enrolled successfully",
+        student: enrolledStudent,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error enrolling new student");
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while enrolling new student",
+      );
+    }
+  }
+
+  async startCourse(courseId: string, studentId: string) {
+    try {
+      const course = await this.courseRepository.findById(courseId);
+      if (!course) throw new AppError(400, "Course does not exist");
+
+      const student = await this.studentRepository.findOne({
+        memberId: studentId,
+      });
+      if (!student) throw new AppError(400, "Student does not exist");
+
+      const studentCourseProgress =
+        StudentCourseProgressFactory.trackStudentCourseProgress({
+          studentId: student.id,
+          courseId: course.id,
+          startedAt: new Date(),
+        });
+
+      await this.studentCourseProgressRepository.save(studentCourseProgress);
+
+      await this.courseRepository.updateById(course.id, {
+        enrolled: Number(course.enrolled) + 1,
+      });
+
+      return {
+        success: true,
+        message: `You have kick started the ${course.courseTitle} training course`,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error starting a new course");
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while starting a new course",
+      );
+    }
+  }
+
+  async completeCourse(courseId: string, studentId: string) {
+    try {
+      const course = await this.courseRepository.findById(courseId);
+      if (!course) throw new AppError(400, "Course does not exist");
+
+      const student = await this.studentRepository.findOne({
+        memberId: studentId,
+      });
+      if (!student) throw new AppError(400, "StudentModule does not exist");
+
+      await this.studentCourseProgressRepository.findAndUpdate(
+        { studentId: student.id, courseId: course.id },
+        {
+          status: "Completed",
+          completedAt: new Date(),
+        },
+      );
+
+      return {
+        success: true,
+        message: `Congratulations, you have completed the ${course.courseTitle} training course`,
+      };
+    } catch (error) {
+      logger.error({
+        error: "Error completing course",
+      });
+      throw new Error("An unexpected error occurred while completing course.");
+    }
+  }
+
+  async startModule(moduleId: string, studentId: string) {
+    try {
+      const module = await this.courseModuleRepository.findById(moduleId);
+      if (!module) throw new AppError(400, "Module does not exist");
+
+      const student = await this.studentRepository.findOne({
+        memberId: studentId,
+      });
+      if (!student) throw new AppError(400, "Student does not exist");
+
+      const studentModuleProgress =
+        StudentModuleProgressFactory.trackStudentModuleProgress({
+          studentId: student.id,
+          moduleId: module.id,
+          startedAt: new Date(),
+        });
+
+      await this.studentModuleProgressRepository.save(studentModuleProgress);
+
+      return {
+        success: true,
+        message: `You have kick started the ${module.moduleTitle} module`,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error starting a module");
+      throw new AppError(
+        400,
+        error.message || "An unexpected error occurred while starting a module",
+      );
+    }
+  }
+
+  async completeModule(moduleId: string, studentId: string) {
+    try {
+      const module = await this.courseModuleRepository.findById(moduleId);
+      if (!module) throw new AppError(400, "Module does not exist");
+
+      const student = await this.studentRepository.findOne({
+        memberId: studentId,
+      });
+      if (!student) throw new AppError(400, "Student does not exist");
+
+      await this.studentModuleProgressRepository.findAndUpdate(
+        { studentId: student.id, moduleId: module.id },
+        {
+          status: "Completed",
+          completedAt: new Date(),
+        },
+      );
+
+      return {
+        success: true,
+        message: `Congratulations, you have completed the ${module.moduleTitle} module`,
+      };
+    } catch (error) {
+      logger.error({
+        error: "Error completing module",
+      });
+      throw new Error("An unexpected error occurred while completing module.");
+    }
+  }
+
+  async getAllChurchCourses(req: any) {
+    const churchId = req.params.churchId;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: churchCourses, totalRecords } =
+        await this.courseRepository.findAndCountAll({ churchId }, page, limit);
+
+      if (churchCourses.length === 0) {
+        return {
+          churchCourses: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        churchCourses,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching all church courses" });
+      throw new Error(
+        "An unexpected error occurred while fetching all church courses.",
+      );
+    }
+  }
+
+  async getAllChurchMandatoryCourses(req: any) {
+    const churchId = req.params.churchId;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: churchMandatoryCourses, totalRecords } =
+        await this.courseRepository.findAndCountAll(
+          { churchId, mandatoryCourse: true },
+          page,
+          limit,
+        );
+
+      if (churchMandatoryCourses.length === 0) {
+        return {
+          churchMandatoryCourses: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        churchMandatoryCourses,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching all church mandatory courses" });
+      throw new Error(
+        "An unexpected error occurred while fetching all church mandatory courses.",
+      );
+    }
+  }
+
+  async getCourseModules(req: any) {
+    const courseId = req.params.courseId;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: courseModules, totalRecords } =
+        await this.courseModuleRepository.findAndCountAll(
+          { courseId },
+          page,
+          limit,
+        );
+
+      if (courseModules.length === 0) {
+        return {
+          courseModules: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        courseModules,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching course modules" });
+      throw new Error(
+        "An unexpected error occurred while fetching course modules.",
+      );
+    }
+  }
+
+  async editCourse(req: any) {
+    try {
+      const data = req.body;
+      const course = await this.courseRepository.findById(req.params.courseId);
+      if (!course) throw new AppError(400, "Course does not exist");
+
+      await this.courseRepository.updateById(course.id, {
+        courseTitle: data.courseTitle,
+        description: data.description,
+        category: data.category,
+        totalDuration: data.totalDuration,
+        passingScore: data.passingScore,
+        enrollmentType: data.enrollmentType,
+        mandatoryCourse: data.mandatoryCourse,
+      });
+
+      return {
+        success: true,
+        message: "Course info has been updated successfully",
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to edit course");
+      throw new AppError(400, error.message);
+    }
+  }
+
+  async deleteCourse(courseId: string) {
+    const course = await this.courseRepository.findById(courseId);
+    if (!course) throw new AppError(400, "Course does not exist");
+
+    await this.courseRepository.deleteById(course.id);
+
+    return `${course.courseTitle} course has been deleted successfully`;
+  }
+
+  async editCourseModule(req: any) {
+    try {
+      const data = req.body;
+      const courseModule = await this.courseModuleRepository.findById(
+        req.params.courseModuleId,
+      );
+      if (!courseModule)
+        throw new AppError(400, "Course module does not exist");
+
+      await this.courseModuleRepository.updateById(courseModule.id, {
+        moduleTitle: data.moduleTitle,
+        duration: data.duration,
+      });
+
+      return {
+        success: true,
+        message: "Course module info has been updated successfully",
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to edit course module");
+      throw new AppError(400, error.message);
+    }
+  }
+
+  async deleteCourseModule(courseModuleId: string) {
+    const courseModule = await this.courseModuleRepository.findById(
+      courseModuleId,
+    );
+    if (!courseModule) throw new AppError(400, "Course module does not exist");
+
+    const course = await this.courseRepository.findById(courseModule.courseId);
+    if (!course) throw new AppError(400, "Course does not exist");
+
+    await this.courseRepository.updateById(courseModule.courseId, {
+      modules: Number(course.modules) - 1,
+    });
+
+    await this.courseModuleRepository.deleteById(courseModule.id);
+
+    return `${courseModule.moduleTitle} has been deleted successfully`;
+  }
+}
+
+export default CourseService;
