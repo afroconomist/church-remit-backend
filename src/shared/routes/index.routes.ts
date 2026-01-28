@@ -16,6 +16,7 @@ import prayerRoute from "../../v1/modules/prayerManagement/routes/prayer-and-war
 import groupRoute from "../../v1/modules/groupManagement/routes/group.route";
 import sacramentRoute from "../../v1/modules/sacramentManagement/routes/sacrament.route";
 import courseRoute from "../../v1/modules/courseManagement/routes/course.route";
+import campusRoute from "../../v1/modules/campusManagement/routes/campus.route";
 
 export default {
   app: appRoute,
@@ -36,4 +37,5 @@ export default {
   groupManagement: groupRoute,
   sacramentManagement: sacramentRoute,
   courseManagement: courseRoute,
+  campusManagement: campusRoute,
 };

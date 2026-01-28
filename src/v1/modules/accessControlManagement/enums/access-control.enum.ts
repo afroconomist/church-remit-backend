@@ -58,4 +58,8 @@ export enum AccessControls {
 	COURSE_LIST = "view-training-courses",
 	COURSE_UPDATE = "edit-training-course",
 	COURSE_DELETION = "delete-training-course",
+	CAMPUS_ADDITION = "add-campus",
+	CAMPUS_LIST = "view-campuses",
+	CAMPUS_UPDATE = "edit-campus",
+	CAMPUS_MANAGEMENT = "manage-campus-operations",
 }
