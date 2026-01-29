@@ -62,4 +62,8 @@ export enum AccessControls {
 	CAMPUS_LIST = "view-campuses",
 	CAMPUS_UPDATE = "edit-campus",
 	CAMPUS_MANAGEMENT = "manage-campus-operations",
+	FACILITY_ADDITION = "add-facility",
+	FACILITY_BOOKING = "book-facility",
+	FACILITY_LIST = "view-facilities",
+	FACILITY_UPDATE = "edit-facility",
 }
