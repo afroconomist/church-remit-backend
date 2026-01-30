@@ -85,6 +85,13 @@ class CourseController {
       .json(result);
   };
 
+  getCourse = async (req: Request, res: Response) => {
+    const result: any = await this.courseService.getCourse(req.params.courseId);
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
+
   getAllChurchCourses = async (req: Request, res: Response) => {
     try {
       const churchCourses = await this.courseService.getAllChurchCourses(req);

@@ -84,6 +84,13 @@ router.put(
 );
 
 router.get(
+  "/courses/:courseId/info",
+  [authMiddleware, accessControlMiddleware(AccessControls.COURSE_LIST)],
+  (req: Request, res: Response, next) =>
+    courseController.getCourse(req, res).catch((err) => next(err)),
+);
+
+router.get(
   "/:churchId/courses",
   [authMiddleware],
   (req: Request, res: Response, next) =>

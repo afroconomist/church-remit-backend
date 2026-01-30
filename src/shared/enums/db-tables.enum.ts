@@ -40,4 +40,9 @@ export enum DB_TABLES {
   STUDENT_COURSE_PROGRESSES = "student_course_progresses",
   STUDENT_MODULE_PROGRESSES = "student_module_progresses",
   STUDENT_LESSON_PROGRESSES = "student_lesson_progresses",
+  CAMPUSES = "campuses",
+  CAMPUS_PERSONNELS = "campus_personnels",
+  FACILITIES = "facilities",
+  FACILITY_BOOKINGS = "facility_bookings",
+  DOCUMENTS = "documents",
 }

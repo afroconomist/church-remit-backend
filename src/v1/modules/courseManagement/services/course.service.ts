@@ -363,6 +363,13 @@ class CourseService {
     }
   }
 
+  async getCourse(courseId: string) {
+    const course = await this.courseRepository.findById(courseId);
+    if (!course) throw new AppError(400, "Course does not exist");
+
+    return { success: true, course };
+  }
+
   async getAllChurchCourses(req: any) {
     const churchId = req.params.churchId;
     const { page, limit } = req.query;
