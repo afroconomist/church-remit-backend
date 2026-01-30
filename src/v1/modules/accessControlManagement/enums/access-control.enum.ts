@@ -66,4 +66,6 @@ export enum AccessControls {
 	FACILITY_BOOKING = "book-facility",
 	FACILITY_LIST = "view-facilities",
 	FACILITY_UPDATE = "edit-facility",
+	DOCUMENT_UPLOAD = "upload-document",
+	DOCUMENT_LIST = "view-documents",
 }

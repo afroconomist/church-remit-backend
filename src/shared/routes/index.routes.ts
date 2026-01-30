@@ -18,6 +18,7 @@ import sacramentRoute from "../../v1/modules/sacramentManagement/routes/sacramen
 import courseRoute from "../../v1/modules/courseManagement/routes/course.route";
 import campusRoute from "../../v1/modules/campusManagement/routes/campus.route";
 import facilityRoute from "../../v1/modules/facilitymanagement/routes/facility.route";
+import documentRoute from "../../v1/modules/documentManagement/routes/document.route";
 
 export default {
   app: appRoute,
@@ -40,4 +41,5 @@ export default {
   courseManagement: courseRoute,
   campusManagement: campusRoute,
   facilityManagement: facilityRoute,
+  documentManagement: documentRoute,
 };
