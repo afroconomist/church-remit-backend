@@ -29,17 +29,26 @@ class MemberService {
     private readonly mailService: MailService,
     private readonly roleRepo: RoleRepo,
     private readonly accessControlManagementService: AccessControlManagementService,
-    private readonly reasonRepository: ReasonRepository
+    private readonly reasonRepository: ReasonRepository,
   ) {}
 
   async addMember(member_data: AddMember, superAdminId: string) {
     try {
+      const accountExists = await this.userRepository.findOne({
+        email: member_data.email,
+      });
+      if (accountExists)
+        return {
+          success: false,
+          message: "Account already exists with this email",
+        };
+
       const superAdminExists = await this.userRepository.findById(superAdminId);
       if (!superAdminExists)
         return { success: false, message: "Super admin does not exist" };
 
       const churchExists = await this.churchRepository.findById(
-        String(superAdminExists.churchId)
+        String(superAdminExists.churchId),
       );
       if (!churchExists)
         return { success: false, message: "Church does not exist" };
@@ -47,10 +56,11 @@ class MemberService {
       const role = await this.roleRepo.findByName("member");
       if (!role) return { success: false, message: "Role not found" };
 
-      const email: string = member_data.email;
-      const memberExists = await this.memberRepository.findOne({ email });
+      const memberExists = await this.memberRepository.findOne({
+        email: member_data.email,
+      });
       if (memberExists)
-        return { success: true, message: "Member already added" };
+        return { success: false, message: "Member already added" };
 
       const memberPassword = this.generateMemberPassword();
 
@@ -65,7 +75,7 @@ class MemberService {
 
       const emailResponse = await this.sendAccountCreationEmail(
         addedMember,
-        memberPassword
+        memberPassword,
       );
       if (!emailResponse.success) return emailResponse;
 
@@ -79,7 +89,7 @@ class MemberService {
       logger.error({ error: error.message }, "Error adding member");
       throw new AppError(
         400,
-        error.message || "An unexpected error occurred while adding member"
+        error.message || "An unexpected error occurred while adding member",
       );
     }
   }
@@ -111,7 +121,7 @@ class MemberService {
     } catch (error: any) {
       logger.error(
         { error: error.message },
-        "Error sending account creation mail"
+        "Error sending account creation mail",
       );
     }
   }
@@ -160,13 +170,13 @@ class MemberService {
       if (member.status === "deactivated") {
         throw new AppError(
           400,
-          "Your account has been deactivated. Please contact administrator."
+          "Your account has been deactivated. Please contact administrator.",
         );
       }
 
       const passwordMatch = await bcryptCompareHashedString(
         data.password,
-        String(member.password)
+        String(member.password),
       );
       if (!passwordMatch) {
         throw new AppError(400, "Password is incorrect. Kindly check!");
@@ -185,7 +195,7 @@ class MemberService {
       } catch (emailError: any) {
         logger.error(
           { error: emailError.message },
-          "Failed to send login notification email"
+          "Failed to send login notification email",
         );
       }
 
@@ -227,7 +237,7 @@ class MemberService {
       if (member.isDefaultPassword == false) {
         throw new AppError(
           400,
-          "Can`t perform this action!. Your password has been changed already."
+          "Can`t perform this action!. Your password has been changed already.",
         );
       }
       const id = member.id;
@@ -331,7 +341,7 @@ class MemberService {
     } catch (error: any) {
       logger.error(
         { error: error.message },
-        "Failed to update member profile picture"
+        "Failed to update member profile picture",
       );
       throw new AppError(400, error.message);
     }
@@ -373,7 +383,7 @@ class MemberService {
     if (linkedAgents) {
       throw new AppError(
         400,
-        "Member cannot be deleted because they are assigned as a supervisor to other members."
+        "Member cannot be deleted because they are assigned as a supervisor to other members.",
       );
     }
 
@@ -411,7 +421,7 @@ class MemberService {
         supervisorsMap,
         added,
         notAdded,
-        addedBy
+        addedBy,
       );
 
       await this.saveMembers(membersDataArray);
@@ -425,7 +435,7 @@ class MemberService {
     } catch (error: any) {
       logger.error(
         { error: JSON.stringify(error) },
-        "MemberService [BulkMemberOnboarding]: Error Creating Members"
+        "MemberService [BulkMemberOnboarding]: Error Creating Members",
       );
     }
   }
@@ -437,7 +447,7 @@ class MemberService {
 
   private async getSupervisors(members: any[]): Promise<Map<string, any>> {
     const supervisorIds = Array.from(
-      new Set(members.map((member) => member.supervisorId))
+      new Set(members.map((member) => member.supervisorId)),
     );
     return await this.getSupervisorsMap(supervisorIds);
   }
@@ -448,7 +458,7 @@ class MemberService {
     supervisorsMap: Map<string, any>,
     added: any[],
     notAdded: any[],
-    addedBy: string
+    addedBy: string,
   ) {
     const membersDataArray: IMember[] = [];
     const mailDataArray: {
@@ -471,7 +481,7 @@ class MemberService {
         membersDataArray,
         mailDataArray,
         added,
-        notAdded
+        notAdded,
       );
     });
 
@@ -491,20 +501,20 @@ class MemberService {
   }
 
   private async getExistingMembersMap(
-    emails: string[]
+    emails: string[],
   ): Promise<Map<string, any>> {
     const existingMembers = await this.memberRepository.findByEmails(emails);
     return new Map(existingMembers.map((member) => [member.email, member]));
   }
 
   private async getSupervisorsMap(
-    supervisorIds: string[]
+    supervisorIds: string[],
   ): Promise<Map<string, any>> {
     const supervisors = await this.memberRepository.findByIdsAndRole(
-      supervisorIds
+      supervisorIds,
     );
     return new Map(
-      supervisors.map((supervisor) => [supervisor.id, supervisor])
+      supervisors.map((supervisor) => [supervisor.id, supervisor]),
     );
   }
 
@@ -514,11 +524,11 @@ class MemberService {
     memmbersDataArray: IMember[],
     mailDataArray: any[],
     added: any[],
-    notAdded: any[]
+    notAdded: any[],
   ) {
     try {
       const newMember = MemberFactory.addMember(
-        this.createMemberData(member, password)
+        this.createMemberData(member, password),
       );
       memmbersDataArray.push(newMember);
       mailDataArray.push({
@@ -542,7 +552,7 @@ class MemberService {
   private isExistingMember(
     member: any,
     existingMembersMap: Map<string, any>,
-    notAdded: any[]
+    notAdded: any[],
   ): boolean {
     if (existingMembersMap.has(member.email)) {
       notAdded.push({
@@ -557,7 +567,7 @@ class MemberService {
   private hasValidSupervisor(
     member: any,
     supervisorsMap: Map<string, any>,
-    notAdded: any[]
+    notAdded: any[],
   ): boolean {
     const supervisor = supervisorsMap.get(member.supervisorId);
     if (!supervisor) {

@@ -41,26 +41,35 @@ class ChurchService {
     private readonly memberRepository: MemberRepository,
     private readonly otpService: OTPService,
     private readonly mailService: MailService,
-    private readonly roleRepo: RoleRepo
+    private readonly roleRepo: RoleRepo,
   ) {}
 
   async createChurchAndUser(church_user_data: OnboardingPayload) {
     try {
+      const accountExists = await this.memberRepository.findOne({
+        email: church_user_data.userEmail,
+      });
+      if (accountExists)
+        return {
+          success: false,
+          message: "Account already exists with this email",
+        };
+
       const existingChurchResponse = await this.checkIfChurchExists(
-        church_user_data.email
+        church_user_data.email,
       );
       if (!existingChurchResponse?.success) return existingChurchResponse;
 
       const existingUserResponse = await this.checkIfUserExists(
-        String(church_user_data.userEmail)
+        String(church_user_data.userEmail),
       );
       if (!existingUserResponse?.success) return existingUserResponse;
-      
+
       const role = await this.roleRepo.findByName("super-admin");
       if (!role) return { success: false, message: "Role not found" };
 
       const churchCreationResponse = await this.createChurchRecord(
-        church_user_data
+        church_user_data,
       );
       if (!churchCreationResponse.success) return churchCreationResponse;
       const user = UserFactory.createUser({
@@ -103,7 +112,7 @@ class ChurchService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while creating the church and user"
+          "An unexpected error occurred while creating the church and user",
       );
     }
   }
@@ -202,9 +211,13 @@ class ChurchService {
 
     try {
       const { data: churchesBasedOnTypes, totalRecords } =
-        await this.churchRepository.findAndCountAll({
-          churchType,
-        }, page, limit);
+        await this.churchRepository.findAndCountAll(
+          {
+            churchType,
+          },
+          page,
+          limit,
+        );
 
       if (churchesBasedOnTypes.length === 0) {
         return {
@@ -225,7 +238,7 @@ class ChurchService {
     } catch (error) {
       logger.error({ error: "Error fetching churches based on types" });
       throw new Error(
-        "An unexpected error occurred while fetching churches based on types."
+        "An unexpected error occurred while fetching churches based on types.",
       );
     }
   }
@@ -238,9 +251,13 @@ class ChurchService {
 
     try {
       const { data: verifiedChurches, totalRecords } =
-        await this.churchRepository.findAndCountAll({
-          verified: true,
-        }, page, limit);
+        await this.churchRepository.findAndCountAll(
+          {
+            verified: true,
+          },
+          page,
+          limit,
+        );
 
       if (verifiedChurches.length === 0) {
         return {
@@ -261,7 +278,7 @@ class ChurchService {
     } catch (error) {
       logger.error({ error: "Error fetching verified churches" });
       throw new Error(
-        "An unexpected error occurred while fetching verified churches."
+        "An unexpected error occurred while fetching verified churches.",
       );
     }
   }
@@ -296,7 +313,7 @@ class ChurchService {
     } catch (error) {
       logger.error({ error: "Error fetching church members" });
       throw new Error(
-        "An unexpected error occurred while fetching church members."
+        "An unexpected error occurred while fetching church members.",
       );
     }
   }

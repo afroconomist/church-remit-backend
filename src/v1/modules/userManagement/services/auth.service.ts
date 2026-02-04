@@ -1,5 +1,6 @@
 import { injectable } from "tsyringe";
 import UserRepository from "../repositories/user.repository";
+import MemberRepository from "../../memberManagement/repositories/member.repository";
 import { isAfter } from "date-fns";
 import {
   generateCode,
@@ -21,11 +22,12 @@ import appConfig from "@config/app.config";
 class AuthService {
   constructor(
     private readonly userRepository: UserRepository,
+    private readonly memberRepository: MemberRepository,
     private readonly otpRepository: OtpRepository,
     private readonly otpService: OTPService,
     private readonly mailService: MailService,
     private readonly roleRepo: RoleRepo,
-    private readonly accessControlManagementService: AccessControlManagementService
+    private readonly accessControlManagementService: AccessControlManagementService,
   ) {}
 
   async verifyOtp(data: { email: string; token: string }) {
@@ -124,7 +126,7 @@ class AuthService {
       } catch (emailError: any) {
         logger.error(
           { error: emailError.message },
-          "Failed to send password reset email"
+          "Failed to send password reset email",
         );
       }
 
@@ -196,7 +198,7 @@ class AuthService {
       if (user.isDefaultPassword == false) {
         throw new AppError(
           400,
-          "Can`t perform this action!. Your password has been changed already."
+          "Can`t perform this action!. Your password has been changed already.",
         );
       }
       const id = user.id;
@@ -219,13 +221,50 @@ class AuthService {
   }
 
   async login(data: { email: string; password: string }) {
-    try {
-      const user = await this.userRepository.findOne({ email: data.email });
-      if (!user) {
-        throw new AppError(400, "User not found");
-      }
+    const superAdmin = await this.userRepository.findOne({
+      email: data.email,
+    });
 
-      if (user.isDefaultPassword === true) {
+    if (superAdmin) {
+      return this.loginUser({
+        data,
+        user: superAdmin,
+        repository: this.userRepository,
+        requiresOtpCheck: true,
+      });
+    }
+
+    const member = await this.memberRepository.findOne({
+      email: data.email,
+    });
+
+    if (member) {
+      return this.loginUser({
+        data,
+        user: member,
+        repository: this.memberRepository,
+      });
+    }
+
+    return {
+      status: false,
+      message: "Account not found",
+    };
+  }
+
+  private async loginUser({
+    data,
+    user,
+    repository,
+    requiresOtpCheck = false,
+  }: {
+    data: { email: string; password: string };
+    user: any;
+    repository: UserRepository | MemberRepository;
+    requiresOtpCheck?: boolean;
+  }) {
+    try {
+      if (user.isDefaultPassword) {
         return {
           status: false,
           message: "Please change your password from the default password.",
@@ -236,29 +275,33 @@ class AuthService {
       if (user.status === "deactivated") {
         throw new AppError(
           400,
-          "Your account has been deactivated. Please contact administrator."
+          "Your account has been deactivated. Please contact administrator.",
         );
       }
 
-      const notVerified = await this.otpRepository.findOne({
-        userId: user.id,
-        status: "pending",
-      });
-      if (notVerified && user.isDefaultPassword === false) {
-        throw new AppError(400, "Your account is not verified!");
+      if (requiresOtpCheck) {
+        const notVerified = await this.otpRepository.findOne({
+          userId: user.id,
+          status: "pending",
+        });
+
+        if (notVerified) {
+          throw new AppError(400, "Your account is not verified!");
+        }
       }
 
       const passwordMatch = await bcryptCompareHashedString(
         data.password,
-        String(user.password)
+        String(user.password),
       );
+
       if (!passwordMatch) {
         throw new AppError(400, "Password is incorrect. Kindly check!");
       }
 
       const accessToken = await generateJwtToken(user);
       const refreshToken = await generateRefreshToken(user);
-      await this.userRepository.updateById(user.id, { refreshToken });
+      await repository.updateById(user.id, { refreshToken });
 
       try {
         await this.mailService.sendLoginEmail({
@@ -266,32 +309,31 @@ class AuthService {
           subject: "Login Notification",
           name: user.firstName,
         });
-      } catch (emailError: any) {
+      } catch (err: any) {
         logger.error(
-          { error: emailError.message },
-          "Failed to send login notification email"
+          { error: err.message },
+          "Failed to send login notification email",
         );
       }
 
       const role = await this.roleRepo.findById(String(user.roleId));
 
-      const { password, ...loggedInUser } = user;
-      const returnResponse = {
-        user: loggedInUser,
-        accessToken,
-        permissions: role?.id
-          ? (await this.accessControlManagementService.getRole(role?.id))
-              .permissions
-          : [],
-      };
-
       return {
         status: true,
         message: "Login successful",
-        data: returnResponse,
+        data: {
+          user,
+          role: role.slug,
+          accessToken,
+          permissions: role?.id
+            ? (await this.accessControlManagementService.getRole(role.id))
+                .permissions
+            : [],
+        },
       };
     } catch (error: any) {
-      logger.error({ error: error.message }, "Error logging in");
+      logger.error({ error: error.message }, "Login failed");
+
       return {
         status: false,
         message:
@@ -304,7 +346,7 @@ class AuthService {
     try {
       const decoded = jwt.verify(
         oldRefreshToken.refreshToken,
-        appConfig.jwt_token.secret
+        appConfig.jwt_token.secret,
       );
       const user = await this.userRepository.findById(decoded.userId);
 
@@ -320,7 +362,7 @@ class AuthService {
     } catch (error: any) {
       logger.error({ error: error.message }, "Error refreshing token");
       throw new ServiceUnavailableError(
-        "Invalid or expired refresh token" + error.message
+        "Invalid or expired refresh token" + error.message,
       );
     }
   }
