@@ -52,6 +52,13 @@ class CampusService {
     }
   }
 
+  async getCampus(campusId: string) {
+    const campus = await this.campusRepository.findById(campusId);
+    if (!campus) throw new AppError(400, "Campus does not exist");
+
+    return { success: true, campus };
+  }
+
   async assignPersonnelToCampus(req: any) {
     try {
       const campus = await this.campusRepository.findById(req.params.campusId);

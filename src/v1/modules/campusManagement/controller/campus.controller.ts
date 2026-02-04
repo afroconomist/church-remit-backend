@@ -1,7 +1,7 @@
 import { SuccessResponse, ErrorResponse } from "@shared/utils/response.util";
 import { Request, Response } from "express";
 import { injectable } from "tsyringe";
-import CampusService from "../service/campus.service";
+import CampusService from "../services/campus.service";
 import httpStatus from "http-status";
 
 @injectable()
@@ -13,6 +13,13 @@ class CampusController {
       req.body,
       req.user.id,
     );
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
+
+  getCampus = async (req: Request, res: Response) => {
+    const result: any = await this.campusService.getCampus(req.params.campusId);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
