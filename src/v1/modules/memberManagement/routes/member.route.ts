@@ -4,6 +4,8 @@ import { addMemberRules } from "../validations/add-member.validator";
 import { assignRoleToMemberRules } from "../validations/assign-role-to-member.validator";
 import { uploadBulkMembersRules } from "../validations/create-bulk-members.validator";
 import { updateMemberRules } from "../validations/update-member.validator";
+import { createCategoryRules } from "../validations/create-category.validator";
+import { editCategoryRules } from "../validations/edit-category.validator";
 import {
   validate,
   validateArray,
@@ -31,7 +33,7 @@ router.post(
     validate(addMemberRules),
   ],
   (req: Request, res: Response, next) =>
-    memberController.addMember(req, res).catch((err) => next(err))
+    memberController.addMember(req, res).catch((err) => next(err)),
 );
 
 router.put(
@@ -43,7 +45,7 @@ router.put(
   ],
   (req: Request, res: Response, next) => {
     memberController.assignRoleToMember(req, res).catch((e) => next(e));
-  }
+  },
 );
 
 router.post(
@@ -53,7 +55,7 @@ router.post(
     accessControlMiddleware(AccessControls.BULK_USER_ONBOARDING),
     validateArray(uploadBulkMembersRules),
   ],
-  (req: Request, res: Response) => memberController.uploadBulkMembers(req, res)
+  (req: Request, res: Response) => memberController.uploadBulkMembers(req, res),
 );
 
 router.post(
@@ -61,7 +63,7 @@ router.post(
   validate(loginRules),
   (req: Request, res: Response, next) => {
     memberController.loginMember(req, res).catch((err) => next(err));
-  }
+  },
 );
 
 router.post(
@@ -69,7 +71,7 @@ router.post(
   validate(changePasswordRules),
   (req: Request, res: Response, next) => {
     memberController.createPassword(req, res).catch((err) => next(err));
-  }
+  },
 );
 
 router.get(
@@ -80,7 +82,7 @@ router.get(
   ],
   (req: Request, res: Response, next) => {
     memberController.getMemberProfile(req, res).catch((e) => next(e));
-  }
+  },
 );
 
 router.put(
@@ -92,7 +94,7 @@ router.put(
   ],
   (req: Request, res: Response, next) => {
     memberController.updateMember(req, res).catch((err) => next(err));
-  }
+  },
 );
 
 router.put(
@@ -106,7 +108,7 @@ router.put(
     memberController
       .uploadMemberProfilePicture(req, res)
       .catch((err) => next(err));
-  }
+  },
 );
 
 router.get(
@@ -118,7 +120,7 @@ router.get(
   ],
   (req: Request, res: Response, next) => {
     memberController.getMember(req, res).catch((e) => next(e));
-  }
+  },
 );
 
 router.delete(
@@ -130,7 +132,37 @@ router.delete(
   ],
   (req: Request, res: Response, next) => {
     memberController.deleteMember(req, res).catch((e) => next(e));
-  }
+  },
+);
+
+router.post(
+  "/categories/create",
+  [authMiddleware, validate(createCategoryRules)],
+  (req: Request, res: Response, next) =>
+    memberController.createMemberCategory(req, res).catch((err) => next(err)),
+);
+
+router.get(
+  "/:churchId/member-categories",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController
+      .getChurchMemberCategories(req, res)
+      .catch((err) => next(err)),
+);
+
+router.put(
+  "/categories/:categoryId/update",
+  [authMiddleware, validate(editCategoryRules)],
+  (req: Request, res: Response, next) =>
+    memberController.editMemberCategory(req, res).catch((err) => next(err)),
+);
+
+router.delete(
+  "/categories/:categoryId/delete",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController.deleteMemberCategory(req, res).catch((err) => next(err)),
 );
 
 export default router;

@@ -1,6 +1,7 @@
 import { injectable } from "tsyringe";
 import { Request } from "express";
 import { AddMember } from "../dtos/add-member.dto";
+import { CreateCategory } from "../dtos/create-category.dto";
 import {
   generateCode,
   generateJwtToken,
@@ -12,6 +13,8 @@ import ChurchRepository from "../../churchManagement/repositories/church.reposit
 import UserRepository from "../../userManagement/repositories/user.repository";
 import ReasonRepository from "../../userManagement/repositories/reason.repository";
 import ActionReasonFactory from "../../userManagement/factories/action_reason.factory";
+import CategoryFactory from "../factories/category.factory";
+import CategoryRepository from "../repositories/category.repository";
 import MailService from "../../userManagement/services/mail.service";
 import AccessControlManagementService from "../../accessControlManagement/services/access-control-management.service";
 import RoleRepo from "../../accessControlManagement/repositories/role.repo";
@@ -19,6 +22,7 @@ import { bcryptCompareHashedString } from "@shared/utils/hash.util";
 import logger from "@shared/utils/logger";
 import { IMember } from "../model/member.model";
 import AppError from "@shared/error/app.error";
+import slugify from "slugify";
 
 @injectable()
 class MemberService {
@@ -30,6 +34,7 @@ class MemberService {
     private readonly roleRepo: RoleRepo,
     private readonly accessControlManagementService: AccessControlManagementService,
     private readonly reasonRepository: ReasonRepository,
+    private readonly categoryRepository: CategoryRepository,
   ) {}
 
   async addMember(member_data: AddMember, superAdminId: string) {
@@ -591,6 +596,108 @@ class MemberService {
       addedBy: member.addedBy,
       churchId: member.churchId,
     };
+  }
+
+  async createMemberCategory(data: CreateCategory, superAdminId: string) {
+    try {
+      const superAdmin = await this.userRepository.findById(superAdminId);
+      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+
+      const category = CategoryFactory.createCategory({
+        categoryName: data.categoryName,
+        description: data.description,
+        categoryType: data.categoryType,
+        churchId: String(superAdmin.churchId),
+      });
+      const membercategory = await this.categoryRepository.save(category);
+
+      return {
+        success: true,
+        message: "Member category has been added successfully",
+        category: membercategory,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error adding member");
+      throw new AppError(
+        400,
+        error.message || "An unexpected error occurred while adding member",
+      );
+    }
+  }
+
+  async getChurchMemberCategories(req: any) {
+    const churchId = req.params.churchId;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: memberCategories, totalRecords } =
+        await this.categoryRepository.findAndCountAll(
+          { churchId },
+          page,
+          limit,
+        );
+
+      if (memberCategories.length === 0) {
+        return {
+          memberCategories: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        memberCategories,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching all church member categories" });
+      throw new Error(
+        "An unexpected error occurred while fetching all church member categories.",
+      );
+    }
+  }
+
+  async editMemberCategory(req: any) {
+    try {
+      const data = req.body;
+      const category = await this.categoryRepository.findById(
+        req.params.categoryId,
+      );
+      if (!category) throw new AppError(400, "Category not found");
+
+      const slug = slugify(data.categoryName, { lower: true });
+
+      await this.categoryRepository.updateById(category.id, {
+        categoryName: data.categoryName,
+        description: data.description,
+        categoryType: data.categoryType,
+        slug,
+      });
+
+      return {
+        success: true,
+        message: "Category has been updated successfully",
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to update category");
+      throw new AppError(400, error.message);
+    }
+  }
+
+  async deleteMemberCategory(categoryId: string) {
+    const category = await this.categoryRepository.findById(categoryId);
+    if (!category) throw new AppError(400, "Category not found");
+
+    await this.categoryRepository.deleteById(category.id);
+
+    return `${category.categoryName} member category has been deleted successfully`;
   }
 }
 

@@ -43,7 +43,7 @@ export class Member extends Model {
       relation: Model.BelongsToOneRelation,
       modelClass: Role,
       join: {
-        from: "members.role",
+        from: "members.roleId",
         to: "roles.id",
       },
     },
