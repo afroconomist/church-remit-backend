@@ -12,6 +12,7 @@ class PrayerWarriorFactory {
     prayerWarrior.completed = data.completed;
     prayerWarrior.avgResponse = data.avgResponse;
     prayerWarrior.church = data.church;
+    prayerWarrior.churchMemberId = data.churchMemberId;
 
     return prayerWarrior;
   }

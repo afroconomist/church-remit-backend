@@ -5,9 +5,11 @@ import { FamilyMember } from "./family_member.model";
 export class Family extends Model {
   static tableName = DB_TABLES.FAMILIES;
   id: string;
+  familyName?: string;
   primaryMember: string;
   familyAddress: string;
   church: string;
+  members?: number;
 
   static relationMappings = {
     familyMembers: {

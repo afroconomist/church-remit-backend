@@ -6,4 +6,5 @@ export type CreateVolunteerRole = {
   startTime: string;
   endTime: string;
   church: string;
+  groupId?: string;
 };

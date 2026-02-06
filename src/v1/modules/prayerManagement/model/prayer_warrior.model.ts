@@ -11,6 +11,7 @@ export class PrayerWarrior extends Model {
   completed?: number;
   avgResponse?: string;
   church: string;
+  churchMemberId?: string;
 }
 
 export type IPrayerWarrior = ModelObject<PrayerWarrior>;

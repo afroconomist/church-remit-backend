@@ -12,6 +12,7 @@ export class GroupMember extends Model {
   absent?: boolean;
   excused?: boolean;
   group: string;
+  churchMemberId?: string;
 }
 
 export type IGroupMember = ModelObject<GroupMember>;

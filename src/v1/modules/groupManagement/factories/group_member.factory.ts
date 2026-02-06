@@ -13,6 +13,7 @@ class GroupMemberFactory {
     groupMember.absent = data.absent;
     groupMember.excused = data.excused;
     groupMember.group = data.group;
+    groupMember.churchMemberId = data.churchMemberId;
 
     return groupMember;
   }

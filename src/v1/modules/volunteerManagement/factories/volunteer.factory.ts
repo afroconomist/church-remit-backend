@@ -12,6 +12,7 @@ class VolunteerFactory {
     volunteer.availability = data.availability;
     volunteer.memberSince = data.memberSince;
     volunteer.church = data.church;
+    volunteer.churchMemberId = data.churchMemberId;
 
     return volunteer;
   }

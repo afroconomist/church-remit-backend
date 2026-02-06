@@ -14,7 +14,7 @@ class FamilyAndMemberService {
   constructor(
     private readonly familyRepository: FamilyRepository,
     private readonly familyMemberRepository: FamilyMemberRepository,
-    private readonly memberRepository: MemberRepository
+    private readonly memberRepository: MemberRepository,
   ) {}
 
   async createFamily(req: Request) {
@@ -45,9 +45,11 @@ class FamilyAndMemberService {
         };
 
       const family = FamilyFactory.createFamily({
-        primaryMember: `${primaryMember} Family`,
+        familyName: `${churchMember.firstName} Family`,
+        primaryMember,
         familyAddress: familyAddress,
         church: churchMember.churchId,
+        members: 1,
       });
       const createdFamily = await this.familyRepository.save(family);
 
@@ -60,9 +62,10 @@ class FamilyAndMemberService {
         memberRelationship: "Parent",
         primary: true,
         family: createdFamily.id,
+        churchMemberId: churchMember.id,
       });
       const primaryMemberAdded = await this.familyMemberRepository.save(
-        newPrimaryMember
+        newPrimaryMember,
       );
 
       await this.memberRepository.updateById(churchMember.id, {
@@ -79,7 +82,7 @@ class FamilyAndMemberService {
       logger.error({ error: error.message }, "Error creating family");
       throw new AppError(
         400,
-        error.message || "An unexpected error occurred while creating family"
+        error.message || "An unexpected error occurred while creating family",
       );
     }
   }
@@ -93,9 +96,13 @@ class FamilyAndMemberService {
 
     try {
       const { data: families, totalRecords } =
-        await this.familyRepository.findAndCountAll({
-          church: churchId,
-        }, page, limit);
+        await this.familyRepository.findAndCountAll(
+          {
+            church: churchId,
+          },
+          page,
+          limit,
+        );
 
       if (families.length === 0) {
         return {
@@ -161,11 +168,16 @@ class FamilyAndMemberService {
           memberAddress: family.familyAddress,
           memberRelationship: "Child",
           family: family.id,
+          churchMemberId: churchMember.id,
         });
         const childAdded = await this.familyMemberRepository.save(child);
 
         await this.memberRepository.updateById(churchMember.id, {
           linkedToFamily: true,
+        });
+
+        await this.familyRepository.updateById(family.id, {
+          members: Number(family.members) + 1,
         });
 
         return {
@@ -183,13 +195,18 @@ class FamilyAndMemberService {
         memberAddress: family.familyAddress,
         memberRelationship,
         family: family.id,
+        churchMemberId: churchMember.id,
       });
       const familyMemberAdded = await this.familyMemberRepository.save(
-        familyMember
+        familyMember,
       );
 
       await this.memberRepository.updateById(churchMember.id, {
         linkedToFamily: true,
+      });
+
+      await this.familyRepository.updateById(family.id, {
+        members: Number(family.members) + 1,
       });
 
       return {
@@ -202,7 +219,7 @@ class FamilyAndMemberService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while adding family member"
+          "An unexpected error occurred while adding family member",
       );
     }
   }
@@ -216,10 +233,14 @@ class FamilyAndMemberService {
 
     try {
       const { data: unlinkedMembers, totalRecords } =
-        await this.memberRepository.findAndCountAll({
-          churchId,
-          linkedToFamily: false,
-        }, page, limit);
+        await this.memberRepository.findAndCountAll(
+          {
+            churchId,
+            linkedToFamily: false,
+          },
+          page,
+          limit,
+        );
 
       if (unlinkedMembers.length === 0) {
         return {
@@ -240,7 +261,7 @@ class FamilyAndMemberService {
     } catch (error) {
       logger.error({ error: "Error fetching unlinked members" });
       throw new Error(
-        "An unexpected error occurred while fetching unlinked members."
+        "An unexpected error occurred while fetching unlinked members.",
       );
     }
   }
@@ -286,11 +307,16 @@ class FamilyAndMemberService {
           memberAddress: family.familyAddress,
           memberRelationship: "Child",
           family: family.id,
+          churchMemberId: churchMember.id,
         });
         const childAdded = await this.familyMemberRepository.save(child);
 
         await this.memberRepository.updateById(churchMember.id, {
           linkedToFamily: true,
+        });
+
+        await this.familyRepository.updateById(family.id, {
+          members: Number(family.members) + 1,
         });
 
         return {
@@ -308,13 +334,18 @@ class FamilyAndMemberService {
         memberAddress: family.familyAddress,
         memberRelationship,
         family: family.id,
+        churchMemberId: churchMember.id,
       });
       const newFamilyMember = await this.familyMemberRepository.save(
-        familyMember
+        familyMember,
       );
 
       await this.memberRepository.updateById(churchMember.id, {
         linkedToFamily: true,
+      });
+
+      await this.familyRepository.updateById(family.id, {
+        members: Number(family.members) + 1,
       });
 
       return {
@@ -327,7 +358,7 @@ class FamilyAndMemberService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while linking member to family"
+          "An unexpected error occurred while linking member to family",
       );
     }
   }
@@ -342,7 +373,7 @@ class FamilyAndMemberService {
     } catch (error: any) {
       logger.error({ error: "Error fetching family members" });
       throw new Error(
-        "An unexpected error occurred while fetching family members."
+        "An unexpected error occurred while fetching family members.",
       );
     }
   }
@@ -351,7 +382,7 @@ class FamilyAndMemberService {
     try {
       const data = req.body;
       const familyMember = await this.familyMemberRepository.findById(
-        req.params.memberId
+        req.params.memberId,
       );
       if (!familyMember)
         return {
@@ -380,8 +411,17 @@ class FamilyAndMemberService {
       if (!family) return { success: false, message: "Family does not exist" };
 
       await this.familyRepository.updateById(req.params.familyId, {
+        familyName: req.body.familyName,
         familyAddress: req.body.address,
       });
+
+      await this.familyMemberRepository.findAndUpdate(
+        { family: req.params.familyId, primary: true },
+        {
+          memberPhoneNumber: req.body.primaryPhone,
+          memberEmail: req.body.primaryEmail,
+        },
+      );
 
       await this.familyMemberRepository.findAllAndUpdate(
         {
@@ -389,7 +429,7 @@ class FamilyAndMemberService {
         },
         {
           memberAddress: req.body.address,
-        }
+        },
       );
 
       return {
@@ -400,7 +440,7 @@ class FamilyAndMemberService {
       logger.error({ error: error.message }, "Error editing family");
       throw new AppError(
         400,
-        error.message || "An unexpected error occurred while editing family"
+        error.message || "An unexpected error occurred while editing family",
       );
     }
   }
@@ -412,9 +452,23 @@ class FamilyAndMemberService {
       throw new AppError(400, "Family member does not exist");
     }
 
+    const family = await this.familyRepository.findById(familyMember.family);
+    if (!family) throw new AppError(400, "Family does not exist");
+
     if (familyMember.primary) {
       throw new AppError(403, "Primary member can not be removed");
     }
+
+    await this.memberRepository.updateById(
+      String(familyMember.churchMemberId),
+      {
+        linkedToFamily: false,
+      },
+    );
+
+    await this.familyRepository.updateById(family.id, {
+      members: Number(family.members) - 1,
+    });
 
     await this.familyMemberRepository.deleteById(familyMember.id);
 
