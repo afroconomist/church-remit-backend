@@ -36,11 +36,12 @@ class FamilyAndMemberService {
       }
 
       const primaryMemberExists = await this.familyMemberRepository.findOne({
-        memberEmail: churchMember.email,
+        churchMemberId: churchMember.id,
+        primary: true,
       });
       if (primaryMemberExists)
         return {
-          success: true,
+          status: false,
           message: "Primary member already exists for another family",
         };
 
@@ -143,7 +144,8 @@ class FamilyAndMemberService {
       if (!family) return { success: false, message: "Family does not exist" };
 
       const addedFamilyMember = await this.familyMemberRepository.findOne({
-        memberEmail: churchMember.email,
+        churchMemberId: churchMember.id,
+        family: family.id,
       });
       if (addedFamilyMember)
         return {
@@ -282,7 +284,8 @@ class FamilyAndMemberService {
       if (!family) return { success: false, message: "Family does not exist" };
 
       const linkedFamilyMember = await this.familyMemberRepository.findOne({
-        memberEmail: churchMember.email,
+        churchMemberId: churchMember.id,
+        family: family.id,
       });
       if (linkedFamilyMember)
         return {
