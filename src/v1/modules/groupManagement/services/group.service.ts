@@ -22,7 +22,7 @@ class GroupService {
     private readonly groupMemberRepository: GroupMemberRepository,
     private readonly groupChatRepository: GroupChatRepository,
     private readonly groupMeetingAttendanceRepository: GroupMeetingAttendanceRepository,
-    private readonly userRepository: UserRepository
+    private readonly userRepository: UserRepository,
   ) {}
 
   async createGroup(data: CreateGroup, groupCreatorId: string) {
@@ -35,8 +35,9 @@ class GroupService {
         groupName: data.groupName,
         category: data.category,
         description: data.description,
-        groupLeader: data.groupLeader,
+        groupLeader: "",
         capacity: data.capacity,
+        capacityTracker: 1,
         meetingDay: data.meetingDay,
         meetingTime: data.meetingTime,
         frequency: data.frequency,
@@ -54,7 +55,7 @@ class GroupService {
       const newGroup = await this.groupRepository.save(group);
 
       const groupLeader = GroupMemberFactory.addMemberToGroup({
-        groupMemberName: data.groupLeader,
+        groupMemberName: `${groupCreator.firstName} ${groupCreator.lastName}`,
         groupMemberRole: "Leader",
         joined: new Date(),
         group: newGroup.id,
@@ -70,7 +71,8 @@ class GroupService {
       logger.error({ error: error.message }, "Error creating new group");
       throw new AppError(
         400,
-        error.message || "An unexpected error occurred while creating new group"
+        error.message ||
+          "An unexpected error occurred while creating new group",
       );
     }
   }
@@ -108,7 +110,7 @@ class GroupService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while adding member to group"
+          "An unexpected error occurred while adding member to group",
       );
     }
   }
@@ -160,7 +162,7 @@ class GroupService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while requesting to join group"
+          "An unexpected error occurred while requesting to join group",
       );
     }
   }
@@ -186,7 +188,7 @@ class GroupService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while messaging the group"
+          "An unexpected error occurred while messaging the group",
       );
     }
   }
@@ -217,12 +219,12 @@ class GroupService {
     } catch (error: any) {
       logger.error(
         { error: error.message },
-        "Error recording attendance for group meeting"
+        "Error recording attendance for group meeting",
       );
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while recording attendance for group meeting"
+          "An unexpected error occurred while recording attendance for group meeting",
       );
     }
   }
@@ -236,7 +238,11 @@ class GroupService {
 
     try {
       const { data: churchGroups, totalRecords } =
-        await this.groupRepository.findAndCountAll({ church: churchId }, page, limit);
+        await this.groupRepository.findAndCountAll(
+          { church: churchId },
+          page,
+          limit,
+        );
 
       if (churchGroups.length === 0) {
         return {
@@ -257,7 +263,7 @@ class GroupService {
     } catch (error: any) {
       logger.error({ error: "Error fetching all church groups" });
       throw new Error(
-        "An unexpected error occurred while fetching all church groups."
+        "An unexpected error occurred while fetching all church groups.",
       );
     }
   }
@@ -271,10 +277,14 @@ class GroupService {
 
     try {
       const { data: churchGroupsBasedOnCategory, totalRecords } =
-        await this.groupRepository.findAndCountAll({
-          category,
-          church: churchId,
-        }, page, limit);
+        await this.groupRepository.findAndCountAll(
+          {
+            category,
+            church: churchId,
+          },
+          page,
+          limit,
+        );
 
       if (churchGroupsBasedOnCategory.length === 0) {
         return {
@@ -295,7 +305,7 @@ class GroupService {
     } catch (error: any) {
       logger.error({ error: "Error fetching all church groups on category" });
       throw new Error(
-        "An unexpected error occurred while fetching all church groups on category."
+        "An unexpected error occurred while fetching all church groups on category.",
       );
     }
   }
@@ -340,7 +350,7 @@ class GroupService {
         error: "Error approving new member",
       });
       throw new Error(
-        "An unexpected error occurred while approving new member."
+        "An unexpected error occurred while approving new member.",
       );
     }
   }
@@ -348,7 +358,7 @@ class GroupService {
   async assignGroupMemberToRole(groupMemberId: string, role: string) {
     try {
       const groupMember = await this.groupMemberRepository.findById(
-        groupMemberId
+        groupMemberId,
       );
       if (!groupMember) throw new AppError(400, "Group member does not exist");
 
@@ -365,7 +375,7 @@ class GroupService {
         error: "Error assigning group member to role",
       });
       throw new Error(
-        "An unexpected error occurred while assigning group member to role."
+        "An unexpected error occurred while assigning group member to role.",
       );
     }
   }
@@ -404,7 +414,7 @@ class GroupService {
 
   async removeMemberFromGroup(groupMemberId: string) {
     const groupMember = await this.groupMemberRepository.findById(
-      groupMemberId
+      groupMemberId,
     );
     if (!groupMember) throw new AppError(400, "Group member does not exist");
 
@@ -438,10 +448,14 @@ class GroupService {
 
     try {
       const { data: groupMembers, totalRecords } =
-        await this.groupMemberRepository.findAndCountAll({
-          status: "Approved",
-          group: groupId,
-        }, page, limit);
+        await this.groupMemberRepository.findAndCountAll(
+          {
+            status: "Approved",
+            group: groupId,
+          },
+          page,
+          limit,
+        );
 
       if (groupMembers.length === 0) {
         return {
@@ -462,7 +476,7 @@ class GroupService {
     } catch (error: any) {
       logger.error({ error: "Error fetching group members" });
       throw new Error(
-        "An unexpected error occurred while fetching group members."
+        "An unexpected error occurred while fetching group members.",
       );
     }
   }
@@ -476,9 +490,13 @@ class GroupService {
 
     try {
       const { data: groupMeetings, totalRecords } =
-        await this.groupMeetingAttendanceRepository.findAndCountAll({
-          group: groupId,
-        }, page, limit);
+        await this.groupMeetingAttendanceRepository.findAndCountAll(
+          {
+            group: groupId,
+          },
+          page,
+          limit,
+        );
 
       if (groupMeetings.length === 0) {
         return {
@@ -499,7 +517,7 @@ class GroupService {
     } catch (error: any) {
       logger.error({ error: "Error fetching group meetings" });
       throw new Error(
-        "An unexpected error occurred while fetching group meetings."
+        "An unexpected error occurred while fetching group meetings.",
       );
     }
   }
@@ -513,10 +531,14 @@ class GroupService {
 
     try {
       const { data: groupJoinRequests, totalRecords } =
-        await this.groupMemberRepository.findAndCountAll({
-          status: "Pending",
-          group: groupId,
-        }, page, limit);
+        await this.groupMemberRepository.findAndCountAll(
+          {
+            status: "Pending",
+            group: groupId,
+          },
+          page,
+          limit,
+        );
 
       if (groupJoinRequests.length === 0) {
         return {
@@ -537,7 +559,7 @@ class GroupService {
     } catch (error: any) {
       logger.error({ error: "Error fetching group join requests" });
       throw new Error(
-        "An unexpected error occurred while fetching group join requests."
+        "An unexpected error occurred while fetching group join requests.",
       );
     }
   }
