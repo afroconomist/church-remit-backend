@@ -311,6 +311,45 @@ class ChurchService {
       );
     }
   }
+
+  async getChurch(churchId: string) {
+    const church = await this.churchRepository.findById(churchId);
+    if (!church) throw new AppError(400, "Church does not exist");
+
+    return { success: true, church };
+  }
+
+  async editChurch(req: any) {
+    try {
+      const data = req.body;
+      const church = await this.churchRepository.findById(req.params.churchId);
+      if (!church) throw new AppError(400, "Church does not exist");
+
+      await this.churchRepository.updateById(church.id, {
+        churchName: data.churchName,
+        churchType: data.churchType,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        website: data.website,
+        streetAddress: data.streetAddress,
+        city: data.city,
+        stateRegion: data.stateRegion,
+        country: data.country,
+        timeZone: data.timeZone,
+        baseCurrency: data.baseCurrency,
+        fiscalYearStart: data.fiscalYearStart,
+        initialFundsToCreate: JSON.stringify(data.initialFundsToCreate),
+      });
+
+      return {
+        success: true,
+        message: "Church info has been updated successfully",
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to edit course");
+      throw new AppError(400, error.message);
+    }
+  }
 }
 
 export default ChurchService;

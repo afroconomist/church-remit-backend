@@ -45,7 +45,7 @@ class ChurchController {
   getVerifiedChurches = async (req: Request, res: Response) => {
     try {
       const verifiedChurches = await this.churchService.getVerifiedChurches(
-        req
+        req,
       );
       return res
         .status(httpStatus.OK)
@@ -67,6 +67,30 @@ class ChurchController {
       return res
         .status(httpStatus.INTERNAL_SERVER_ERROR)
         .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getChurch = async (req: Request, res: Response) => {
+    const result: any = await this.churchService.getChurch(req.params.courseId);
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
+
+  editChurch = async (req: Request, res: Response) => {
+    try {
+      const result: any = await this.churchService.editChurch(req);
+      if (result.success) {
+        return res.send(SuccessResponse(result.message));
+      } else {
+        return res
+          .status(400)
+          .json({ status: result.success, message: result.message });
+      }
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ status: false, message: "Failed to edit course info" });
     }
   };
 }

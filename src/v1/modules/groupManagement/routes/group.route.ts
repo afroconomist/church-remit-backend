@@ -2,7 +2,6 @@ import express, { Request, Response } from "express";
 import { container } from "tsyringe";
 import { createGroupRules } from "../validations/create-group.valiadator";
 import { addMemberTogroupRules } from "../validations/add-member-to-group.validator";
-import { joinGroupRules } from "../validations/join-group.validator";
 import { messageGroupRules } from "../validations/message-group.validator";
 import { recordAttendanceRules } from "../validations/record-attendance.validator";
 import { editGroupRules } from "../validations/edit-group.validator";
@@ -41,7 +40,7 @@ router.post(
 
 router.post(
   "/groups/:groupId/join",
-  [authMiddleware, validate(joinGroupRules)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     groupController.requestToOrJoinGroup(req, res).catch((err) => next(err))
 );
