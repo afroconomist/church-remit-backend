@@ -9,8 +9,8 @@ import GroupChatRepository from "../repositories/group_chat.repository";
 import GroupMeetingAttendanceFactory from "../factories/group_meeting_attendance.factory";
 import GroupMeetingAttendanceRepository from "../repositories/group_meeting_attendance.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
+import MemberRepository from "../../memberManagement/repositories/member.repository";
 import { CreateGroup } from "../dtos/create-new-group.dto";
-import { AddMemberToGroup } from "../dtos/add-member.dto";
 import { RecordAttendance } from "../dtos/record-attendance.dto";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
@@ -23,6 +23,7 @@ class GroupService {
     private readonly groupChatRepository: GroupChatRepository,
     private readonly groupMeetingAttendanceRepository: GroupMeetingAttendanceRepository,
     private readonly userRepository: UserRepository,
+    private readonly memberRepository: MemberRepository,
   ) {}
 
   async createGroup(data: CreateGroup, groupCreatorId: string) {
@@ -54,13 +55,14 @@ class GroupService {
       });
       const newGroup = await this.groupRepository.save(group);
 
-      const groupLeader = GroupMemberFactory.addMemberToGroup({
+      const groupMember = GroupMemberFactory.addMemberToGroup({
         groupMemberName: `${groupCreator.firstName} ${groupCreator.lastName}`,
         groupMemberRole: "Leader",
         joined: new Date(),
         group: newGroup.id,
+        churchMemberId: groupCreator.id,
       });
-      await this.groupMemberRepository.save(groupLeader);
+      await this.groupMemberRepository.save(groupMember);
 
       return {
         success: true,
@@ -77,10 +79,26 @@ class GroupService {
     }
   }
 
-  async addMemberToGroup(data: AddMemberToGroup, groupId: string) {
+  async addMemberToGroup(req: Request) {
     try {
-      const group = await this.groupRepository.findById(groupId);
+      const group = await this.groupRepository.findById(req.params.groupId);
       if (!group) throw new AppError(400, "Group does not exist");
+
+      const churchMember = await this.memberRepository.findById(
+        req.body.churchMemberId,
+      );
+      if (!churchMember)
+        throw new AppError(400, "Church member does not exist");
+
+      const groupMemberExist = await this.groupMemberRepository.findOne({
+        group: group.id,
+        churchMemberId: churchMember.id,
+      });
+      if (groupMemberExist)
+        return {
+          status: false,
+          message: `${groupMemberExist.groupMemberName} is already a member of this group`,
+        };
 
       if (group.capacity === group.capacityTracker && group.capacity !== 0) {
         return {
@@ -90,9 +108,10 @@ class GroupService {
       }
 
       const member = GroupMemberFactory.addMemberToGroup({
-        groupMemberName: data.groupMemberName,
+        groupMemberName: req.body.groupMemberName,
         joined: new Date(),
         group: group.id,
+        churchMemberId: churchMember.id,
       });
       const groupMember = await this.groupMemberRepository.save(member);
 
@@ -115,10 +134,24 @@ class GroupService {
     }
   }
 
-  async requestToOrJoinGroup(groupId: string, churchMemberName: string) {
+  async requestToOrJoinGroup(groupId: string, churchMemberId: string) {
     try {
       const group = await this.groupRepository.findById(groupId);
       if (!group) throw new AppError(400, "Group does not exist");
+
+      const churchMember = await this.memberRepository.findById(churchMemberId);
+      if (!churchMember)
+        throw new AppError(400, "Church member does not exist");
+
+      const groupMemberExist = await this.groupMemberRepository.findOne({
+        group: group.id,
+        churchMemberId: churchMember.id,
+      });
+      if (groupMemberExist)
+        return {
+          status: false,
+          message: "You have requested to or join this group",
+        };
 
       if (group.capacity === group.capacityTracker && group.capacity !== 0) {
         return {
@@ -129,9 +162,10 @@ class GroupService {
 
       if (group.requireLeaderApproval) {
         const member = GroupMemberFactory.addMemberToGroup({
-          groupMemberName: churchMemberName,
+          groupMemberName: `${churchMember.firstName} ${churchMember.lastName}`,
           status: "Pending",
           group: group.id,
+          churchMemberId: churchMember.id,
         });
         await this.groupMemberRepository.save(member);
 
@@ -142,9 +176,10 @@ class GroupService {
       }
 
       const member = GroupMemberFactory.addMemberToGroup({
-        groupMemberName: churchMemberName,
+        groupMemberName: `${churchMember.firstName} ${churchMember.lastName}`,
         joined: new Date(),
         group: group.id,
+        churchMemberId: churchMember.id,
       });
       const groupMember = await this.groupMemberRepository.save(member);
 
@@ -172,8 +207,18 @@ class GroupService {
       const group = await this.groupRepository.findById(req.params.groupId);
       if (!group) throw new AppError(400, "Group does not exist");
 
+      const churchMember = await this.memberRepository.findById(req.user.id);
+      if (!churchMember)
+        throw new AppError(400, "Church member does not exist");
+
+      const groupMember = await this.groupMemberRepository.findOne({
+        group: group.id,
+        churchMemberId: churchMember.id,
+      });
+      if (!groupMember) throw new AppError(400, "Group member does not exist");
+
       const chatGroup = GroupChatFactory.messageGroup({
-        groupMemberName: req.body.groupMemberName,
+        groupMemberName: `${groupMember.groupMemberName}`,
         message: req.body.message,
         group: group.id,
       });
@@ -390,7 +435,6 @@ class GroupService {
         groupName: data.groupName,
         category: data.category,
         description: data.description,
-        groupLeader: data.groupLeader,
         capacity: data.capacity,
         meetingDay: data.meetingDay,
         meetingTime: data.meetingTime,

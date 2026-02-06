@@ -11,7 +11,7 @@ class GroupController {
   createGroup = async (req: Request, res: Response) => {
     const result: any = await this.groupService.createGroup(
       req.body,
-      req.user.id
+      req.user.id,
     );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -19,10 +19,7 @@ class GroupController {
   };
 
   addMemberToGroup = async (req: Request, res: Response) => {
-    const result: any = await this.groupService.addMemberToGroup(
-      req.body,
-      req.params.groupId
-    );
+    const result: any = await this.groupService.addMemberToGroup(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
@@ -31,7 +28,7 @@ class GroupController {
   requestToOrJoinGroup = async (req: Request, res: Response) => {
     const result: any = await this.groupService.requestToOrJoinGroup(
       req.params.groupId,
-      req.body.churchMemberName
+      req.user.id,
     );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -48,7 +45,7 @@ class GroupController {
   recordAttendance = async (req: Request, res: Response) => {
     const result: any = await this.groupService.recordAttendance(
       req.body,
-      req.params.groupId
+      req.params.groupId,
     );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -75,7 +72,7 @@ class GroupController {
       return res
         .status(httpStatus.OK)
         .send(
-          SuccessResponse("Operation successful", churchGroupsBasedOnCategory)
+          SuccessResponse("Operation successful", churchGroupsBasedOnCategory),
         );
     } catch (error: any) {
       return res
@@ -94,7 +91,7 @@ class GroupController {
   approveNewMembers = async (req: Request, res: Response) => {
     try {
       const result: any = await this.groupService.approveNewMembers(
-        req.params.newMemberId
+        req.params.newMemberId,
       );
       if (result.success) {
         return res.send(SuccessResponse(result.message));
@@ -114,7 +111,7 @@ class GroupController {
     try {
       const result: any = await this.groupService.assignGroupMemberToRole(
         req.params.groupMemberId,
-        req.body.role
+        req.body.role,
       );
       if (result.success) {
         return res.send(SuccessResponse(result.message));
@@ -124,9 +121,10 @@ class GroupController {
           .json({ status: result.success, message: result.message });
       }
     } catch (error) {
-      return res
-        .status(500)
-        .json({ status: false, message: "Failed to assign member to new role" });
+      return res.status(500).json({
+        status: false,
+        message: "Failed to assign member to new role",
+      });
     }
   };
 
@@ -149,7 +147,7 @@ class GroupController {
 
   removeMemberFromGroup = async (req: Request, res: Response) => {
     const response = await this.groupService.removeMemberFromGroup(
-      req.params.groupMemberId
+      req.params.groupMemberId,
     );
 
     return res.status(httpStatus.OK).send(SuccessResponse(response));
@@ -190,7 +188,7 @@ class GroupController {
   getGroupJoinRequests = async (req: Request, res: Response) => {
     try {
       const groupJoinRequests = await this.groupService.getGroupJoinRequests(
-        req
+        req,
       );
       return res
         .status(httpStatus.OK)
