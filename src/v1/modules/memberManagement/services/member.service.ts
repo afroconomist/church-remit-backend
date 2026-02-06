@@ -23,6 +23,7 @@ import logger from "@shared/utils/logger";
 import { IMember } from "../model/member.model";
 import AppError from "@shared/error/app.error";
 import slugify from "slugify";
+import { getAgeByDate } from "@shared/utils/functions.util";
 
 @injectable()
 class MemberService {
@@ -67,7 +68,43 @@ class MemberService {
       if (memberExists)
         return { success: false, message: "Member already added" };
 
+      const memberCategory = await this.categoryRepository.findOne({
+        slug: "youth-ministry",
+      });
+      if (!memberCategory)
+        return { success: false, message: "Member category not found" };
+
       const memberPassword = this.generateMemberPassword();
+
+      const ageOfMember = getAgeByDate(String(member_data.dateOfBirth));
+      if (ageOfMember > 18 && ageOfMember < 35) {
+        const member = MemberFactory.addMember({
+          ...member_data,
+          password: memberPassword,
+          roleId: role.id,
+          addedBy: superAdminId,
+          churchId: String(superAdminExists.churchId),
+          memberCategoryId: memberCategory.id,
+        });
+        const addedMember = await this.memberRepository.save(member);
+
+        const emailResponse = await this.sendAccountCreationEmail(
+          addedMember,
+          memberPassword,
+        );
+        if (!emailResponse.success) return emailResponse;
+
+        await this.categoryRepository.updateById(memberCategory.id, {
+          members: Number(memberCategory.members) + 1,
+        });
+
+        return {
+          success: true,
+          message: "Member has been added successfully",
+          welcome_mail: `Kindly check your email address ${member.email} for welcome mail`,
+          added_member_data: addedMember,
+        };
+      }
 
       const member = MemberFactory.addMember({
         ...member_data,
@@ -609,12 +646,12 @@ class MemberService {
         categoryType: data.categoryType,
         churchId: String(superAdmin.churchId),
       });
-      const membercategory = await this.categoryRepository.save(category);
+      const memberCategory = await this.categoryRepository.save(category);
 
       return {
         success: true,
         message: "Member category has been added successfully",
-        category: membercategory,
+        category: memberCategory,
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Error adding member");

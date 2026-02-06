@@ -37,6 +37,7 @@ export class Member extends Model {
   addedBy: string;
   churchId: string;
   linkedToFamily?: boolean;
+  memberCategoryId?: string;
 
   static relationMappings = {
     userRole: {
