@@ -165,4 +165,13 @@ router.delete(
     memberController.deleteMemberCategory(req, res).catch((err) => next(err)),
 );
 
+router.get(
+  "/:churchId/members-birthdays",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController
+      .getChurchUpcomingMembersBirthdays(req, res)
+      .catch((err) => next(err)),
+);
+
 export default router;

@@ -46,4 +46,5 @@ export enum DB_TABLES {
   FACILITY_BOOKINGS = "facility_bookings",
   DOCUMENTS = "documents",
   CATEGORIES = "categories",
+  MEMBER_BIRTHDAYS = "member_birthdays",
 }

@@ -346,7 +346,7 @@ class ChurchService {
         message: "Church info has been updated successfully",
       };
     } catch (error: any) {
-      logger.error({ error: error.message }, "Failed to edit course");
+      logger.error({ error: error.message }, "Failed to edit church");
       throw new AppError(400, error.message);
     }
   }

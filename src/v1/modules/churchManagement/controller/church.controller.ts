@@ -90,7 +90,7 @@ class ChurchController {
     } catch (error) {
       return res
         .status(500)
-        .json({ status: false, message: "Failed to edit course info" });
+        .json({ status: false, message: "Failed to edit church info" });
     }
   };
 }

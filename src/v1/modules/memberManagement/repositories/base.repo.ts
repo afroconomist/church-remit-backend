@@ -1,5 +1,5 @@
 import { ObjectLiteral } from "@shared/types/object-literal.type";
-import { Model, Transaction } from "objection";
+import { Model, Transaction, raw } from "objection";
 
 export class BaseRepository<T, M extends Model> {
   private model: typeof Model | any;
@@ -28,7 +28,7 @@ export class BaseRepository<T, M extends Model> {
   async updateById(
     id: string,
     data: Partial<M>,
-    trx?: Transaction
+    trx?: Transaction,
   ): Promise<M> {
     return await this.model
       .query(trx)
@@ -38,7 +38,7 @@ export class BaseRepository<T, M extends Model> {
 
   async getAndCountAll(
     page: number,
-    limit: number
+    limit: number,
   ): Promise<{ data: T[]; totalRecords: number }> {
     const query = this.model.query();
 
@@ -61,7 +61,7 @@ export class BaseRepository<T, M extends Model> {
   async findAndCountAll(
     filter: ObjectLiteral,
     page: number,
-    limit: number
+    limit: number,
   ): Promise<{ data: T[]; totalRecords: number }> {
     const query = this.model.query();
 
@@ -85,5 +85,71 @@ export class BaseRepository<T, M extends Model> {
 
   async deleteById(id: string) {
     return await this.model.query().deleteById(id);
+  }
+
+  async findUpcomingBirthdays(
+    filter: ObjectLiteral,
+    range: number,
+    page: number,
+    limit: number,
+  ): Promise<{ data: T[]; totalRecords: number }> {
+    const offset = (page - 1) * limit;
+
+    const birthdaySql = `
+      CASE
+        WHEN make_date(
+          extract(year from current_date)::int,
+          extract(month from "dateOfBirth")::int,
+          extract(day from "dateOfBirth")::int
+        ) < current_date
+        THEN make_date(
+          extract(year from current_date)::int + 1,
+          extract(month from "dateOfBirth")::int,
+          extract(day from "dateOfBirth")::int
+        )
+        ELSE make_date(
+          extract(year from current_date)::int,
+          extract(month from "dateOfBirth")::int,
+          extract(day from "dateOfBirth")::int
+        )
+      END
+    `;
+
+    const daysToGoSql = `
+      (${birthdaySql} - current_date)::int
+    `;
+
+    const baseQuery = this.model
+      .query()
+      .where(filter)
+      .select(
+        "*",
+        raw(`${birthdaySql} as "birthday"`),
+        raw(`${daysToGoSql} as "daysToGo"`),
+        raw(`
+          extract(year from ${birthdaySql})::int
+          - extract(year from "dateOfBirth")::int
+          as "turningAge"
+        `),
+      );
+
+    if (range > 0) {
+      baseQuery.whereRaw(`${daysToGoSql} BETWEEN 0 AND ?`, [range]);
+    }
+
+    const totalRecordsResult = await baseQuery
+      .clone()
+      .clearSelect()
+      .count("* as count")
+      .first();
+
+    const totalRecords = Number(totalRecordsResult?.count ?? 0);
+
+    const data = await baseQuery
+      .orderBy("daysToGo", "asc")
+      .limit(limit)
+      .offset(offset);
+
+    return { data, totalRecords };
   }
 }

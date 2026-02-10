@@ -185,6 +185,20 @@ class MemberController {
 
     return res.status(httpStatus.OK).send(SuccessResponse(response));
   };
+
+  getChurchUpcomingMembersBirthdays = async (req: Request, res: Response) => {
+    try {
+      const membersBirthdays =
+        await this.memberService.getChurchUpcomingMembersBirthdays(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", membersBirthdays));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
 }
 
 export default MemberController;

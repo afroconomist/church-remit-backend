@@ -11,6 +11,8 @@ import MemberFactory from "../factories/member.factory";
 import MemberRepository from "../repositories/member.repository";
 import ChurchRepository from "../../churchManagement/repositories/church.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
+import MemberBirthdayFactory from "../factories/member_birthday.factory";
+import MemberBirthdayRepository from "../repositories/member_birthday.repository";
 import ReasonRepository from "../../userManagement/repositories/reason.repository";
 import ActionReasonFactory from "../../userManagement/factories/action_reason.factory";
 import CategoryFactory from "../factories/category.factory";
@@ -31,6 +33,7 @@ class MemberService {
     private readonly memberRepository: MemberRepository,
     private readonly churchRepository: ChurchRepository,
     private readonly userRepository: UserRepository,
+    private readonly memberBirthdayRepository: MemberBirthdayRepository,
     private readonly mailService: MailService,
     private readonly roleRepo: RoleRepo,
     private readonly accessControlManagementService: AccessControlManagementService,
@@ -88,6 +91,19 @@ class MemberService {
         });
         const addedMember = await this.memberRepository.save(member);
 
+        if (addedMember.dateOfBirth) {
+          const memberBirthday = MemberBirthdayFactory.addMemberBirthday({
+            celebrantName: `${addedMember.firstName} ${addedMember.lastName}`,
+            dateOfBirth: addedMember.dateOfBirth,
+            celebrantEmail: addedMember.email,
+            celebrantPhone: addedMember.phoneNumber,
+            campus: "Member campus",
+            memberId: addedMember.id,
+            churchId: addedMember.churchId,
+          });
+          await this.memberBirthdayRepository.save(memberBirthday);
+        }
+
         const emailResponse = await this.sendAccountCreationEmail(
           addedMember,
           memberPassword,
@@ -114,6 +130,19 @@ class MemberService {
         churchId: String(superAdminExists.churchId),
       });
       const addedMember = await this.memberRepository.save(member);
+
+      if (addedMember.dateOfBirth) {
+        const memberBirthday = MemberBirthdayFactory.addMemberBirthday({
+          celebrantName: `${addedMember.firstName} ${addedMember.lastName}`,
+          dateOfBirth: addedMember.dateOfBirth,
+          celebrantEmail: addedMember.email,
+          celebrantPhone: addedMember.phoneNumber,
+          campus: "Member campus",
+          memberId: addedMember.id,
+          churchId: addedMember.churchId,
+        });
+        await this.memberBirthdayRepository.save(memberBirthday);
+      }
 
       const emailResponse = await this.sendAccountCreationEmail(
         addedMember,
@@ -354,6 +383,19 @@ class MemberService {
         joinDate: data.joinDate,
         baptismDate: data.baptismDate,
       });
+
+      if (data.dateOfBirth) {
+        const memberBirthday = MemberBirthdayFactory.addMemberBirthday({
+          celebrantName: `${member.firstName} ${member.lastName}`,
+          dateOfBirth: data.dateOfBirth,
+          celebrantEmail: member.email,
+          celebrantPhone: member.phoneNumber,
+          campus: "Member campus",
+          memberId: member.id,
+          churchId: member.churchId,
+        });
+        await this.memberBirthdayRepository.save(memberBirthday);
+      }
 
       return {
         success: true,
@@ -735,6 +777,49 @@ class MemberService {
     await this.categoryRepository.deleteById(category.id);
 
     return `${category.categoryName} member category has been deleted successfully`;
+  }
+
+  async getChurchUpcomingMembersBirthdays(req: any) {
+    const churchId = req.params.churchId;
+    const { range, page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+    const rangeNumber = parseInt(range, 10) || 0;
+
+    try {
+      const { data: membersBirthdays, totalRecords } =
+        await this.memberBirthdayRepository.findUpcomingBirthdays(
+          { churchId },
+          rangeNumber,
+          currentPage,
+          pageSize,
+        );
+
+      if (membersBirthdays.length === 0) {
+        return {
+          membersBirthdays: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        membersBirthdays,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({
+        error: "Error fetching all church upcoming members birthdays",
+      });
+      throw new Error(
+        "An unexpected error occurred while fetching all church upcoming members birthdays.",
+      );
+    }
   }
 }
 
