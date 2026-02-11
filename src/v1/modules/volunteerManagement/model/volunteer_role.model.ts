@@ -11,6 +11,7 @@ export class VolunteerRole extends Model {
   startTime: string;
   endTime: string;
   church: string;
+  groupId?: string;
 }
 
 export type IVolunteerRole = ModelObject<VolunteerRole>;

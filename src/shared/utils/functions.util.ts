@@ -45,7 +45,7 @@ export const convertKeysToCamelCase = (obj: Object) => {
 
 export const formatAmountForDisplay = (
   amount: number,
-  currency: string
+  currency: string,
 ): string => {
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
@@ -90,7 +90,7 @@ export const generateJwtToken = async (user: any) => {
       },
     },
     secret_key,
-    { expiresIn: session }
+    { expiresIn: session },
   );
   return token;
 };
@@ -109,7 +109,7 @@ export const generateRefreshToken = async (user: any) => {
       },
     },
     secret_key,
-    { expiresIn: session }
+    { expiresIn: session },
   );
   return token;
 };
@@ -176,7 +176,7 @@ const MS_IN_A_DAY = 1000 * 60 * 60 * 24;
 
 export function normalizeDate(date: Date): Date {
   return new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
   );
 }
 
@@ -188,4 +188,50 @@ export function calculateLeaveDays(startDate: Date, endDate: Date): number {
 
   // +1 for inclusive dates
   return diff + 1;
+}
+
+function parseDateOnly(dateStr: string): Date {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+export function getBirthdayThisYear(dob: string, today = new Date()): Date {
+  const birthDate = parseDateOnly(dob);
+
+  return new Date(
+    today.getFullYear(),
+    birthDate.getMonth(),
+    birthDate.getDate(),
+  );
+}
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+export function getNextBirthday(dob: string, today = new Date()): Date {
+  const birthdayThisYear = getBirthdayThisYear(dob, today);
+
+  if (birthdayThisYear < startOfDay(today)) {
+    birthdayThisYear.setFullYear(today.getFullYear() + 1);
+  }
+
+  return birthdayThisYear;
+}
+
+export function getTurningAge(dob: string, today = new Date()): number {
+  const birthDate = parseDateOnly(dob);
+  const nextBirthday = getNextBirthday(dob, today);
+
+  return nextBirthday.getFullYear() - birthDate.getFullYear();
+}
+
+export function daysUntilBirthday(dob: string, today = new Date()): number {
+  const nextBirthday = getNextBirthday(dob, today);
+
+  const msPerDay = 24 * 60 * 60 * 1000;
+
+  const diff = startOfDay(nextBirthday).getTime() - startOfDay(today).getTime();
+
+  return Math.ceil(diff / msPerDay);
 }

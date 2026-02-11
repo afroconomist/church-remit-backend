@@ -12,7 +12,7 @@ router.post(
   "/churches/register-church-and-user",
   [validate(createChurchAndUserRules)],
   (req: Request, res: Response, next) =>
-    churchController.registerChurchAndUser(req, res).catch((err) => next(err))
+    churchController.registerChurchAndUser(req, res).catch((err) => next(err)),
 );
 
 // Add req: Request as the first parameter
@@ -26,7 +26,7 @@ router.get(
     churchController
       .getChurchesBasedOnTypes(req, res)
       .catch((err) => next(err));
-  }
+  },
 );
 
 router.get("/churches/verified", (req: Request, res: Response, next) => {
@@ -37,7 +37,15 @@ router.get(
   "/churches/:churchId/members",
   (req: Request, res: Response, next) => {
     churchController.getChurchMembers(req, res).catch((err) => next(err));
-  }
+  },
+);
+
+router.get("/churches/:churchId/profile", (req: Request, res: Response, next) =>
+  churchController.getChurch(req, res).catch((err) => next(err)),
+);
+
+router.put("/churches/:churchId/update", (req: Request, res: Response, next) =>
+  churchController.editChurch(req, res).catch((err) => next(err)),
 );
 
 export default router;

@@ -6,4 +6,5 @@ export type AddNewVolunteer = {
   availability: string[] | string;
   memberSince: Date;
   church: string;
+  churchMemberId?: string;
 };

@@ -7,4 +7,5 @@ export type AddMemberToGroup = {
   absent?: boolean;
   excused?: boolean;
   group: string;
+  churchMemberId?: string;
 };

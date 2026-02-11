@@ -30,6 +30,7 @@ class MemberFactory {
     member.roleId = data.roleId;
     member.addedBy = data.addedBy;
     member.churchId = data.churchId;
+    member.memberCategoryId = data.memberCategoryId;
 
     return member;
   }

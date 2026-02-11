@@ -24,4 +24,5 @@ export type AddMember = {
   roleId: string;
   addedBy: string;
   churchId: string;
+  memberCategoryId?: string;
 };

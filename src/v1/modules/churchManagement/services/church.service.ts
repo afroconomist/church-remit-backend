@@ -1,5 +1,4 @@
 import { injectable } from "tsyringe";
-import { CreateChurch } from "../dtos/create-church-and-user.dto";
 import ChurchFactory from "../factories/church.factory";
 import UserFactory from "../../userManagement/factories/user.factory";
 import ChurchRepository from "../repositories/church.repository";
@@ -12,6 +11,8 @@ import logger from "@shared/utils/logger";
 import { generateCode } from "@shared/utils/functions.util";
 import { IUser } from "../../userManagement/model/user.model";
 import AppError from "@shared/error/app.error";
+import { transaction } from "objection";
+import { Church } from "../model/church.model";
 
 interface OnboardingPayload {
   churchName: string;
@@ -68,20 +69,42 @@ class ChurchService {
       const role = await this.roleRepo.findByName("super-admin");
       if (!role) return { success: false, message: "Role not found" };
 
-      const churchCreationResponse = await this.createChurchRecord(
-        church_user_data,
+      const { createdChurch, createdUser } = await transaction(
+        Church.knex(),
+        async (trx) => {
+          const church = ChurchFactory.createChurch({
+            churchName: church_user_data.churchName,
+            churchType: church_user_data.churchType,
+            email: church_user_data.email,
+            phoneNumber: church_user_data.phoneNumber,
+            website: church_user_data.website,
+            streetAddress: church_user_data.streetAddress,
+            city: church_user_data.city,
+            stateRegion: church_user_data.stateRegion,
+            country: church_user_data.country,
+            timeZone: church_user_data.timeZone,
+            baseCurrency: church_user_data.baseCurrency,
+            fiscalYearStart: church_user_data.fiscalYearStart,
+            initialFundsToCreate: JSON.stringify(
+              church_user_data.initialFundsToCreate,
+            ),
+          });
+          const createdChurch = await this.churchRepository.save(church, trx);
+
+          const user = UserFactory.createUser({
+            firstName: church_user_data.userFirstName,
+            lastName: church_user_data.userLastName,
+            email: church_user_data.userEmail,
+            password: church_user_data.userPassword,
+            roleId: role.id,
+            isDefaultPassword: false,
+            churchId: createdChurch.id,
+          });
+          const createdUser = await this.userRepository.save(user, trx);
+
+          return { createdChurch, createdUser };
+        },
       );
-      if (!churchCreationResponse.success) return churchCreationResponse;
-      const user = UserFactory.createUser({
-        firstName: church_user_data.userFirstName,
-        lastName: church_user_data.userLastName,
-        email: church_user_data.userEmail,
-        password: church_user_data.userPassword,
-        roleId: role.id,
-        isDefaultPassword: false,
-        churchId: churchCreationResponse.church_data.id,
-      });
-      const createdUser = await this.userRepository.save(user);
 
       const otpReceiver: IUser = createdUser;
       const token = generateCode(6);
@@ -103,8 +126,8 @@ class ChurchService {
       return {
         success: true,
         message: "Church and user account has been created successfully",
-        otp_message: `Kindly check your email address ${user.email} for OTP`,
-        church_data: churchCreationResponse.church_data,
+        otp_message: `Kindly check your email address ${newUser.email} for OTP`,
+        church_data: createdChurch,
         user_data: newUser,
       };
     } catch (error: any) {
@@ -114,35 +137,6 @@ class ChurchService {
         error.message ||
           "An unexpected error occurred while creating the church and user",
       );
-    }
-  }
-
-  private async createChurchRecord(data: CreateChurch) {
-    try {
-      const church = ChurchFactory.createChurch({
-        churchName: data.churchName,
-        churchType: data.churchType,
-        email: data.email,
-        phoneNumber: data.phoneNumber,
-        website: data.website,
-        streetAddress: data.streetAddress,
-        city: data.city,
-        stateRegion: data.stateRegion,
-        country: data.country,
-        timeZone: data.timeZone,
-        baseCurrency: data.baseCurrency,
-        fiscalYearStart: data.fiscalYearStart,
-        initialFundsToCreate: JSON.stringify(data.initialFundsToCreate),
-      });
-      const createdChurch = await this.churchRepository.save(church);
-
-      return {
-        success: true,
-        church_data: createdChurch,
-      };
-    } catch (error: any) {
-      logger.error({ error: error.message }, "Error creating church record");
-      throw new AppError(400, "Failed to create church record");
     }
   }
 
@@ -315,6 +309,45 @@ class ChurchService {
       throw new Error(
         "An unexpected error occurred while fetching church members.",
       );
+    }
+  }
+
+  async getChurch(churchId: string) {
+    const church = await this.churchRepository.findById(churchId);
+    if (!church) throw new AppError(400, "Church does not exist");
+
+    return { success: true, church };
+  }
+
+  async editChurch(req: any) {
+    try {
+      const data = req.body;
+      const church = await this.churchRepository.findById(req.params.churchId);
+      if (!church) throw new AppError(400, "Church does not exist");
+
+      await this.churchRepository.updateById(church.id, {
+        churchName: data.churchName,
+        churchType: data.churchType,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        website: data.website,
+        streetAddress: data.streetAddress,
+        city: data.city,
+        stateRegion: data.stateRegion,
+        country: data.country,
+        timeZone: data.timeZone,
+        baseCurrency: data.baseCurrency,
+        fiscalYearStart: data.fiscalYearStart,
+        initialFundsToCreate: JSON.stringify(data.initialFundsToCreate),
+      });
+
+      return {
+        success: true,
+        message: "Church info has been updated successfully",
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to edit church");
+      throw new AppError(400, error.message);
     }
   }
 }

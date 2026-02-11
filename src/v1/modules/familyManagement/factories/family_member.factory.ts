@@ -13,6 +13,7 @@ class FamilyMemberFactory {
     familyMember.memberRelationship = data.memberRelationship;
     familyMember.primary = data.primary;
     familyMember.family = data.family;
+    familyMember.churchMemberId = data.churchMemberId;
 
     return familyMember;
   }

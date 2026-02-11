@@ -9,8 +9,8 @@ import GroupChatRepository from "../repositories/group_chat.repository";
 import GroupMeetingAttendanceFactory from "../factories/group_meeting_attendance.factory";
 import GroupMeetingAttendanceRepository from "../repositories/group_meeting_attendance.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
+import MemberRepository from "../../memberManagement/repositories/member.repository";
 import { CreateGroup } from "../dtos/create-new-group.dto";
-import { AddMemberToGroup } from "../dtos/add-member.dto";
 import { RecordAttendance } from "../dtos/record-attendance.dto";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
@@ -22,7 +22,8 @@ class GroupService {
     private readonly groupMemberRepository: GroupMemberRepository,
     private readonly groupChatRepository: GroupChatRepository,
     private readonly groupMeetingAttendanceRepository: GroupMeetingAttendanceRepository,
-    private readonly userRepository: UserRepository
+    private readonly userRepository: UserRepository,
+    private readonly memberRepository: MemberRepository,
   ) {}
 
   async createGroup(data: CreateGroup, groupCreatorId: string) {
@@ -35,8 +36,9 @@ class GroupService {
         groupName: data.groupName,
         category: data.category,
         description: data.description,
-        groupLeader: data.groupLeader,
+        groupLeader: "",
         capacity: data.capacity,
+        capacityTracker: 1,
         meetingDay: data.meetingDay,
         meetingTime: data.meetingTime,
         frequency: data.frequency,
@@ -53,13 +55,14 @@ class GroupService {
       });
       const newGroup = await this.groupRepository.save(group);
 
-      const groupLeader = GroupMemberFactory.addMemberToGroup({
-        groupMemberName: data.groupLeader,
+      const groupMember = GroupMemberFactory.addMemberToGroup({
+        groupMemberName: `${groupCreator.firstName} ${groupCreator.lastName}`,
         groupMemberRole: "Leader",
         joined: new Date(),
         group: newGroup.id,
+        churchMemberId: groupCreator.id,
       });
-      await this.groupMemberRepository.save(groupLeader);
+      await this.groupMemberRepository.save(groupMember);
 
       return {
         success: true,
@@ -70,15 +73,32 @@ class GroupService {
       logger.error({ error: error.message }, "Error creating new group");
       throw new AppError(
         400,
-        error.message || "An unexpected error occurred while creating new group"
+        error.message ||
+          "An unexpected error occurred while creating new group",
       );
     }
   }
 
-  async addMemberToGroup(data: AddMemberToGroup, groupId: string) {
+  async addMemberToGroup(req: Request) {
     try {
-      const group = await this.groupRepository.findById(groupId);
+      const group = await this.groupRepository.findById(req.params.groupId);
       if (!group) throw new AppError(400, "Group does not exist");
+
+      const churchMember = await this.memberRepository.findById(
+        req.body.churchMemberId,
+      );
+      if (!churchMember)
+        throw new AppError(400, "Church member does not exist");
+
+      const groupMemberExist = await this.groupMemberRepository.findOne({
+        group: group.id,
+        churchMemberId: churchMember.id,
+      });
+      if (groupMemberExist)
+        return {
+          status: false,
+          message: `${groupMemberExist.groupMemberName} is already a member of this group`,
+        };
 
       if (group.capacity === group.capacityTracker && group.capacity !== 0) {
         return {
@@ -88,9 +108,10 @@ class GroupService {
       }
 
       const member = GroupMemberFactory.addMemberToGroup({
-        groupMemberName: data.groupMemberName,
+        groupMemberName: req.body.groupMemberName,
         joined: new Date(),
         group: group.id,
+        churchMemberId: churchMember.id,
       });
       const groupMember = await this.groupMemberRepository.save(member);
 
@@ -108,15 +129,29 @@ class GroupService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while adding member to group"
+          "An unexpected error occurred while adding member to group",
       );
     }
   }
 
-  async requestToOrJoinGroup(groupId: string, churchMemberName: string) {
+  async requestToOrJoinGroup(groupId: string, churchMemberId: string) {
     try {
       const group = await this.groupRepository.findById(groupId);
       if (!group) throw new AppError(400, "Group does not exist");
+
+      const churchMember = await this.memberRepository.findById(churchMemberId);
+      if (!churchMember)
+        throw new AppError(400, "Church member does not exist");
+
+      const groupMemberExist = await this.groupMemberRepository.findOne({
+        group: group.id,
+        churchMemberId: churchMember.id,
+      });
+      if (groupMemberExist)
+        return {
+          status: false,
+          message: "You have requested to or join this group",
+        };
 
       if (group.capacity === group.capacityTracker && group.capacity !== 0) {
         return {
@@ -127,9 +162,10 @@ class GroupService {
 
       if (group.requireLeaderApproval) {
         const member = GroupMemberFactory.addMemberToGroup({
-          groupMemberName: churchMemberName,
+          groupMemberName: `${churchMember.firstName} ${churchMember.lastName}`,
           status: "Pending",
           group: group.id,
+          churchMemberId: churchMember.id,
         });
         await this.groupMemberRepository.save(member);
 
@@ -140,9 +176,10 @@ class GroupService {
       }
 
       const member = GroupMemberFactory.addMemberToGroup({
-        groupMemberName: churchMemberName,
+        groupMemberName: `${churchMember.firstName} ${churchMember.lastName}`,
         joined: new Date(),
         group: group.id,
+        churchMemberId: churchMember.id,
       });
       const groupMember = await this.groupMemberRepository.save(member);
 
@@ -160,7 +197,7 @@ class GroupService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while requesting to join group"
+          "An unexpected error occurred while requesting to join group",
       );
     }
   }
@@ -170,8 +207,18 @@ class GroupService {
       const group = await this.groupRepository.findById(req.params.groupId);
       if (!group) throw new AppError(400, "Group does not exist");
 
+      const churchMember = await this.memberRepository.findById(req.user.id);
+      if (!churchMember)
+        throw new AppError(400, "Church member does not exist");
+
+      const groupMember = await this.groupMemberRepository.findOne({
+        group: group.id,
+        churchMemberId: churchMember.id,
+      });
+      if (!groupMember) throw new AppError(400, "Group member does not exist");
+
       const chatGroup = GroupChatFactory.messageGroup({
-        groupMemberName: req.body.groupMemberName,
+        groupMemberName: `${groupMember.groupMemberName}`,
         message: req.body.message,
         group: group.id,
       });
@@ -186,7 +233,7 @@ class GroupService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while messaging the group"
+          "An unexpected error occurred while messaging the group",
       );
     }
   }
@@ -217,12 +264,12 @@ class GroupService {
     } catch (error: any) {
       logger.error(
         { error: error.message },
-        "Error recording attendance for group meeting"
+        "Error recording attendance for group meeting",
       );
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while recording attendance for group meeting"
+          "An unexpected error occurred while recording attendance for group meeting",
       );
     }
   }
@@ -236,7 +283,11 @@ class GroupService {
 
     try {
       const { data: churchGroups, totalRecords } =
-        await this.groupRepository.findAndCountAll({ church: churchId }, page, limit);
+        await this.groupRepository.findAndCountAll(
+          { church: churchId },
+          page,
+          limit,
+        );
 
       if (churchGroups.length === 0) {
         return {
@@ -257,7 +308,7 @@ class GroupService {
     } catch (error: any) {
       logger.error({ error: "Error fetching all church groups" });
       throw new Error(
-        "An unexpected error occurred while fetching all church groups."
+        "An unexpected error occurred while fetching all church groups.",
       );
     }
   }
@@ -271,10 +322,14 @@ class GroupService {
 
     try {
       const { data: churchGroupsBasedOnCategory, totalRecords } =
-        await this.groupRepository.findAndCountAll({
-          category,
-          church: churchId,
-        }, page, limit);
+        await this.groupRepository.findAndCountAll(
+          {
+            category,
+            church: churchId,
+          },
+          page,
+          limit,
+        );
 
       if (churchGroupsBasedOnCategory.length === 0) {
         return {
@@ -295,7 +350,7 @@ class GroupService {
     } catch (error: any) {
       logger.error({ error: "Error fetching all church groups on category" });
       throw new Error(
-        "An unexpected error occurred while fetching all church groups on category."
+        "An unexpected error occurred while fetching all church groups on category.",
       );
     }
   }
@@ -340,7 +395,7 @@ class GroupService {
         error: "Error approving new member",
       });
       throw new Error(
-        "An unexpected error occurred while approving new member."
+        "An unexpected error occurred while approving new member.",
       );
     }
   }
@@ -348,7 +403,7 @@ class GroupService {
   async assignGroupMemberToRole(groupMemberId: string, role: string) {
     try {
       const groupMember = await this.groupMemberRepository.findById(
-        groupMemberId
+        groupMemberId,
       );
       if (!groupMember) throw new AppError(400, "Group member does not exist");
 
@@ -365,7 +420,7 @@ class GroupService {
         error: "Error assigning group member to role",
       });
       throw new Error(
-        "An unexpected error occurred while assigning group member to role."
+        "An unexpected error occurred while assigning group member to role.",
       );
     }
   }
@@ -380,7 +435,6 @@ class GroupService {
         groupName: data.groupName,
         category: data.category,
         description: data.description,
-        groupLeader: data.groupLeader,
         capacity: data.capacity,
         meetingDay: data.meetingDay,
         meetingTime: data.meetingTime,
@@ -404,7 +458,7 @@ class GroupService {
 
   async removeMemberFromGroup(groupMemberId: string) {
     const groupMember = await this.groupMemberRepository.findById(
-      groupMemberId
+      groupMemberId,
     );
     if (!groupMember) throw new AppError(400, "Group member does not exist");
 
@@ -438,10 +492,14 @@ class GroupService {
 
     try {
       const { data: groupMembers, totalRecords } =
-        await this.groupMemberRepository.findAndCountAll({
-          status: "Approved",
-          group: groupId,
-        }, page, limit);
+        await this.groupMemberRepository.findAndCountAll(
+          {
+            status: "Approved",
+            group: groupId,
+          },
+          page,
+          limit,
+        );
 
       if (groupMembers.length === 0) {
         return {
@@ -462,7 +520,7 @@ class GroupService {
     } catch (error: any) {
       logger.error({ error: "Error fetching group members" });
       throw new Error(
-        "An unexpected error occurred while fetching group members."
+        "An unexpected error occurred while fetching group members.",
       );
     }
   }
@@ -476,9 +534,13 @@ class GroupService {
 
     try {
       const { data: groupMeetings, totalRecords } =
-        await this.groupMeetingAttendanceRepository.findAndCountAll({
-          group: groupId,
-        }, page, limit);
+        await this.groupMeetingAttendanceRepository.findAndCountAll(
+          {
+            group: groupId,
+          },
+          page,
+          limit,
+        );
 
       if (groupMeetings.length === 0) {
         return {
@@ -499,7 +561,7 @@ class GroupService {
     } catch (error: any) {
       logger.error({ error: "Error fetching group meetings" });
       throw new Error(
-        "An unexpected error occurred while fetching group meetings."
+        "An unexpected error occurred while fetching group meetings.",
       );
     }
   }
@@ -513,10 +575,14 @@ class GroupService {
 
     try {
       const { data: groupJoinRequests, totalRecords } =
-        await this.groupMemberRepository.findAndCountAll({
-          status: "Pending",
-          group: groupId,
-        }, page, limit);
+        await this.groupMemberRepository.findAndCountAll(
+          {
+            status: "Pending",
+            group: groupId,
+          },
+          page,
+          limit,
+        );
 
       if (groupJoinRequests.length === 0) {
         return {
@@ -537,7 +603,7 @@ class GroupService {
     } catch (error: any) {
       logger.error({ error: "Error fetching group join requests" });
       throw new Error(
-        "An unexpected error occurred while fetching group join requests."
+        "An unexpected error occurred while fetching group join requests.",
       );
     }
   }

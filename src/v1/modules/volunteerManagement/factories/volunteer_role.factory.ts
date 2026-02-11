@@ -12,6 +12,7 @@ class VolunteerRoleFactory {
     volunteerRole.startTime = data.startTime;
     volunteerRole.endTime = data.endTime;
     volunteerRole.church = data.church;
+    volunteerRole.groupId = data.groupId;
 
     return volunteerRole;
   }

@@ -37,13 +37,14 @@ export class Member extends Model {
   addedBy: string;
   churchId: string;
   linkedToFamily?: boolean;
+  memberCategoryId?: string;
 
   static relationMappings = {
     userRole: {
       relation: Model.BelongsToOneRelation,
       modelClass: Role,
       join: {
-        from: "members.role",
+        from: "members.roleId",
         to: "roles.id",
       },
     },

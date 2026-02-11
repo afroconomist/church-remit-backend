@@ -7,4 +7,5 @@ export type AddFamilyMember = {
   memberRelationship: string;
   primary?: boolean;
   family: string;
+  churchMemberId?: string;
 };

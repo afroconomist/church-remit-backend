@@ -11,7 +11,7 @@ class MemberController {
   addMember = async (req: Request, res: Response) => {
     const result: any = await this.memberService.addMember(
       req.body,
-      req.user.id
+      req.user.id,
     );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -65,7 +65,7 @@ class MemberController {
   createPassword = async (req: Request, res) => {
     try {
       const result: any = await this.memberService.changePasswordOnFirstLogin(
-        req.body
+        req.body,
       );
       if (result.success) {
         return res.send(SuccessResponse(result.message, result.data));
@@ -106,7 +106,7 @@ class MemberController {
   uploadMemberProfilePicture = async (req: Request, res: Response) => {
     try {
       const result: any = await this.memberService.uploadMemberProfilePicture(
-        req
+        req,
       );
       if (result.success) {
         return res.send(SuccessResponse(result.message));
@@ -135,6 +135,69 @@ class MemberController {
     const response = await this.memberService.deleteMember(req);
 
     return res.status(httpStatus.OK).send(SuccessResponse(response));
+  };
+
+  createMemberCategory = async (req: Request, res: Response) => {
+    const result: any = await this.memberService.createMemberCategory(
+      req.body,
+      req.user.id,
+    );
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
+
+  getChurchMemberCategories = async (req: Request, res: Response) => {
+    try {
+      const memberCategories =
+        await this.memberService.getChurchMemberCategories(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", memberCategories));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  editMemberCategory = async (req: Request, res: Response) => {
+    try {
+      const result: any = await this.memberService.editMemberCategory(req);
+      if (result.success) {
+        return res.send(SuccessResponse(result.message));
+      } else {
+        return res
+          .status(400)
+          .json({ status: result.success, message: result.message });
+      }
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ status: false, message: "Failed to update member category" });
+    }
+  };
+
+  deleteMemberCategory = async (req: Request, res: Response) => {
+    const response = await this.memberService.deleteMemberCategory(
+      req.params.categoryId,
+    );
+
+    return res.status(httpStatus.OK).send(SuccessResponse(response));
+  };
+
+  getChurchUpcomingMembersBirthdays = async (req: Request, res: Response) => {
+    try {
+      const membersBirthdays =
+        await this.memberService.getChurchUpcomingMembersBirthdays(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", membersBirthdays));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
   };
 }
 
