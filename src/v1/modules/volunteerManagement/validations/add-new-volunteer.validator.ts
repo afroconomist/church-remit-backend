@@ -1,8 +1,8 @@
 export const addNewVolunteerRules = {
-  name: "required|string",
+  firstName: "required|string",
+  lastName: "required|string",
   email: "required|string",
   phoneNumber: "required|string",
-  memberSince: "required|date",
   skills: "required",
   availability: "required",
 };
