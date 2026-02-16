@@ -7,7 +7,7 @@ import httpStatus from "http-status";
 @injectable()
 class FamilyAndMemberController {
   constructor(
-    private readonly familyAndMemberService: FamilyAndMemberService
+    private readonly familyAndMemberService: FamilyAndMemberService,
   ) {}
 
   createfamily = async (req: Request, res: Response) => {
@@ -19,8 +19,7 @@ class FamilyAndMemberController {
 
   getFamilies = async (req: Request, res: Response) => {
     try {
-      const families =
-        await this.familyAndMemberService.getFamilies(req);
+      const families = await this.familyAndMemberService.getFamilies(req);
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", families));
@@ -62,7 +61,7 @@ class FamilyAndMemberController {
   getFamilyMembers = async (req: Request, res: Response) => {
     try {
       const familyMembers = await this.familyAndMemberService.getFamilyMembers(
-        req
+        req,
       );
       return res
         .status(httpStatus.OK)
@@ -77,7 +76,7 @@ class FamilyAndMemberController {
   editFamilyMember = async (req: Request, res: Response) => {
     try {
       const result: any = await this.familyAndMemberService.editFamilyMember(
-        req
+        req,
       );
       if (result.success) {
         return res.send(SuccessResponse(result.message));
@@ -112,6 +111,12 @@ class FamilyAndMemberController {
 
   removeFamilyMember = async (req: Request, res: Response) => {
     const response = await this.familyAndMemberService.removeFamilyMember(req);
+
+    return res.status(httpStatus.OK).send(SuccessResponse(response));
+  };
+
+  deleteFamily = async (req: Request, res: Response) => {
+    const response = await this.familyAndMemberService.deleteFamily(req);
 
     return res.status(httpStatus.OK).send(SuccessResponse(response));
   };

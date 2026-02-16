@@ -14,6 +14,9 @@ export class ChurchEvent extends Model {
   maximumCapacity: number;
   maximumCapacityTracker: number;
   registration: boolean;
+  recurring?: boolean;
+  upcoming?: boolean;
+  past?: boolean;
   church: string;
 }
 

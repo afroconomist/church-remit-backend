@@ -23,14 +23,14 @@ router.post(
     validate(createFamilyRules),
   ],
   (req: Request, res: Response, next) =>
-    familyAndMemberController.createfamily(req, res).catch((err) => next(err))
+    familyAndMemberController.createfamily(req, res).catch((err) => next(err)),
 );
 
 router.get(
   "/admin/:churchId/families",
   [authMiddleware, accessControlMiddleware(AccessControls.VIEW_FAMILY)],
   (req: Request, res: Response, next) =>
-    familyAndMemberController.getFamilies(req, res).catch((err) => next(err))
+    familyAndMemberController.getFamilies(req, res).catch((err) => next(err)),
 );
 
 router.post(
@@ -43,7 +43,7 @@ router.post(
   (req: Request, res: Response, next) =>
     familyAndMemberController
       .addFamilyMember(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.get(
@@ -52,7 +52,7 @@ router.get(
   (req: Request, res: Response, next) =>
     familyAndMemberController
       .getUnlinkedMembers(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.post(
@@ -63,9 +63,7 @@ router.post(
     validate(linkToFamilyRules),
   ],
   (req: Request, res: Response, next) =>
-    familyAndMemberController
-      .linkToFamily(req, res)
-      .catch((err) => next(err))
+    familyAndMemberController.linkToFamily(req, res).catch((err) => next(err)),
 );
 
 router.get(
@@ -74,7 +72,7 @@ router.get(
   (req: Request, res: Response, next) =>
     familyAndMemberController
       .getFamilyMembers(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.put(
@@ -87,7 +85,7 @@ router.put(
   (req: Request, res: Response, next) =>
     familyAndMemberController
       .editFamilyMember(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.put(
@@ -98,7 +96,7 @@ router.put(
     validate(editFamilyRules),
   ],
   (req: Request, res: Response, next) =>
-    familyAndMemberController.editFamily(req, res).catch((err) => next(err))
+    familyAndMemberController.editFamily(req, res).catch((err) => next(err)),
 );
 
 router.delete(
@@ -108,7 +106,15 @@ router.delete(
     familyAndMemberController
       .removeFamilyMember(req, res)
       .catch((e) => next(e));
-  }
+  },
+);
+
+router.delete(
+  "/admin/family/:familyId/delete",
+  [authMiddleware, accessControlMiddleware(AccessControls.REMOVE_FAMILY)],
+  (req: Request, res: Response, next) => {
+    familyAndMemberController.deleteFamily(req, res).catch((e) => next(e));
+  },
 );
 
 export default router;

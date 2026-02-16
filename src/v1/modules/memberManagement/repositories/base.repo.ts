@@ -69,6 +69,7 @@ export class BaseRepository<T, M extends Model> {
 
     const data = await query
       .where(filter)
+      .orderBy("createdAt", "desc")
       .limit(limit)
       .offset((page - 1) * limit);
 

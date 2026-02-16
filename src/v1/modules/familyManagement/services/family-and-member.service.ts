@@ -477,6 +477,15 @@ class FamilyAndMemberService {
 
     return "Family member has been removed successfully";
   }
+
+  async deleteFamily(req: Request) {
+    const family = await this.familyRepository.findById(req.params.familyId);
+    if (!family) throw new AppError(400, "Family does not exist");
+
+    await this.familyRepository.deleteById(family.id);
+
+    return "Family has been deleted successfully";
+  }
 }
 
 export default FamilyAndMemberService;

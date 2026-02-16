@@ -17,6 +17,7 @@ import ReasonRepository from "../../userManagement/repositories/reason.repositor
 import ActionReasonFactory from "../../userManagement/factories/action_reason.factory";
 import CategoryFactory from "../factories/category.factory";
 import CategoryRepository from "../repositories/category.repository";
+import FamilyMemberRepository from "../../familyManagement/repositories/family_member.repository";
 import MailService from "../../userManagement/services/mail.service";
 import AccessControlManagementService from "../../accessControlManagement/services/access-control-management.service";
 import RoleRepo from "../../accessControlManagement/repositories/role.repo";
@@ -39,6 +40,7 @@ class MemberService {
     private readonly accessControlManagementService: AccessControlManagementService,
     private readonly reasonRepository: ReasonRepository,
     private readonly categoryRepository: CategoryRepository,
+    private readonly familyMemberRepository: FamilyMemberRepository,
   ) {}
 
   async addMember(member_data: AddMember, superAdminId: string) {
@@ -818,6 +820,43 @@ class MemberService {
       });
       throw new Error(
         "An unexpected error occurred while fetching all church upcoming members birthdays.",
+      );
+    }
+  }
+
+  async getMemberFamily(req: Request) {
+    try {
+      const member = await this.familyMemberRepository.findOne({
+        churchMemberId: req.params.id,
+      });
+      if (!member) throw new AppError(400, "Member doesn't have a family");
+
+      const familyMembers = await this.familyMemberRepository.findAll({
+        family: member.family,
+      });
+
+      return { familyMembers };
+    } catch (error) {
+      logger.error({ error: "Error fetching member family members" });
+      throw new Error(
+        "An unexpected error occurred while fetching member family members.",
+      );
+    }
+  }
+
+  async getMemberCelebrations(req: Request) {
+    try {
+      const memberBirthday = await this.memberBirthdayRepository.findOne({
+        memberId: req.params.id,
+      });
+      if (!memberBirthday)
+        throw new AppError(400, "Member has not provided date of birth");
+
+      return { memberBirthday };
+    } catch (error) {
+      logger.error({ error: "Error fetching member family members" });
+      throw new Error(
+        "An unexpected error occurred while fetching member family members.",
       );
     }
   }

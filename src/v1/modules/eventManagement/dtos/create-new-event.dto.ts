@@ -9,5 +9,6 @@ export type CreateNewEvent = {
   maximumCapacity: number;
   maximumCapacityTracker: number;
   registration: boolean;
+  recurring?: boolean;
   church: string;
 };

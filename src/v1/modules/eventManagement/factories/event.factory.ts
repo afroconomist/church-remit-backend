@@ -15,6 +15,7 @@ class EventFactory {
     event.maximumCapacity = data.maximumCapacity;
     event.maximumCapacityTracker = data.maximumCapacityTracker;
     event.registration = data.registration;
+    event.recurring = data.recurring;
     event.church = data.church;
 
     return event;
