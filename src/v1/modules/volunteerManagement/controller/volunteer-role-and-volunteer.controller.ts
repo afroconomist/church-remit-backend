@@ -7,14 +7,14 @@ import httpStatus from "http-status";
 @injectable()
 class VolunteerAndRoleController {
   constructor(
-    private readonly volunteerAndRoleService: VolunteerAndRoleService
+    private readonly volunteerAndRoleService: VolunteerAndRoleService,
   ) {}
 
   createVolunteerRoleAndShifts = async (req: Request, res: Response) => {
     const result: any =
       await this.volunteerAndRoleService.createVolunteerRoleAndShifts(
         req.body,
-        req.user.id
+        req.user.id,
       );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -22,10 +22,7 @@ class VolunteerAndRoleController {
   };
 
   addNewVolunteer = async (req: Request, res: Response) => {
-    const result: any = await this.volunteerAndRoleService.addNewVolunteer(
-      req.body,
-      req.user.id
-    );
+    const result: any = await this.volunteerAndRoleService.addNewVolunteer(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
@@ -48,7 +45,7 @@ class VolunteerAndRoleController {
   getAllVolunteers = async (req: Request, res: Response) => {
     try {
       const volunteers = await this.volunteerAndRoleService.getAllVolunteers(
-        req
+        req,
       );
       return res
         .status(httpStatus.OK)

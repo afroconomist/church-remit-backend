@@ -56,6 +56,7 @@ class EventService {
         maximumCapacity: data.maximumCapacity,
         maximumCapacityTracker: 0,
         registration: data.registration,
+        recurring: data.recurring,
         church: String(superAdmin.churchId),
       });
       const createdNewEvent = await this.eventRepository.save(newEvent);

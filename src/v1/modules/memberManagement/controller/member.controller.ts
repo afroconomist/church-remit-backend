@@ -199,6 +199,34 @@ class MemberController {
         .json(ErrorResponse("Internal Server Error: ", error.message));
     }
   };
+
+  getMemberFamily = async (req: Request, res: Response) => {
+    try {
+      const familyMembers = await this.memberService.getMemberFamily(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", familyMembers));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getMemberCelebrations = async (req: Request, res: Response) => {
+    try {
+      const memberBirthday = await this.memberService.getMemberCelebrations(
+        req,
+      );
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", memberBirthday));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
 }
 
 export default MemberController;

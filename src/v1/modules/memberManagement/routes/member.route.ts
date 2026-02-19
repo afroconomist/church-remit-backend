@@ -174,4 +174,18 @@ router.get(
       .catch((err) => next(err)),
 );
 
+router.get(
+  "/members/:id/family-members",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController.getMemberFamily(req, res).catch((err) => next(err)),
+);
+
+router.get(
+  "/members/:id/celebrations",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController.getMemberCelebrations(req, res).catch((err) => next(err)),
+);
+
 export default router;
