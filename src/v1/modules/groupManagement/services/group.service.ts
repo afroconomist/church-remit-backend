@@ -207,13 +207,9 @@ class GroupService {
       const group = await this.groupRepository.findById(req.params.groupId);
       if (!group) throw new AppError(400, "Group does not exist");
 
-      const churchMember = await this.memberRepository.findById(req.user.id);
-      if (!churchMember)
-        throw new AppError(400, "Church member does not exist");
-
       const groupMember = await this.groupMemberRepository.findOne({
         group: group.id,
-        churchMemberId: churchMember.id,
+        churchMemberId: req.user.id,
       });
       if (!groupMember) throw new AppError(400, "Group member does not exist");
 

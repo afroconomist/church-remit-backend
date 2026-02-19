@@ -68,4 +68,5 @@ export enum AccessControls {
 	FACILITY_UPDATE = "edit-facility",
 	DOCUMENT_UPLOAD = "upload-document",
 	DOCUMENT_LIST = "view-documents",
+	NEWS_CREATION = "create-communication",
 }

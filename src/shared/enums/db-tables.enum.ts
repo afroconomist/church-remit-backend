@@ -47,4 +47,13 @@ export enum DB_TABLES {
   DOCUMENTS = "documents",
   CATEGORIES = "categories",
   MEMBER_BIRTHDAYS = "member_birthdays",
+  NEWS = "news",
+  NEWSLETTERS = "newsletters",
+  DISCUSSION_BOARDS = "discussion_boards",
+  BOARD_MEMBERS = "board_members",
+  BOARD_TOPICS = "board_topics",
+  TOPIC_REPLIES = "topic_replies",
+  TAGS = "tags",
+  ANNOUNCEMENTS = "announcements",
+  CIRCULARS = "circulars",
 }

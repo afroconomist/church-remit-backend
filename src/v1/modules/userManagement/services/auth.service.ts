@@ -318,11 +318,13 @@ class AuthService {
 
       const role = await this.roleRepo.findById(String(user.roleId));
 
+      const { password, ...loggedInUser } = user;
+
       return {
         status: true,
         message: "Login successful",
         data: {
-          user,
+          user: loggedInUser,
           role: role.slug,
           accessToken,
           permissions: role?.id
