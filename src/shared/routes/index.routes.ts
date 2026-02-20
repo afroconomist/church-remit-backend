@@ -17,7 +17,7 @@ import groupRoute from "../../v1/modules/groupManagement/routes/group.route";
 import sacramentRoute from "../../v1/modules/sacramentManagement/routes/sacrament.route";
 import courseRoute from "../../v1/modules/courseManagement/routes/course.route";
 import campusRoute from "../../v1/modules/campusManagement/routes/campus.route";
-import facilityRoute from "../../v1/modules/facilityManagement/routes/facility.route";
+import facilityRoute from "../../v1/modules/facilitymanagement/routes/facility.route";
 import documentRoute from "../../v1/modules/documentManagement/routes/document.route";
 import communicationRoute from "../../v1/modules/communicationManagement/routes/communication.route";
 
