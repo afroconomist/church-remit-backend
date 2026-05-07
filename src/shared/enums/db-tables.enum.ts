@@ -56,4 +56,5 @@ export enum DB_TABLES {
   TAGS = "tags",
   ANNOUNCEMENTS = "announcements",
   CIRCULARS = "circulars",
+  ASSETS = "assets"
 }

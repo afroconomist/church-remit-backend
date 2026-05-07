@@ -4,7 +4,7 @@ import { CreateUser } from "../dtos/create-user.dto";
 import UserFactory from "../factories/user.factory";
 import UserRepository from "../repositories/user.repository";
 import { exportCSVData, generateCode } from "@shared/utils/functions.util";
-import MailService from "./mail.service";
+import MailService from "../../notificationAndEmailManagement/services/mail.service";
 import logger from "@shared/utils/logger";
 import { ErrorResponse, SuccessResponse } from "@shared/utils/response.util";
 import httpStatus from "http-status";

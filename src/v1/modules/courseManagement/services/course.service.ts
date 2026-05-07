@@ -543,21 +543,49 @@ class CourseService {
   }
 
   async deleteCourseModule(courseModuleId: string) {
-    const courseModule = await this.courseModuleRepository.findById(
-      courseModuleId,
-    );
-    if (!courseModule) throw new AppError(400, "Course module does not exist");
+    try {
+      const courseModule = await this.courseModuleRepository.findById(
+        courseModuleId,
+      );
+      if (!courseModule)
+        throw new AppError(400, "Course module does not exist");
 
-    const course = await this.courseRepository.findById(courseModule.courseId);
-    if (!course) throw new AppError(400, "Course does not exist");
+      const course = await this.courseRepository.findById(
+        courseModule.courseId,
+      );
+      if (!course) throw new AppError(400, "Course does not exist");
 
-    await this.courseRepository.updateById(courseModule.courseId, {
-      modules: Number(course.modules) - 1,
-    });
+      const modulesToReorder =
+        (await this.courseModuleRepository.findAllWithWhere(
+          { courseId: course.id },
+          { column: "order", order: "asc" },
+        )) as any[];
 
-    await this.courseModuleRepository.deleteById(courseModule.id);
+      await this.courseModuleRepository.deleteById(courseModule.id);
 
-    return `${courseModule.moduleTitle} has been deleted successfully`;
+      const modulesAfterDeleted = modulesToReorder.filter(
+        (m) => m.order > courseModule.order,
+      );
+
+      for (const module of modulesAfterDeleted) {
+        await this.courseModuleRepository.updateById(module.id, {
+          order: module.order - 1,
+        });
+      }
+
+      await this.courseRepository.updateById(courseModule.courseId, {
+        modules: Number(course.modules) - 1,
+      });
+
+      return `${courseModule.moduleTitle} has been deleted successfully and remaining modules have been reordered`;
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error deleting course module");
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while deleting course module",
+      );
+    }
   }
 }
 

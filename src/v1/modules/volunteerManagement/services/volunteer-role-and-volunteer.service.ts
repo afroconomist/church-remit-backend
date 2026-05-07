@@ -8,7 +8,7 @@ import VolunteerRepository from "../repositories/volunteer.repo";
 import UserRepository from "../../userManagement/repositories/user.repository";
 import MemberRepository from "../../memberManagement/repositories/member.repository";
 import MemberFactory from "../../memberManagement/factories/member.factory";
-import MailService from "../../userManagement/services/mail.service";
+import MailService from "../../notificationAndEmailManagement/services/mail.service";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
 import RoleRepo from "../../accessControlManagement/repositories/role.repo";

@@ -1,8 +1,8 @@
 import { injectable } from "tsyringe";
 import { addMinutes } from "date-fns";
-import OTPRepo from "../repositories/otp.repo";
+import OTPRepo from "../../auth/repositories/otp.repo";
 // import { resetPasswordMail } from "@shared/mailer/resetPasswordMail";
-import { IUser } from "../model/user.model";
+import { IUser } from "../../userManagement/model/user.model";
 
 @injectable()
 class OTPService {

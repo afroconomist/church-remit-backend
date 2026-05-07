@@ -195,4 +195,20 @@ router.post(
       .catch((err) => next(err)),
 );
 
+router.get(
+  "/communications/:churchId/announcements",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    communicationController
+      .getAllChurchAnnouncements(req, res)
+      .catch((err) => next(err)),
+);
+
+router.get(
+  "/communications/:announcementId/view-announcement",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    communicationController.getAnnouncement(req, res).catch((err) => next(err)),
+);
+
 export default router;

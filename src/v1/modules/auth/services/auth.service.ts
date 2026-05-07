@@ -1,5 +1,5 @@
 import { injectable } from "tsyringe";
-import UserRepository from "../repositories/user.repository";
+import UserRepository from "../../userManagement/repositories/user.repository";
 import MemberRepository from "../../memberManagement/repositories/member.repository";
 import { isAfter } from "date-fns";
 import {
@@ -7,10 +7,10 @@ import {
   generateJwtToken,
   generateRefreshToken,
 } from "@shared/utils/functions.util";
-import OtpRepository from "../repositories/otp.repository";
+import OtpRepository from "../../userManagement/repositories/otp.repository";
 import OTPService from "./otp.service";
 import { bcryptCompareHashedString } from "@shared/utils/hash.util";
-import MailService from "./mail.service";
+import MailService from "../../notificationAndEmailManagement/services/mail.service";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
 import jwt from "jsonwebtoken";
@@ -224,7 +224,6 @@ class AuthService {
     const superAdmin = await this.userRepository.findOne({
       email: data.email,
     });
-
     if (superAdmin) {
       return this.loginUser({
         data,
@@ -237,7 +236,6 @@ class AuthService {
     const member = await this.memberRepository.findOne({
       email: data.email,
     });
-
     if (member) {
       return this.loginUser({
         data,
@@ -248,7 +246,7 @@ class AuthService {
 
     return {
       status: false,
-      message: "Account not found",
+      message: "This email is not registered to any account",
     };
   }
 

@@ -1,6 +1,6 @@
 import { injectable } from "tsyringe";
 import { BaseRepository } from "./base.repo";
-import { OTP, IOTP } from "../model/otp.model";
+import { OTP, IOTP } from "../../auth/model/otp.model";
 
 @injectable()
 class OtpRepository extends BaseRepository<IOTP, OTP> {
