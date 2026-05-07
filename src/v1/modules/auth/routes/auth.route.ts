@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { container } from "tsyringe";
-import AuthController from "../controller/auth.controller";
+import AuthController from "../../auth/controller/auth.controller";
 import { validate } from "@shared/middlewares/validator.middleware";
 import { passwordResetRules } from "../validations/password-reset.validator";
 import { resetPasswordRules } from "../validations/reset-password.validator";

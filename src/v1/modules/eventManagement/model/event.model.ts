@@ -15,6 +15,7 @@ export class ChurchEvent extends Model {
   maximumCapacityTracker: number;
   registration: boolean;
   recurring?: boolean;
+  eventFrequency?: "weekly" | "monthly" | "quarterly" | "yearly";
   upcoming?: boolean;
   past?: boolean;
   church: string;

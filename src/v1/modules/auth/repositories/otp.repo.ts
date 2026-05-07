@@ -1,5 +1,5 @@
 import { injectable } from "tsyringe";
-import { BaseRepository } from "./base.repo";
+import { BaseRepository } from "../../userManagement/repositories/base.repo";
 import { OTP, IOTP } from "../model/otp.model";
 
 @injectable()

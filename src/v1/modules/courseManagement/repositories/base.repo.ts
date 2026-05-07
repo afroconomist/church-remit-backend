@@ -91,4 +91,51 @@ export class BaseRepository<T, M extends Model> {
   async deleteById(id: string) {
     return await this.model.query().deleteById(id);
   }
+
+  async updateByFilter(
+    filter: ObjectLiteral,
+    data: Partial<M>,
+    trx?: Transaction,
+  ): Promise<number> {
+    return await this.model.query(trx).where(filter).update(data);
+  }
+
+  async findByIdAndDelete(id: string, trx?: Transaction): Promise<number> {
+    return await this.model.query(trx).deleteById(id);
+  }
+
+  async findAllWithWhere(
+    filter: ObjectLiteral,
+    orderBy?: { column: string; order: "asc" | "desc" },
+  ): Promise<T[]> {
+    let query = this.model.query().where(filter);
+
+    if (orderBy) {
+      query = query.orderBy(orderBy.column, orderBy.order);
+    }
+
+    return await query;
+  }
+
+  async incrementField(
+    id: string,
+    field: string,
+    increment: number = 1,
+    trx?: Transaction,
+  ): Promise<M> {
+    return await this.model.query(trx).patchAndFetchById(id, {
+      [field]: this.model.raw(`?? + ?`, [field, increment]),
+    });
+  }
+
+  async decrementField(
+    id: string,
+    field: string,
+    decrement: number = 1,
+    trx?: Transaction,
+  ): Promise<M> {
+    return await this.model.query(trx).patchAndFetchById(id, {
+      [field]: this.model.raw(`?? - ?`, [field, decrement]),
+    });
+  }
 }

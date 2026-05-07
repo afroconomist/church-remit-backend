@@ -1,7 +1,7 @@
 import auditTrailRoute from "../../v1/modules/moduleName/routes/audit-trail.route";
 import appRoute from "../../v1/modules/app/app.route";
 import healthRoute from "../../v1/modules/health/health.route";
-import authRoute from "../../v1/modules/userManagement/routes/auth.route";
+import authRoute from "../../v1/modules/auth/routes/auth.route";
 import userRoute from "../../v1/modules/userManagement/routes/user.route";
 import accessControlRoute from "../../v1/modules/accessControlManagement/routes/access-control.route";
 import walletRoute from "../../v1/modules/walletService/routes/wallet.route";
@@ -20,6 +20,7 @@ import campusRoute from "../../v1/modules/campusManagement/routes/campus.route";
 import facilityRoute from "../../v1/modules/facilitymanagement/routes/facility.route";
 import documentRoute from "../../v1/modules/documentManagement/routes/document.route";
 import communicationRoute from "../../v1/modules/communicationManagement/routes/communication.route";
+import assetRoute from "../../v1/modules/assetManagement/routes/asset.route";
 
 export default {
   app: appRoute,
@@ -44,4 +45,5 @@ export default {
   facilityManagement: facilityRoute,
   documentManagement: documentRoute,
   communicationManagement: communicationRoute,
+  assetManagement: assetRoute,
 };

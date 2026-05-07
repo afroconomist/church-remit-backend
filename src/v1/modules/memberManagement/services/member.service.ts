@@ -18,7 +18,7 @@ import ActionReasonFactory from "../../userManagement/factories/action_reason.fa
 import CategoryFactory from "../factories/category.factory";
 import CategoryRepository from "../repositories/category.repository";
 import FamilyMemberRepository from "../../familyManagement/repositories/family_member.repository";
-import MailService from "../../userManagement/services/mail.service";
+import MailService from "../../notificationAndEmailManagement/services/mail.service";
 import AccessControlManagementService from "../../accessControlManagement/services/access-control-management.service";
 import RoleRepo from "../../accessControlManagement/repositories/role.repo";
 import { bcryptCompareHashedString } from "@shared/utils/hash.util";
@@ -187,7 +187,7 @@ class MemberService {
       name: user.firstName,
       email: user.email,
       password,
-      link: process.env.FRONTEND_BASEURL + "/auth/login",
+      link: `${process.env.FRONTEND_BASEURL}/auth/login`,
     };
     try {
       await this.mailService.sendUserAccountMail(mail);
@@ -683,6 +683,16 @@ class MemberService {
     try {
       const superAdmin = await this.userRepository.findById(superAdminId);
       if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+
+      const categoryExist = await this.categoryRepository.findOne({
+        categoryName: data.categoryName,
+        churchId: superAdmin.churchId,
+      });
+      if (categoryExist)
+        return {
+          status: false,
+          message: `${data.categoryName} already exist, use another name!`,
+        };
 
       const category = CategoryFactory.createCategory({
         categoryName: data.categoryName,

@@ -28,6 +28,7 @@ import MemberRepository from "../../memberManagement/repositories/member.reposit
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
 import slugify from "slugify";
+import { normalizeDate } from "@shared/utils/functions.util";
 
 @injectable()
 class CommunicationService {
@@ -125,6 +126,15 @@ class CommunicationService {
     try {
       const superAdmin = await this.userRepository.findById(superAdminId);
       if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+
+      if (data.sendDate) {
+        const sendDate = new Date(data.sendDate);
+        const today = normalizeDate(new Date());
+        const normalizedSendDate = normalizeDate(sendDate);
+        if (normalizedSendDate < today) {
+          throw new Error("Newsletter cannot be published in the past");
+        }
+      }
 
       const newsletter = NewsletterFactory.createNewsletter({
         newsletterTitle: data.newsletterTitle,
@@ -701,14 +711,62 @@ class CommunicationService {
     } catch (error: any) {
       logger.error(
         { error: error.message },
-        "Error publishing a new annoucement",
+        "Error publishing a new announcement",
       );
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while publishing a new annoucement",
+          "An unexpected error occurred while publishing a new announcement",
       );
     }
+  }
+
+  async getAllChurchAnnouncements(req: any) {
+    const churchId = req.params.churchId;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: churchAnnouncements, totalRecords } =
+        await this.announcementRepository.findAndCountAll(
+          { churchId },
+          currentPage,
+          pageSize,
+        );
+
+      if (churchAnnouncements.length === 0) {
+        return {
+          churchAnnouncements: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        churchAnnouncements,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching all church announcements" });
+      throw new Error(
+        "An unexpected error occurred while fetching all church announcements.",
+      );
+    }
+  }
+
+  async getAnnouncement(announcementId: string) {
+    const announcement = await this.announcementRepository.findById(
+      announcementId,
+    );
+    if (!announcement) throw new AppError(400, "Announcement not found");
+
+    return { success: true, announcement };
   }
 }
 

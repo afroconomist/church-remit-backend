@@ -232,6 +232,29 @@ class CommunicationController {
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
   };
+
+  getAllChurchAnnouncements = async (req: Request, res: Response) => {
+    try {
+      const churchAnnouncements =
+        await this.communicationService.getAllChurchAnnouncements(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", churchAnnouncements));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getAnnouncement = async (req: Request, res: Response) => {
+    const result: any = await this.communicationService.getAnnouncement(
+      req.params.announcementId,
+    );
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
 }
 
 export default CommunicationController;

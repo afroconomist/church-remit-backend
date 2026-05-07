@@ -57,7 +57,7 @@ class FacilityService {
       if (facility.status === "Booked" || facility.status === "Maintenance") {
         return {
           success: false,
-          message: `${facility.facilityName} current status is ${facility.status}`,
+          message: `${facility.facilityName} current status is/on ${facility.status}`,
         };
       }
 

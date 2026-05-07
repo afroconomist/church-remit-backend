@@ -10,7 +10,7 @@ import {
   validate,
   validateArray,
 } from "@shared/middlewares/validator.middleware";
-import { loginRules } from "../../userManagement/validations/login.validator";
+import { loginRules } from "../../auth/validations/login.validator";
 import { changePasswordRules } from "../validations/change-password.validator";
 import { profilePictureUploadRules } from "../../userManagement/validations/profile-picture.validator";
 import { deleteReasonRules } from "../../userManagement/validations/delete-reason.validator";

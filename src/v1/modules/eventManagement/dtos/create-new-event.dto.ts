@@ -10,5 +10,6 @@ export type CreateNewEvent = {
   maximumCapacityTracker: number;
   registration: boolean;
   recurring?: boolean;
+  eventFrequency?: "weekly" | "monthly" | "quarterly" | "yearly";
   church: string;
 };

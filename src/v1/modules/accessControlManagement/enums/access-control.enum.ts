@@ -69,4 +69,7 @@ export enum AccessControls {
 	DOCUMENT_UPLOAD = "upload-document",
 	DOCUMENT_LIST = "view-documents",
 	NEWS_CREATION = "create-communication",
+	ASSET_ADDITION = "add-asset",
+	ASSET_LIST = "view-assets",
+	ASSET_UPDATE = "edit-asset",
 }
