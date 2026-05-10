@@ -222,8 +222,8 @@ class CommunicationService {
         description: data.description,
         province: data.province,
         category: data.category,
-        file: data.file,
-        uploadedAt: new Date(),
+        documentUrl: data.documentUrl,
+        uploadedAt: new Date().toISOString(),
         churchId: String(superAdmin.churchId),
       });
       const uploadedCircular = await this.circularRepository.save(circular);

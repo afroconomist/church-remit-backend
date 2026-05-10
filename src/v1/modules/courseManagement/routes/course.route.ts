@@ -113,6 +113,13 @@ router.get(
     courseController.getCourseModules(req, res).catch((err) => next(err)),
 );
 
+router.get(
+  "/course/:moduleId/lessons",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    courseController.getCourseModuleLessons(req, res).catch((err) => next(err)),
+);
+
 router.put(
   "/courses/:courseId/update",
   [

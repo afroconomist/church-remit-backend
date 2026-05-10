@@ -36,6 +36,13 @@ router.post(
 );
 
 router.get(
+  "/facilities/:facilityId/bookings",
+  [authMiddleware, accessControlMiddleware(AccessControls.FACILITY_LIST)],
+  (req: Request, res: Response, next) =>
+    facilityController.getFacilityBookings(req, res).catch((err) => next(err)),
+);
+
+router.get(
   "/:churchId/facilities",
   [authMiddleware, accessControlMiddleware(AccessControls.FACILITY_LIST)],
   (req: Request, res: Response, next) =>

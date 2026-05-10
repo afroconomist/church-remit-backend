@@ -9,7 +9,7 @@ class CircularFactory {
     circular.description = data.description;
     circular.province = data.province;
     circular.category = data.category;
-    circular.file = data.file;
+    circular.documentUrl = data.documentUrl;
     circular.uploadedAt = data.uploadedAt;
     circular.churchId = data.churchId;
 

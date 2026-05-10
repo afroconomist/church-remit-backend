@@ -8,7 +8,7 @@ class DocumentFactory {
     document.documentName = data.documentName;
     document.category = data.category;
     document.confidentiality = data.confidentiality;
-    document.documentFile = data.documentFile;
+    document.documentUrl = data.documentUrl;
     document.churchId = data.churchId;
 
     return document;

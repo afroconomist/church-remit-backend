@@ -39,7 +39,7 @@ class CourseController {
   };
 
   enrollStudent = async (req: Request, res: Response) => {
-    const result: any = await this.courseService.enrollStudent(req.user.id);
+    const result: any = await this.courseService.enrollStudent(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
@@ -125,6 +125,20 @@ class CourseController {
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", courseModules));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getCourseModuleLessons = async (req: Request, res: Response) => {
+    try {
+      const courseModuleLessons =
+        await this.courseService.getCourseModuleLessons(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", courseModuleLessons));
     } catch (error: any) {
       return res
         .status(httpStatus.INTERNAL_SERVER_ERROR)

@@ -12,6 +12,7 @@ import StudentCourseProgressRepository from "../repositories/student_course_prog
 import StudentModuleProgressFactory from "../factories/student_module_progress.factory";
 import StudentModuleProgressRepository from "../repositories/student_module_progress.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
+import MemberRepository from "../../memberManagement/repositories/member.repository";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
 import { transaction } from "objection";
@@ -56,6 +57,7 @@ class CourseService {
     private readonly studentCourseProgressRepository: StudentCourseProgressRepository,
     private readonly studentModuleProgressRepository: StudentModuleProgressRepository,
     private readonly userRepository: UserRepository,
+    private readonly memberRepository: MemberRepository,
   ) {}
 
   async createCourse(data: CreateCoursePayload, superAdminId: string) {
@@ -205,17 +207,23 @@ class CourseService {
     }
   }
 
-  async enrollStudent(memberId: string) {
+  async enrollStudent(req: any) {
     try {
-      const member = await this.userRepository.findById(memberId);
-      if (!member) throw new AppError(400, "Church member does not exist");
+      const [member, admin] = await Promise.all([
+        this.memberRepository.findById(req.user.id),
+        this.userRepository.findById(req.user.id),
+      ]);
+      let enrollingStudent;
+      if (member || admin) {
+        enrollingStudent = member || admin;
+      }
 
       const student = StudentFactory.enrollStudent({
-        studentName: `${member.firstName} ${member.lastName}`,
+        studentName: `${enrollingStudent.firstName} ${enrollingStudent.lastName}`,
         role: "Sunday School Teacher",
         department: "Youth Ministry",
-        memberId: member.id,
-        churchId: String(member.churchId),
+        memberId: enrollingStudent.id,
+        churchId: String(enrollingStudent.churchId),
       });
       const enrolledStudent = await this.studentRepository.save(student);
 
@@ -479,6 +487,45 @@ class CourseService {
       logger.error({ error: "Error fetching course modules" });
       throw new Error(
         "An unexpected error occurred while fetching course modules.",
+      );
+    }
+  }
+
+  async getCourseModuleLessons(req: any) {
+    const moduleId = req.params.moduleId;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: courseModuleLessons, totalRecords } =
+        await this.courseModuleLessonRepository.findAndCountAll(
+          { moduleId },
+          page,
+          limit,
+        );
+
+      if (courseModuleLessons.length === 0) {
+        return {
+          courseModuleLessons: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        courseModuleLessons,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching course module lessons" });
+      throw new Error(
+        "An unexpected error occurred while fetching course module lessons.",
       );
     }
   }

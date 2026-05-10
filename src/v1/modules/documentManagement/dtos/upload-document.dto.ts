@@ -2,6 +2,6 @@ export type UploadDocument = {
   documentName: string;
   category: string;
   confidentiality: string;
-  documentFile: string;
+  documentUrl: string;
   churchId: string;
 };

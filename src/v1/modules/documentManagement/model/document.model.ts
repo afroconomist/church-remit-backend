@@ -7,7 +7,7 @@ export class Document extends Model {
   documentName: string;
   category: string;
   confidentiality: string;
-  documentFile: string;
+  documentUrl: string;
   churchId: string;
 }
 

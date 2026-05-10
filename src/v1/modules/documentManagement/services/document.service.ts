@@ -22,7 +22,7 @@ class DocumentService {
         documentName: data.documentName,
         category: data.category,
         confidentiality: data.confidentiality,
-        documentFile: data.documentFile,
+        documentUrl: data.documentUrl,
         churchId: String(superAdmin.churchId),
       });
       const uploadedDocument = await this.documentRepository.save(document);
