@@ -54,10 +54,10 @@ class FacilityService {
       const facility = await this.facilityRepository.findById(facilityId);
       if (!facility) throw new AppError(400, "Facility does not exist");
 
-      if (facility.status === "Booked" || facility.status === "Maintenance") {
+      if (facility.status === "Maintenance") {
         return {
           success: false,
-          message: `${facility.facilityName} current status is/on ${facility.status}`,
+          message: `${facility.facilityName} current status is under ${facility.status}`,
         };
       }
 
@@ -78,7 +78,6 @@ class FacilityService {
       const newBooking = await this.facilityBookingRepository.save(booking);
 
       await this.facilityRepository.updateById(facility.id, {
-        status: "Booked",
         eventBookedFor: newBooking.eventName,
         eventTime: new Date(newBooking.startTime).toISOString().slice(11, 19),
       });
@@ -93,6 +92,45 @@ class FacilityService {
         400,
         error.message ||
           "An unexpected error occurred while booking a facility",
+      );
+    }
+  }
+
+  async getFacilityBookings(req: any) {
+    const facilityId = req.params.facilityId;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: facilityBookings, totalRecords } =
+        await this.facilityBookingRepository.findAndCountAll(
+          { facilityId },
+          page,
+          limit,
+        );
+
+      if (facilityBookings.length === 0) {
+        return {
+          facilityBookings: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        facilityBookings,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching all facility bookings" });
+      throw new Error(
+        "An unexpected error occurred while fetching all facility bookings.",
       );
     }
   }

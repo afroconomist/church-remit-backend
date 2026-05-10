@@ -187,7 +187,7 @@ class MemberService {
       name: user.firstName,
       email: user.email,
       password,
-      link: `${process.env.FRONTEND_BASEURL}/auth/login`,
+      link: `${process.env.FRONTEND_BASEURL}/member/login`,
     };
     try {
       await this.mailService.sendUserAccountMail(mail);
@@ -360,6 +360,11 @@ class MemberService {
         throw new AppError(400, "Member does not exist");
       }
 
+      const memberBirthdayExist = await this.memberBirthdayRepository.findOne({
+        memberId: member.id,
+        churchId: member.churchId,
+      });
+
       // const superAdminExists = await this.userRepository.findById(
       //   member.addedBy
       // );
@@ -386,7 +391,7 @@ class MemberService {
         baptismDate: data.baptismDate,
       });
 
-      if (data.dateOfBirth) {
+      if (data.dateOfBirth && !memberBirthdayExist) {
         const memberBirthday = MemberBirthdayFactory.addMemberBirthday({
           celebrantName: `${member.firstName} ${member.lastName}`,
           dateOfBirth: data.dateOfBirth,
@@ -463,23 +468,9 @@ class MemberService {
     if (!member) {
       throw new AppError(400, "Member does not exist");
     }
-    const linkedAgents = await this.memberRepository.findOne({
-      supervisorId: member.id,
-    });
-    if (linkedAgents) {
-      throw new AppError(
-        400,
-        "Member cannot be deleted because they are assigned as a supervisor to other members.",
-      );
-    }
 
     await this.memberRepository.deleteById(member.id);
-    const data = {
-      memberId: member.id,
-      action: "delete-member",
-      reason: req.body.reason,
-    };
-    if (req.body.reason) await this.createReason(data);
+
     return "Member account deleted successfully";
   }
 

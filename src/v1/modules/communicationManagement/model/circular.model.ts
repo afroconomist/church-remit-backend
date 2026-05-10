@@ -8,8 +8,8 @@ export class Circular extends Model {
   description: string;
   province: string;
   category: string;
-  file: Text;
-  uploadedAt: Date;
+  documentUrl: string;
+  uploadedAt: string;
   downloads?: number;
   churchId: string;
 }

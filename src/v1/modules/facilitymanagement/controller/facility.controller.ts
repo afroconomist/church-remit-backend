@@ -28,6 +28,21 @@ class FacilityController {
       .json(result);
   };
 
+  getFacilityBookings = async (req: Request, res: Response) => {
+    try {
+      const facilityBookings = await this.facilityService.getFacilityBookings(
+        req,
+      );
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", facilityBookings));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
   getAllChurchFacilities = async (req: Request, res: Response) => {
     try {
       const churchFacilities =
@@ -56,12 +71,10 @@ class FacilityController {
           .json({ status: result.success, message: result.message });
       }
     } catch (error) {
-      return res
-        .status(500)
-        .json({
-          status: false,
-          message: "Failed to put facility on maintenance status",
-        });
+      return res.status(500).json({
+        status: false,
+        message: "Failed to put facility on maintenance status",
+      });
     }
   };
 

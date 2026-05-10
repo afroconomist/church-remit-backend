@@ -3,7 +3,7 @@ export type UploadCircular = {
   description: string;
   province: string;
   category: string;
-  file: Text;
-  uploadedAt: Date;
+  documentUrl: string;
+  uploadedAt: string;
   churchId: string;
 };
