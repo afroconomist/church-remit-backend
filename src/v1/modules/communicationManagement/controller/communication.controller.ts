@@ -74,10 +74,7 @@ class CommunicationController {
   };
 
   uploadCircular = async (req: Request, res: Response) => {
-    const result: any = await this.communicationService.uploadCircular(
-      req.body,
-      req.user.id,
-    );
+    const result: any = await this.communicationService.uploadCircular(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);

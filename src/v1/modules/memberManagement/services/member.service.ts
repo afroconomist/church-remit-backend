@@ -27,6 +27,7 @@ import { IMember } from "../model/member.model";
 import AppError from "@shared/error/app.error";
 import slugify from "slugify";
 import { getAgeByDate } from "@shared/utils/functions.util";
+import { uploadFileToS3 } from "@shared/utils/file-upload.util";
 
 @injectable()
 class MemberService {
@@ -402,6 +403,10 @@ class MemberService {
           churchId: member.churchId,
         });
         await this.memberBirthdayRepository.save(memberBirthday);
+      } else if (data.dateOfBirth && memberBirthdayExist) {
+        await this.memberBirthdayRepository.updateById(memberBirthdayExist.id, {
+          dateOfBirth: data.dateOfBirth,
+        });
       }
 
       return {
@@ -415,14 +420,28 @@ class MemberService {
   }
 
   async uploadMemberProfilePicture(req: Request) {
+    const image = req.file;
+
+    if (!image) {
+      throw new AppError(400, "No profile picture uploaded");
+    }
+
     try {
       const member = await this.memberRepository.findById(req.params.id);
       if (!member) {
         throw new AppError(400, "Member does not exist");
       }
 
-      await this.memberRepository.updateById(req.params.id, {
-        avatar: req.body.avatar,
+      const fileData = await uploadFileToS3(
+        image,
+        `images/${image.originalname}`,
+      );
+      if (!fileData) {
+        throw new AppError(400, "Profile picture upload failed");
+      }
+
+      await this.memberRepository.updateById(member.id, {
+        avatar: fileData.url,
       });
 
       return {
@@ -468,8 +487,14 @@ class MemberService {
     if (!member) {
       throw new AppError(400, "Member does not exist");
     }
+    const memberBirthday = await this.memberBirthdayRepository.findOne({
+      memberId: member.id,
+    });
 
     await this.memberRepository.deleteById(member.id);
+    if (memberBirthday) {
+      await this.memberBirthdayRepository.deleteById(memberBirthday.id);
+    }
 
     return "Member account deleted successfully";
   }

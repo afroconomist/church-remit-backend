@@ -1,10 +1,10 @@
 import { injectable } from "tsyringe";
-import { UploadDocument } from "../dtos/upload-document.dto";
 import DocumentFactory from "../factories/doument.factory";
 import DocumentRepository from "../repositories/document.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
+import { uploadFileToS3 } from "@shared/utils/file-upload.util";
 
 @injectable()
 class DocumentService {
@@ -13,16 +13,39 @@ class DocumentService {
     private readonly userRepository: UserRepository,
   ) {}
 
-  async uploadDocument(data: UploadDocument, superAdminId: string) {
+  async uploadDocument(req: any) {
+    const file = req.file;
+    const superAdminId = req.user.id;
+    const { category, confidentiality } = req.body;
+
+    if (!file) {
+      throw new AppError(400, "No file uploaded");
+    }
+
+    if (!category || !confidentiality) {
+      return {
+        success: false,
+        message: "Category and confidentiality are required",
+      };
+    }
+
     try {
       const superAdmin = await this.userRepository.findById(superAdminId);
       if (!superAdmin) throw new AppError(400, "Super admin does not exist");
 
+      const fileData = await uploadFileToS3(
+        file,
+        `documents/${file.originalname}`,
+      );
+      if (!fileData) {
+        throw new AppError(400, "Document upload failed");
+      }
+
       const document = DocumentFactory.uploadDocument({
-        documentName: data.documentName,
-        category: data.category,
-        confidentiality: data.confidentiality,
-        documentUrl: data.documentUrl,
+        documentName: fileData.key,
+        category,
+        confidentiality,
+        documentUrl: fileData.url,
         churchId: String(superAdmin.churchId),
       });
       const uploadedDocument = await this.documentRepository.save(document);
@@ -53,8 +76,8 @@ class DocumentService {
       const { data: churchDocuments, totalRecords } =
         await this.documentRepository.findAndCountAll(
           { churchId },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (churchDocuments.length === 0) {

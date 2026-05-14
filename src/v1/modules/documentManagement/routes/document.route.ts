@@ -1,11 +1,10 @@
 import express, { Request, Response } from "express";
 import { container } from "tsyringe";
-import { uploadDocumentRules } from "../validations/upload-document.validator";
-import { validate } from "@shared/middlewares/validator.middleware";
 import DocumentController from "../controller/document.controller";
 import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
 import { AccessControls } from "../../accessControlManagement/enums/access-control.enum";
 import authMiddleware from "@shared/middlewares/auth.middleware";
+import { uploadMiddleware } from "@shared/utils/files";
 
 const documentController = container.resolve(DocumentController);
 
@@ -15,8 +14,8 @@ router.post(
   "/documents/upload",
   [
     authMiddleware,
+    uploadMiddleware.single("file"),
     accessControlMiddleware(AccessControls.DOCUMENT_UPLOAD),
-    validate(uploadDocumentRules),
   ],
   (req: Request, res: Response, next) =>
     documentController.uploadDocument(req, res).catch((err) => next(err)),

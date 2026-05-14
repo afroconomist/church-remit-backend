@@ -26,29 +26,19 @@ router.post(
 
 router.post(
   "/facilities/:facilityId/book",
-  [
-    authMiddleware,
-    accessControlMiddleware(AccessControls.FACILITY_BOOKING),
-    validate(bookFacilityRules),
-  ],
+  [authMiddleware, validate(bookFacilityRules)],
   (req: Request, res: Response, next) =>
     facilityController.bookFacility(req, res).catch((err) => next(err)),
 );
 
 router.get(
   "/facilities/:facilityId/bookings",
-  [authMiddleware, accessControlMiddleware(AccessControls.FACILITY_LIST)],
   (req: Request, res: Response, next) =>
     facilityController.getFacilityBookings(req, res).catch((err) => next(err)),
 );
 
-router.get(
-  "/:churchId/facilities",
-  [authMiddleware, accessControlMiddleware(AccessControls.FACILITY_LIST)],
-  (req: Request, res: Response, next) =>
-    facilityController
-      .getAllChurchFacilities(req, res)
-      .catch((err) => next(err)),
+router.get("/:churchId/facilities", (req: Request, res: Response, next) =>
+  facilityController.getAllChurchFacilities(req, res).catch((err) => next(err)),
 );
 
 router.put(

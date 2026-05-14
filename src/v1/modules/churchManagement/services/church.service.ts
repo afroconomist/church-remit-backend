@@ -9,7 +9,6 @@ import OTPService from "../../auth/services/otp.service";
 import MailService from "../../notificationAndEmailManagement/services/mail.service";
 import logger from "@shared/utils/logger";
 import { generateCode } from "@shared/utils/functions.util";
-import { IUser } from "../../userManagement/model/user.model";
 import AppError from "@shared/error/app.error";
 import { transaction } from "objection";
 import { Church } from "../model/church.model";
@@ -106,10 +105,9 @@ class ChurchService {
         },
       );
 
-      const otpReceiver: IUser = createdUser;
       const token = generateCode(6);
       await this.otpService.sendOTP({
-        user: otpReceiver,
+        userId: createdUser.id,
         token,
         otpType: "account-verification",
       });
@@ -172,7 +170,7 @@ class ChurchService {
 
     try {
       const { data: churches, totalRecords } =
-        await this.churchRepository.getAndCountAll(page, limit);
+        await this.churchRepository.getAndCountAll(currentPage, pageSize);
 
       if (churches.length === 0) {
         return {
@@ -209,8 +207,8 @@ class ChurchService {
           {
             churchType,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (churchesBasedOnTypes.length === 0) {
@@ -249,8 +247,8 @@ class ChurchService {
           {
             verified: true,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (verifiedChurches.length === 0) {
@@ -286,7 +284,7 @@ class ChurchService {
 
     try {
       const { data: churchMembers, totalRecords } =
-        await this.memberRepository.findAndCountAll({ churchId }, page, limit);
+        await this.memberRepository.findAndCountAll({ churchId }, currentPage, pageSize);
 
       if (churchMembers.length === 0) {
         return {

@@ -1,7 +1,6 @@
 import { injectable } from "tsyringe";
 import { CreateNews } from "../dtos/create-news.dto";
 import { CreateNewsletter } from "../dtos/create-newsletter.dto";
-import { UploadCircular } from "../dtos/upload-circular.dto";
 import { CreateDiscussionBoard } from "../dtos/create-board.dto";
 import { CreateTag } from "../dtos/create-tag.dto";
 import { CreateAnnouncement } from "../dtos/create-announcement.dto";
@@ -29,6 +28,7 @@ import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
 import slugify from "slugify";
 import { normalizeDate } from "@shared/utils/functions.util";
+import { uploadFileToS3 } from "@shared/utils/file-upload.util";
 
 @injectable()
 class CommunicationService {
@@ -212,17 +212,33 @@ class CommunicationService {
     }
   }
 
-  async uploadCircular(data: UploadCircular, superAdminId: string) {
+  async uploadCircular(req: any) {
+    const file = req.file;
+    const superAdminId = req.user.id;
+    const { title, description, province, category } = req.body;
+
+    if (!file) {
+      throw new AppError(400, "No file uploaded");
+    }
+
     try {
       const superAdmin = await this.userRepository.findById(superAdminId);
       if (!superAdmin) throw new AppError(400, "Super admin does not exist");
 
+      const fileData = await uploadFileToS3(
+        file,
+        `circulars/${file.originalname}`,
+      );
+      if (!fileData) {
+        throw new AppError(400, "Circular document upload failed");
+      }
+
       const circular = CircularFactory.uploadCircular({
-        title: data.title,
-        description: data.description,
-        province: data.province,
-        category: data.category,
-        documentUrl: data.documentUrl,
+        title,
+        description,
+        province,
+        category,
+        documentUrl: fileData.url,
         uploadedAt: new Date().toISOString(),
         churchId: String(superAdmin.churchId),
       });

@@ -246,8 +246,8 @@ class EventService {
           {
             churchEvent: eventId,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (eventReviews.length === 0) {
@@ -287,8 +287,8 @@ class EventService {
       const { data: churchEvents, totalRecords } =
         await this.eventRepository.findAndCountAll(
           { church: churchId },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (churchEvents.length === 0) {
@@ -315,6 +315,169 @@ class EventService {
     }
   }
 
+  async getUpcomingChurchEvents(req: any) {
+    const churchId = req.params.churchId;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const allEvents = await this.eventRepository.findAll({
+        church: churchId,
+      });
+
+      const upcomingEvents = allEvents.filter((event: any) => {
+        const eventDate = new Date(event.eventDate);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate >= today;
+      });
+
+      const totalRecords = upcomingEvents.length;
+
+      if (upcomingEvents.length === 0) {
+        return {
+          upcomingEvents: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      const paginatedEvents = upcomingEvents.slice(start, end);
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        upcomingEvents: paginatedEvents,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Error fetching upcoming church events",
+      );
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while fetching upcoming church events",
+      );
+    }
+  }
+
+  async getRecurringChurchEvents(req: any) {
+    const churchId = req.params.churchId;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const allEvents = await this.eventRepository.findAll({
+        church: churchId,
+      });
+
+      const recurringEvents = allEvents.filter(
+        (event: any) => event.recurring === true,
+      );
+
+      const totalRecords = recurringEvents.length;
+
+      if (recurringEvents.length === 0) {
+        return {
+          recurringEvents: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      const paginatedEvents = recurringEvents.slice(start, end);
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        recurringEvents: paginatedEvents,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Error fetching recurring church events",
+      );
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while fetching recurring church events",
+      );
+    }
+  }
+
+  async getPastChurchEvents(req: any) {
+    const churchId = req.params.churchId;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const allEvents = await this.eventRepository.findAll({
+        church: churchId,
+      });
+
+      const pastEvents = allEvents.filter((event: any) => {
+        const eventDate = new Date(event.eventDate);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate < today && event.recurring === false;
+      });
+
+      const totalRecords = pastEvents.length;
+
+      if (pastEvents.length === 0) {
+        return {
+          pastEvents: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      const paginatedEvents = pastEvents.slice(start, end);
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        pastEvents: paginatedEvents,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Error fetching past church events",
+      );
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while fetching past church events",
+      );
+    }
+  }
+
   async getRegisteredAttendees(req: any) {
     const eventId = req.params.eventId;
     const { page, limit } = req.query;
@@ -328,8 +491,8 @@ class EventService {
           {
             churchEvent: eventId,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (registeredAttendees.length === 0) {
@@ -371,8 +534,8 @@ class EventService {
           {
             churchEvent: eventId,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (eventAgendas.length === 0) {
@@ -414,8 +577,8 @@ class EventService {
           {
             churchEvent: eventId,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (eventVolunteers.length === 0) {

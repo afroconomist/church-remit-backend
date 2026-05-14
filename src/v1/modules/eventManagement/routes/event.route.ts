@@ -80,6 +80,27 @@ router.get(
 );
 
 router.get(
+  "/:churchId/events/upcoming",
+  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
+  (req: Request, res: Response, next) =>
+    eventController.getUpcomingChurchEvents(req, res).catch((err) => next(err)),
+);
+
+router.get(
+  "/:churchId/events/recurring",
+  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
+  (req: Request, res: Response, next) =>
+    eventController.getRecurringChurchEvents(req, res).catch((err) => next(err)),
+);
+
+router.get(
+  "/:churchId/events/past",
+  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
+  (req: Request, res: Response, next) =>
+    eventController.getPastChurchEvents(req, res).catch((err) => next(err)),
+);
+
+router.get(
   "/events/:eventId/registered-attendees",
   [authMiddleware, accessControlMiddleware(AccessControls.EVENT_REGISTRATION)],
   (req: Request, res: Response, next) =>

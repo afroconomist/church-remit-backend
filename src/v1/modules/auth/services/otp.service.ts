@@ -1,18 +1,16 @@
 import { injectable } from "tsyringe";
 import { addMinutes } from "date-fns";
 import OTPRepo from "../../auth/repositories/otp.repo";
-// import { resetPasswordMail } from "@shared/mailer/resetPasswordMail";
-import { IUser } from "../../userManagement/model/user.model";
 
 @injectable()
 class OTPService {
   constructor(private readonly otpRepo: OTPRepo) {}
 
-  async sendOTP(data: { user: IUser; token: string; otpType: string }) {
+  async sendOTP(data: { userId: string; token: string; otpType: string }) {
     const OTP_VALIDITY_DURATION = 10;
     const expiryDate = addMinutes(new Date(), OTP_VALIDITY_DURATION);
     const checkUnUsedOTP = await this.otpRepo.findOne({
-      userId: data.user.id,
+      userId: data.userId,
       status: "pending",
     });
     if (checkUnUsedOTP) {
@@ -23,7 +21,7 @@ class OTPService {
       });
     } else {
       await this.otpRepo.save({
-        userId: data.user.id,
+        userId: data.userId,
         token: data.token,
         expiringDatetime: expiryDate,
         otpType: data.otpType,

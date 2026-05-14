@@ -49,10 +49,10 @@ router.post(
 );
 
 router.post(
-  "/courses/enroll",
+  "/courses/:courseId/enroll",
   [authMiddleware],
   (req: Request, res: Response, next) =>
-    courseController.enrollStudent(req, res).catch((err) => next(err)),
+    courseController.enrollToCourse(req, res).catch((err) => next(err)),
 );
 
 router.post(
@@ -84,10 +84,10 @@ router.put(
 );
 
 router.get(
-  "/courses/:courseId/info",
-  [authMiddleware, accessControlMiddleware(AccessControls.COURSE_LIST)],
+  "/courses/:courseId/course-and-modules",
+  [authMiddleware],
   (req: Request, res: Response, next) =>
-    courseController.getCourse(req, res).catch((err) => next(err)),
+    courseController.getCourseAndModules(req, res).catch((err) => next(err)),
 );
 
 router.get(
@@ -104,13 +104,6 @@ router.get(
     courseController
       .getAllChurchMandatoryCourses(req, res)
       .catch((err) => next(err)),
-);
-
-router.get(
-  "/courses/:courseId/modules",
-  [authMiddleware],
-  (req: Request, res: Response, next) =>
-    courseController.getCourseModules(req, res).catch((err) => next(err)),
 );
 
 router.get(

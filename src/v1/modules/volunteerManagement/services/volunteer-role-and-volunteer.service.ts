@@ -190,8 +190,8 @@ class VolunteerAndRoleService {
           {
             church: churchId,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (volunteerRoles.length === 0) {
@@ -231,8 +231,8 @@ class VolunteerAndRoleService {
           {
             church: churchId,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (volunteers.length === 0) {

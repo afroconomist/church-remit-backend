@@ -56,8 +56,8 @@ class SacramentService {
       const { data: churchSacraments, totalRecords } =
         await this.sacramentRepository.findAndCountAll(
           { church: churchId },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (churchSacraments.length === 0) {

@@ -2,7 +2,6 @@ import express, { Request, Response } from "express";
 import { container } from "tsyringe";
 import { createNewsRules } from "../validations/create-news.validator";
 import { createNewsletterRules } from "../validations/create-newsletter.validator";
-import { uploadCircularRules } from "../validations/upload-circular.validator";
 import { createDiscussionBoardRules } from "../validations/create-discussion-board.validator";
 import { createTopicRules } from "../validations/create-topic.validator";
 import { replyTopicRules } from "../validations/reply-topic.validator";
@@ -14,6 +13,7 @@ import CommunicationController from "../controller/communication.controller";
 import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
 import { AccessControls } from "../../accessControlManagement/enums/access-control.enum";
 import authMiddleware from "@shared/middlewares/auth.middleware";
+import { uploadMiddleware } from "@shared/utils/files";
 
 const communicationController = container.resolve(CommunicationController);
 
@@ -81,8 +81,8 @@ router.post(
   "/communications/upload-circular",
   [
     authMiddleware,
+    uploadMiddleware.single("file"),
     accessControlMiddleware(AccessControls.DOCUMENT_UPLOAD),
-    validate(uploadCircularRules),
   ],
   (req: Request, res: Response, next) =>
     communicationController.uploadCircular(req, res).catch((err) => next(err)),

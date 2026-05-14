@@ -207,12 +207,15 @@ class CourseService {
     }
   }
 
-  async enrollStudent(req: any) {
+  async enrollToCourse(req: any) {
     try {
-      const [member, admin] = await Promise.all([
+      const [member, admin, course] = await Promise.all([
         this.memberRepository.findById(req.user.id),
         this.userRepository.findById(req.user.id),
+        this.courseRepository.findById(req.params.courseId),
       ]);
+      if (!course) throw new AppError(400, "Course does not exist");
+
       let enrollingStudent;
       if (member || admin) {
         enrollingStudent = member || admin;
@@ -220,17 +223,17 @@ class CourseService {
 
       const student = StudentFactory.enrollStudent({
         studentName: `${enrollingStudent.firstName} ${enrollingStudent.lastName}`,
-        role: "Sunday School Teacher",
-        department: "Youth Ministry",
+        role: "null",
+        department: "null",
         memberId: enrollingStudent.id,
+        courseId: course.id,
         churchId: String(enrollingStudent.churchId),
       });
-      const enrolledStudent = await this.studentRepository.save(student);
+      await this.studentRepository.save(student);
 
       return {
         success: true,
-        message: "Student has been enrolled successfully",
-        student: enrolledStudent,
+        message: "You have enrolled to the course successfully",
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Error enrolling new student");
@@ -249,6 +252,7 @@ class CourseService {
 
       const student = await this.studentRepository.findOne({
         memberId: studentId,
+        courseId: course.id,
       });
       if (!student) throw new AppError(400, "Student does not exist");
 
@@ -286,6 +290,7 @@ class CourseService {
 
       const student = await this.studentRepository.findOne({
         memberId: studentId,
+        courseId: course.id,
       });
       if (!student) throw new AppError(400, "StudentModule does not exist");
 
@@ -316,6 +321,7 @@ class CourseService {
 
       const student = await this.studentRepository.findOne({
         memberId: studentId,
+        courseId: module.courseId,
       });
       if (!student) throw new AppError(400, "Student does not exist");
 
@@ -348,6 +354,7 @@ class CourseService {
 
       const student = await this.studentRepository.findOne({
         memberId: studentId,
+        courseId: module.courseId,
       });
       if (!student) throw new AppError(400, "Student does not exist");
 
@@ -371,11 +378,59 @@ class CourseService {
     }
   }
 
-  async getCourse(courseId: string) {
-    const course = await this.courseRepository.findById(courseId);
-    if (!course) throw new AppError(400, "Course does not exist");
+  async getCourseAndModules(req: any) {
+    const courseId = req.params.courseId;
+    const enrolledStudentId = req.user.id;
+    const { page, limit } = req.query;
 
-    return { success: true, course };
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const course = await this.courseRepository.findById(courseId);
+      if (!course) throw new AppError(400, "Course does not exist");
+
+      const { data: courseModules, totalRecords } =
+        await this.courseModuleRepository.findAndCountAll(
+          { courseId: course.id },
+          currentPage,
+          pageSize,
+        );
+
+      if (courseModules.length === 0) {
+        return {
+          courseModules: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const enrolledStudent = await this.studentRepository.findOne({
+        memberId: enrolledStudentId,
+        courseId: course.id,
+      });
+
+      const enrolledStudents = await this.studentRepository.findAll({
+        courseId: course.id,
+      });
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        course,
+        courseModules,
+        enrolledStudents,
+        isEnrolled: enrolledStudent?.isEnrolled,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching course and modules" });
+      throw new Error(
+        "An unexpected error occurred while fetching course and modules.",
+      );
+    }
   }
 
   async getAllChurchCourses(req: any) {
@@ -387,7 +442,11 @@ class CourseService {
 
     try {
       const { data: churchCourses, totalRecords } =
-        await this.courseRepository.findAndCountAll({ churchId }, page, limit);
+        await this.courseRepository.findAndCountAll(
+          { churchId },
+          currentPage,
+          pageSize,
+        );
 
       if (churchCourses.length === 0) {
         return {
@@ -424,8 +483,8 @@ class CourseService {
       const { data: churchMandatoryCourses, totalRecords } =
         await this.courseRepository.findAndCountAll(
           { churchId, mandatoryCourse: true },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (churchMandatoryCourses.length === 0) {
@@ -452,45 +511,6 @@ class CourseService {
     }
   }
 
-  async getCourseModules(req: any) {
-    const courseId = req.params.courseId;
-    const { page, limit } = req.query;
-
-    const pageSize = parseInt(limit, 10) || 10;
-    const currentPage = parseInt(page, 10) || 1;
-
-    try {
-      const { data: courseModules, totalRecords } =
-        await this.courseModuleRepository.findAndCountAll(
-          { courseId },
-          page,
-          limit,
-        );
-
-      if (courseModules.length === 0) {
-        return {
-          courseModules: [],
-          total_result: 0,
-          current_page: currentPage,
-          total_pages: 0,
-        };
-      }
-
-      const totalPages = Math.ceil(totalRecords / pageSize);
-      return {
-        courseModules,
-        total_result: totalRecords,
-        current_page: currentPage,
-        total_pages: totalPages,
-      };
-    } catch (error: any) {
-      logger.error({ error: "Error fetching course modules" });
-      throw new Error(
-        "An unexpected error occurred while fetching course modules.",
-      );
-    }
-  }
-
   async getCourseModuleLessons(req: any) {
     const moduleId = req.params.moduleId;
     const { page, limit } = req.query;
@@ -502,8 +522,8 @@ class CourseService {
       const { data: courseModuleLessons, totalRecords } =
         await this.courseModuleLessonRepository.findAndCountAll(
           { moduleId },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (courseModuleLessons.length === 0) {
