@@ -14,6 +14,7 @@ import { CreateGroup } from "../dtos/create-new-group.dto";
 import { RecordAttendance } from "../dtos/record-attendance.dto";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
+import { normalizeDate } from "@shared/utils/functions.util";
 
 @injectable()
 class GroupService {
@@ -239,6 +240,12 @@ class GroupService {
       const group = await this.groupRepository.findById(groupId);
       if (!group) throw new AppError(400, "Group does not exist");
 
+      const normalizedMeetingDate = normalizeDate(data.meetingDate);
+      const today = normalizeDate(new Date());
+      if (normalizedMeetingDate > today) {
+        throw new AppError(400, "Cannot record attendance for future meetings");
+      }
+
       const meetingAttendance = GroupMeetingAttendanceFactory.recordAttendance({
         meetingDate: data.meetingDate,
         guestCount: data.guestCount,
@@ -281,8 +288,8 @@ class GroupService {
       const { data: churchGroups, totalRecords } =
         await this.groupRepository.findAndCountAll(
           { church: churchId },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (churchGroups.length === 0) {
@@ -323,8 +330,8 @@ class GroupService {
             category,
             church: churchId,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (churchGroupsBasedOnCategory.length === 0) {
@@ -493,8 +500,8 @@ class GroupService {
             status: "Approved",
             group: groupId,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (groupMembers.length === 0) {
@@ -534,8 +541,8 @@ class GroupService {
           {
             group: groupId,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (groupMeetings.length === 0) {
@@ -576,8 +583,8 @@ class GroupService {
             status: "Pending",
             group: groupId,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (groupJoinRequests.length === 0) {

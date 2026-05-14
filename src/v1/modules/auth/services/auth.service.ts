@@ -31,20 +31,42 @@ class AuthService {
   ) {}
 
   async verifyOtp(data: { email: string; token: string }) {
-    try {
-      const user = await this.userRepository.findOne({ email: data.email });
-      if (!user) {
-        throw new AppError(400, "User not found");
-      }
+    const superAdmin = await this.userRepository.findOne({
+      email: data.email,
+    });
+    if (superAdmin) {
+      return this.verifyUserOtp({ data, user: superAdmin });
+    }
 
+    const member = await this.memberRepository.findOne({
+      email: data.email,
+    });
+    if (member) {
+      return this.verifyUserOtp({ data, user: member });
+    }
+
+    return {
+      status: false,
+      message: "Account not found",
+    };
+  }
+
+  private async verifyUserOtp({
+    data,
+    user,
+  }: {
+    data: { email: string; token: string };
+    user: any;
+  }) {
+    try {
       const checkUnUsedOTP = await this.otpRepository.findOne({
         userId: user.id,
-        status: "pending",
+        status: "Pending",
       });
       if (checkUnUsedOTP && data.token === checkUnUsedOTP.token) {
         const id = checkUnUsedOTP.id;
         await this.otpRepository.updateById(id, {
-          status: "success",
+          status: "Success",
         });
       } else {
         return {
@@ -58,20 +80,42 @@ class AuthService {
         message: "Account verified successfully",
       };
     } catch (error: any) {
-      logger.error({ error: error.message }, "Error verifying account");
+      logger.error({ error: error.message }, "otp verification failed");
+
+      return {
+        status: false,
+        message:
+          error instanceof AppError ? error.message : "Internal server error",
+      };
     }
   }
 
   async resendOtp(data: { email: string }) {
-    try {
-      const user = await this.userRepository.findOne({ email: data.email });
-      if (!user) {
-        throw new AppError(400, "User not found");
-      }
+    const superAdmin = await this.userRepository.findOne({
+      email: data.email,
+    });
+    if (superAdmin) {
+      return this.resendOtpToUser({ user: superAdmin });
+    }
 
+    const member = await this.memberRepository.findOne({
+      email: data.email,
+    });
+    if (member) {
+      return this.resendOtpToUser({ user: member });
+    }
+
+    return {
+      status: false,
+      message: "Account not found",
+    };
+  }
+
+  private async resendOtpToUser({ user }: { user: any }) {
+    try {
       const isVerified = await this.otpRepository.findOne({
         userId: user.id,
-        status: "success",
+        status: "Success",
       });
       if (isVerified) {
         return {
@@ -82,7 +126,7 @@ class AuthService {
 
       const token = generateCode(6);
       await this.otpService.sendOTP({
-        user,
+        userId: user.id,
         token,
         otpType: "account-verification",
       });
@@ -100,21 +144,47 @@ class AuthService {
         message: `Kindly check your email address ${user.email} for OTP`,
       };
     } catch (error: any) {
-      logger.error({ error: error.message }, "Error sending OTP");
+      logger.error({ error: error.message }, "resend otp failed");
+
+      return {
+        status: false,
+        message:
+          error instanceof AppError ? error.message : "Internal server error",
+      };
     }
   }
 
   async requestPasswordReset(data: { email: string }) {
-    try {
-      const user = await this.userRepository.findOne({ email: data.email });
-      if (!user) {
-        throw new AppError(400, "User not found");
-      }
-      // generate a password reset link
-      const token = generateCode(6);
-      await this.otpService.sendOTP({ user, token, otpType: "password-reset" });
+    const superAdmin = await this.userRepository.findOne({
+      email: data.email,
+    });
+    if (superAdmin) {
+      return this.requestUserPasswordReset({ user: superAdmin });
+    }
 
-      const link = `${process.env.FRONTEND_BASEURL}/auth/reset-password?token=${token}`;
+    const member = await this.memberRepository.findOne({
+      email: data.email,
+    });
+    if (member) {
+      return this.requestUserPasswordReset({ user: member });
+    }
+
+    return {
+      status: false,
+      message: "Account not found",
+    };
+  }
+
+  private async requestUserPasswordReset({ user }: { user: any }) {
+    try {
+      const token = generateCode(6);
+      await this.otpService.sendOTP({
+        userId: user.id,
+        token,
+        otpType: "password-reset",
+      });
+
+      const link = `${process.env.FRONTEND_BASEURL}/reset-password?token=${token}`;
 
       try {
         await this.mailService.passwordResetMail({
@@ -135,7 +205,16 @@ class AuthService {
         message: `Kindly check your email address ${user.email} for password reset link`,
       };
     } catch (error: any) {
-      logger.error({ error: error.message }, "Error requesting reset password");
+      logger.error(
+        { error: error.message },
+        "request user password reset failed",
+      );
+
+      return {
+        status: false,
+        message:
+          error instanceof AppError ? error.message : "Internal server error",
+      };
     }
   }
 
@@ -143,16 +222,48 @@ class AuthService {
     const { token } = req.query;
     const { email, password } = req.body;
 
-    try {
-      const user = await this.userRepository.findOne({ email: email });
-      if (!user) {
-        throw new AppError(400, "User not found");
-      }
+    const superAdmin = await this.userRepository.findOne({
+      email: email,
+    });
+    if (superAdmin) {
+      return this.resetUserPassword({
+        data: { token, password },
+        user: superAdmin,
+        repository: this.userRepository,
+      });
+    }
 
+    const member = await this.memberRepository.findOne({
+      email: email,
+    });
+    if (member) {
+      return this.resetUserPassword({
+        data: { token, password },
+        user: member,
+        repository: this.memberRepository,
+      });
+    }
+
+    return {
+      status: false,
+      message: "Account not found",
+    };
+  }
+
+  private async resetUserPassword({
+    data,
+    user,
+    repository,
+  }: {
+    data: { token: string; password: string };
+    user: any;
+    repository: UserRepository | MemberRepository;
+  }) {
+    try {
       const checkOtp = await this.otpRepository.findOne({
         userId: user.id,
-        token,
-        status: "pending",
+        token: data.token,
+        status: "Pending",
       });
 
       if (!checkOtp) {
@@ -169,22 +280,23 @@ class AuthService {
       }
 
       const id = checkOtp.id;
-
-      try {
-        await this.userRepository.updateById(checkOtp.userId, {
-          password,
-        });
-        await this.otpRepository.updateById(id, { status: "success" });
-      } catch (error: any) {
-        logger.error({ error: error.message }, "Error comfirming otp");
-      }
+      await repository.updateById(checkOtp.userId, {
+        password: data.password,
+      });
+      await this.otpRepository.updateById(id, { status: "Success" });
 
       return {
         success: true,
         message: "Password has been reset successfully",
       };
     } catch (error: any) {
-      logger.error({ error: error.message }, "Error resetting password");
+      logger.error({ error: error.message }, "reset user password failed");
+
+      return {
+        status: false,
+        message:
+          error instanceof AppError ? error.message : "Internal server error",
+      };
     }
   }
 
@@ -343,14 +455,47 @@ class AuthService {
   }
 
   async refreshToken(oldRefreshToken: { refreshToken: string }) {
-    try {
-      const decoded = jwt.verify(
-        oldRefreshToken.refreshToken,
-        appConfig.jwt_token.secret,
-      );
-      const user = await this.userRepository.findById(decoded.userId);
+    const decoded = jwt.verify(
+      oldRefreshToken.refreshToken,
+      appConfig.jwt_token.secret,
+    );
 
-      if (!user || user.refreshToken !== oldRefreshToken.refreshToken) {
+    const superAdmin = await this.userRepository.findOne({
+      id: decoded.user.id,
+    });
+
+    if (superAdmin) {
+      return this.refreshUserToken({
+        oldRefreshToken: oldRefreshToken.refreshToken,
+        user: superAdmin,
+      });
+    }
+
+    const member = await this.memberRepository.findOne({
+      id: decoded.user.id,
+    });
+    if (member) {
+      return this.refreshUserToken({
+        oldRefreshToken: oldRefreshToken.refreshToken,
+        user: member,
+      });
+    }
+
+    return {
+      status: false,
+      message: "Account not found",
+    };
+  }
+
+  private async refreshUserToken({
+    oldRefreshToken,
+    user,
+  }: {
+    oldRefreshToken: string;
+    user: any;
+  }) {
+    try {
+      if (!user || user.refreshToken !== oldRefreshToken) {
         throw new AppError(401, "Invalid refresh token");
       }
 

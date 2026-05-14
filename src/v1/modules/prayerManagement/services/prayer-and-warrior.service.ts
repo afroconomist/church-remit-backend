@@ -1,11 +1,11 @@
 import { injectable } from "tsyringe";
-// import { Request } from "express";
 import PrayerFactory from "../factories/prayer.factory";
 import PrayerRepository from "../repositories/prayer.repository";
+import PrayerRequestCommentRepository from "../repositories/prayer_request_comment.repository";
 import PrayerWarriorFactory from "../factories/prayer_warrior.factory";
 import PrayerWarriorRepository from "../repositories/prayer_warrior.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
-// import MemberRepository from "../../memberManagement/repositories/member.repository";
+import MemberRepository from "../../memberManagement/repositories/member.repository";
 import { SubmitPrayerRequest } from "../dtos/submit-prayer-request.dto";
 import { AddPrayerWarrior } from "../dtos/add-prayer-warrior.dto";
 import logger from "@shared/utils/logger";
@@ -15,10 +15,11 @@ import AppError from "@shared/error/app.error";
 class PrayerAndWarriorService {
   constructor(
     private readonly prayerRepository: PrayerRepository,
+    private readonly prayerRequestCommentRepository: PrayerRequestCommentRepository,
     private readonly prayerWarriorRepository: PrayerWarriorRepository,
-    private readonly userRepository: UserRepository
-  ) // private readonly memberRepository: MemberRepository
-  {}
+    private readonly userRepository: UserRepository,
+    private readonly memberRepository: MemberRepository,
+  ) {}
 
   async submitPrayerRequest(data: SubmitPrayerRequest, memberId: string) {
     try {
@@ -39,7 +40,7 @@ class PrayerAndWarriorService {
           church: String(member.churchId),
         });
         const submittedPrayerRequest = await this.prayerRepository.save(
-          prayerRequest
+          prayerRequest,
         );
 
         return {
@@ -58,7 +59,7 @@ class PrayerAndWarriorService {
         church: String(member.churchId),
       });
       const submittedPrayerRequest = await this.prayerRepository.save(
-        prayerRequest
+        prayerRequest,
       );
 
       return {
@@ -71,7 +72,7 @@ class PrayerAndWarriorService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while submitting prayer request"
+          "An unexpected error occurred while submitting prayer request",
       );
     }
   }
@@ -88,7 +89,7 @@ class PrayerAndWarriorService {
         church: String(superAdmin.churchId),
       });
       const addedPrayerWarrior = await this.prayerWarriorRepository.save(
-        prayerWarrior
+        prayerWarrior,
       );
 
       return {
@@ -101,7 +102,7 @@ class PrayerAndWarriorService {
       throw new AppError(
         400,
         error.message ||
-          "An unexpected error occurred while adding prayer warrior"
+          "An unexpected error occurred while adding prayer warrior",
       );
     }
   }
@@ -115,9 +116,13 @@ class PrayerAndWarriorService {
 
     try {
       const { data: prayerRequests, totalRecords } =
-        await this.prayerRepository.findAndCountAll({
-          church: churchId,
-        }, page, limit);
+        await this.prayerRepository.findAndCountAll(
+          {
+            church: churchId,
+          },
+          currentPage,
+          pageSize,
+        );
 
       if (prayerRequests.length === 0) {
         return {
@@ -138,7 +143,7 @@ class PrayerAndWarriorService {
     } catch (error) {
       logger.error({ error: "Error fetching prayer requests" });
       throw new Error(
-        "An unexpected error occurred while fetching prayer requests."
+        "An unexpected error occurred while fetching prayer requests.",
       );
     }
   }
@@ -152,9 +157,13 @@ class PrayerAndWarriorService {
 
     try {
       const { data: prayerWarriors, totalRecords } =
-        await this.prayerWarriorRepository.findAndCountAll({
-          church: churchId,
-        }, page, limit);
+        await this.prayerWarriorRepository.findAndCountAll(
+          {
+            church: churchId,
+          },
+          currentPage,
+          pageSize,
+        );
 
       if (prayerWarriors.length === 0) {
         return {
@@ -175,7 +184,7 @@ class PrayerAndWarriorService {
     } catch (error) {
       logger.error({ error: "Error fetching prayer warriors" });
       throw new Error(
-        "An unexpected error occurred while fetching prayer warriors."
+        "An unexpected error occurred while fetching prayer warriors.",
       );
     }
   }
@@ -183,13 +192,13 @@ class PrayerAndWarriorService {
   async assignPrayerToWarrior(req: any) {
     try {
       const prayerWarrior = await this.prayerWarriorRepository.findById(
-        req.body.prayerWarriorId
+        req.body.prayerWarriorId,
       );
       if (!prayerWarrior)
         throw new AppError(400, "Prayer warrior does not exist");
 
       const prayerRequest = await this.prayerRepository.findById(
-        req.body.prayerRequestId
+        req.body.prayerRequestId,
       );
       if (!prayerRequest)
         throw new AppError(400, "Prayer request does not exist");
@@ -210,7 +219,7 @@ class PrayerAndWarriorService {
     } catch (error: any) {
       logger.error(
         { error: error.message },
-        "Failed to assign prayer request to prayer warrior"
+        "Failed to assign prayer request to prayer warrior",
       );
       throw new AppError(400, error.message);
     }
@@ -225,9 +234,13 @@ class PrayerAndWarriorService {
 
     try {
       const { data: prayerWarriorAssignments, totalRecords } =
-        await this.prayerRepository.findAndCountAll({
-          prayerWarrior: prayerWarriorId,
-        }, page, limit);
+        await this.prayerRepository.findAndCountAll(
+          {
+            prayerWarrior: prayerWarriorId,
+          },
+          currentPage,
+          pageSize,
+        );
 
       if (prayerWarriorAssignments.length === 0) {
         return {
@@ -248,7 +261,7 @@ class PrayerAndWarriorService {
     } catch (error) {
       logger.error({ error: "Error fetching prayer warrior assignments" });
       throw new Error(
-        "An unexpected error occurred while fetching prayer warrior assignments."
+        "An unexpected error occurred while fetching prayer warrior assignments.",
       );
     }
   }
@@ -256,13 +269,13 @@ class PrayerAndWarriorService {
   async markPrayerAnswered(prayerRequestId: string) {
     try {
       const prayerRequest = await this.prayerRepository.findById(
-        prayerRequestId
+        prayerRequestId,
       );
       if (!prayerRequest)
         throw new AppError(400, "Prayer request does not exist");
 
       const prayerWarrior = await this.prayerWarriorRepository.findById(
-        String(prayerRequest.prayerWarrior)
+        String(prayerRequest.prayerWarrior),
       );
       if (!prayerWarrior)
         throw new AppError(400, "Prayer warrior does not exist");
@@ -282,7 +295,7 @@ class PrayerAndWarriorService {
     } catch (error: any) {
       logger.error(
         { error: error.message },
-        "Failed to mark prayer request answered"
+        "Failed to mark prayer request answered",
       );
       throw new AppError(400, error.message);
     }
@@ -291,7 +304,7 @@ class PrayerAndWarriorService {
   async prayOnPrayerRequests(prayerRequestId: string) {
     try {
       const prayerRequest = await this.prayerRepository.findById(
-        prayerRequestId
+        prayerRequestId,
       );
       if (!prayerRequest)
         throw new AppError(400, "Prayer request does not exist");
@@ -307,10 +320,105 @@ class PrayerAndWarriorService {
     } catch (error: any) {
       logger.error(
         { error: error.message },
-        "Failed to pray on prayer request"
+        "Failed to pray on prayer request",
       );
       throw new AppError(400, error.message);
     }
+  }
+
+  async commentOnPrayerRequest(
+    prayerRequestId: string,
+    message: string,
+    userId: string,
+  ) {
+    try {
+      const prayerRequest = await this.prayerRepository.findById(
+        prayerRequestId,
+      );
+      if (!prayerRequest)
+        throw new AppError(404, "Prayer request does not exist");
+
+      const [member, admin] = await Promise.all([
+        this.memberRepository.findById(userId),
+        this.userRepository.findById(userId),
+      ]);
+      let prayerWarrior;
+      if (member) {
+        prayerWarrior = await this.prayerWarriorRepository.findOne({
+          churchMemberId: member.id,
+        });
+      }
+      let user;
+      if (member || admin) {
+        user = member || admin;
+      }
+
+      let commentedByName;
+      if (user) {
+        commentedByName = `${user.firstName} ${user.lastName}`;
+      } else if (prayerWarrior) {
+        commentedByName = prayerWarrior.name;
+      }
+
+      const comment = await this.prayerRequestCommentRepository.save({
+        prayerRequestId,
+        message,
+        commentedBy: commentedByName,
+      });
+
+      return {
+        success: true,
+        comment,
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Error commenting on prayer request",
+      );
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while commenting on prayer request",
+      );
+    }
+  }
+
+  async getCommentsOnPrayerRequest(req: any) {
+    const prayerRequestId = req.params.prayerRequestId;
+
+    try {
+      const prayerRequest = await this.prayerRepository.findById(
+        prayerRequestId,
+      );
+      if (!prayerRequest)
+        throw new AppError(404, "Prayer request does not exist");
+
+      const comments = await this.prayerRequestCommentRepository.findAll({
+        prayerRequestId: prayerRequest.id,
+      });
+
+      return {
+        success: true,
+        message: "Comments fetched successfully",
+        comments,
+      };
+    } catch (error) {
+      logger.error({ error: "Error fetching prayer request comments" });
+      throw new Error(
+        "An unexpected error occurred while fetching prayer request comments.",
+      );
+    }
+  }
+
+  async deleteCommentOnPrayerRequest(commentId: string) {
+    const comment = await this.prayerRequestCommentRepository.findById(
+      commentId,
+    );
+    if (!comment) throw new AppError(404, "Comment does not exist");
+
+    await this.prayerRequestCommentRepository.deleteById(commentId);
+
+    return "Comment has been deleted successfully";
   }
 }
 

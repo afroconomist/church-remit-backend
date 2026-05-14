@@ -103,6 +103,45 @@ class EventController {
     }
   };
 
+  getUpcomingChurchEvents = async (req: Request, res: Response) => {
+    try {
+      const upcomingEvents = await this.eventService.getUpcomingChurchEvents(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", upcomingEvents));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getRecurringChurchEvents = async (req: Request, res: Response) => {
+    try {
+      const recurringEvents = await this.eventService.getRecurringChurchEvents(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", recurringEvents));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getPastChurchEvents = async (req: Request, res: Response) => {
+    try {
+      const pastEvents = await this.eventService.getPastChurchEvents(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", pastEvents));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
   getRegisteredAttendees = async (req: Request, res: Response) => {
     try {
       const registeredAttendees =

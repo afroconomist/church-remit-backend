@@ -9,10 +9,7 @@ class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
   uploadDocument = async (req: Request, res: Response) => {
-    const result: any = await this.documentService.uploadDocument(
-      req.body,
-      req.user.id,
-    );
+    const result: any = await this.documentService.uploadDocument(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);

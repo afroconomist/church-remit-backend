@@ -38,8 +38,8 @@ class CourseController {
       .json(result);
   };
 
-  enrollStudent = async (req: Request, res: Response) => {
-    const result: any = await this.courseService.enrollStudent(req);
+  enrollToCourse = async (req: Request, res: Response) => {
+    const result: any = await this.courseService.enrollToCourse(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
@@ -85,11 +85,19 @@ class CourseController {
       .json(result);
   };
 
-  getCourse = async (req: Request, res: Response) => {
-    const result: any = await this.courseService.getCourse(req.params.courseId);
-    return res
-      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
-      .json(result);
+  getCourseAndModules = async (req: Request, res: Response) => {
+    try {
+      const courseAndModules = await this.courseService.getCourseAndModules(
+        req,
+      );
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", courseAndModules));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
   };
 
   getAllChurchCourses = async (req: Request, res: Response) => {
@@ -112,19 +120,6 @@ class CourseController {
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", churchMandatoryCourses));
-    } catch (error: any) {
-      return res
-        .status(httpStatus.INTERNAL_SERVER_ERROR)
-        .json(ErrorResponse("Internal Server Error: ", error.message));
-    }
-  };
-
-  getCourseModules = async (req: Request, res: Response) => {
-    try {
-      const courseModules = await this.courseService.getCourseModules(req);
-      return res
-        .status(httpStatus.OK)
-        .send(SuccessResponse("Operation successful", courseModules));
     } catch (error: any) {
       return res
         .status(httpStatus.INTERNAL_SERVER_ERROR)

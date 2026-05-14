@@ -3,5 +3,6 @@ export type EnrollStudent = {
   role: string;
   department: string;
   memberId: string;
+  courseId: string;
   churchId: string;
 };

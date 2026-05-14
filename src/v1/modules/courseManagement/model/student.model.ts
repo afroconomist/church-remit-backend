@@ -7,7 +7,9 @@ export class Student extends Model {
   studentName: string;
   role: string;
   department: string;
+  isEnrolled: boolean;
   memberId: string;
+  courseId: string;
   churchId: string;
 }
 

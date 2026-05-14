@@ -107,8 +107,8 @@ class FacilityService {
       const { data: facilityBookings, totalRecords } =
         await this.facilityBookingRepository.findAndCountAll(
           { facilityId },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (facilityBookings.length === 0) {
@@ -146,8 +146,8 @@ class FacilityService {
       const { data: churchFacilities, totalRecords } =
         await this.facilityRepository.findAndCountAll(
           { churchId },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (churchFacilities.length === 0) {

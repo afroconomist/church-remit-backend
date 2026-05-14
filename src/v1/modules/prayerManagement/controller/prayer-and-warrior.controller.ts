@@ -7,13 +7,13 @@ import httpStatus from "http-status";
 @injectable()
 class PrayerAndWarriorController {
   constructor(
-    private readonly prayerAndWarriorService: PrayerAndWarriorService
+    private readonly prayerAndWarriorService: PrayerAndWarriorService,
   ) {}
 
   submitPrayerRequest = async (req: Request, res: Response) => {
     const result: any = await this.prayerAndWarriorService.submitPrayerRequest(
       req.body,
-      req.user.id
+      req.user.id,
     );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -23,7 +23,7 @@ class PrayerAndWarriorController {
   addPrayerWarrior = async (req: Request, res: Response) => {
     const result: any = await this.prayerAndWarriorService.addPrayerWarrior(
       req.body,
-      req.user.id
+      req.user.id,
     );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -84,7 +84,7 @@ class PrayerAndWarriorController {
       return res
         .status(httpStatus.OK)
         .send(
-          SuccessResponse("Operation successful", prayerWarriorAssignments)
+          SuccessResponse("Operation successful", prayerWarriorAssignments),
         );
     } catch (error: any) {
       return res
@@ -96,7 +96,7 @@ class PrayerAndWarriorController {
   markPrayerAnswered = async (req: Request, res: Response) => {
     try {
       const result: any = await this.prayerAndWarriorService.markPrayerAnswered(
-        req.params.prayerRequestId
+        req.params.prayerRequestId,
       );
       if (result.success) {
         return res.send(SuccessResponse(result.message));
@@ -117,7 +117,7 @@ class PrayerAndWarriorController {
     try {
       const result: any =
         await this.prayerAndWarriorService.prayOnPrayerRequests(
-          req.params.prayerRequestId
+          req.params.prayerRequestId,
         );
       if (result.success) {
         return res.send(SuccessResponse(result.message));
@@ -132,6 +132,35 @@ class PrayerAndWarriorController {
         message: "Failed to pray on prayer request",
       });
     }
+  };
+
+  commentOnPrayerRequest = async (req: Request, res: Response) => {
+    const result: any =
+      await this.prayerAndWarriorService.commentOnPrayerRequest(
+        req.params.prayerRequestId,
+        req.body.message,
+        req.user.id,
+      );
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
+
+  getCommentsOnPrayerRequest = async (req: Request, res: Response) => {
+    const result: any =
+      await this.prayerAndWarriorService.getCommentsOnPrayerRequest(req);
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
+
+  deleteCommentOnPrayerRequest = async (req: Request, res: Response) => {
+    const response =
+      await this.prayerAndWarriorService.deleteCommentOnPrayerRequest(
+        req.params.commentId,
+      );
+
+    return res.status(httpStatus.OK).send(SuccessResponse(response));
   };
 }
 

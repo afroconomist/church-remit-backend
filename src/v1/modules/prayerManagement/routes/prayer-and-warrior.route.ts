@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import { container } from "tsyringe";
 import { submitPrayerRequestRules } from "../validations/submit-prayer-request.validator";
+import { addCommentOnPrayerRequestRules } from "../validations/add-comment-on-prayer-request.validator";
 import { addPrayerWarriorRules } from "../validations/add-prayer-warrior.validator";
 import { assignPrayerToWarriorRules } from "../validations/assign-prayer-to-warrior.validator";
 import { validate } from "@shared/middlewares/validator.middleware";
@@ -95,6 +96,33 @@ router.put(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .prayOnPrayerRequests(req, res)
+      .catch((err) => next(err))
+);
+
+router.post(
+  "/prayer/:prayerRequestId/comment",
+  [authMiddleware, validate(addCommentOnPrayerRequestRules)],
+  (req: Request, res: Response, next) =>
+    prayerAndWarriorController
+      .commentOnPrayerRequest(req, res)
+      .catch((err) => next(err))
+);
+
+router.get(
+  "/prayer/:prayerRequestId/comments",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    prayerAndWarriorController
+      .getCommentsOnPrayerRequest(req, res)
+      .catch((err) => next(err))
+);
+
+router.delete(
+  "/prayer/requests/comments/:commentId/delete",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    prayerAndWarriorController
+      .deleteCommentOnPrayerRequest(req, res)
       .catch((err) => next(err))
 );
 

@@ -27,6 +27,7 @@ export enum DB_TABLES {
   EVENT_VOLUNTEERS = "event_volunteers",
   EVENT_REVIEWS = "event_reviews",
   PRAYERS = "prayers",
+  PRAYER_REQUEST_COMMENTS = "prayer_request_comments",
   PRAYER_WARRIORS = "prayer_warriors",
   GROUPS = "groups",
   GROUP_MEMBERS = "group_members",

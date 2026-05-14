@@ -107,7 +107,11 @@ class CampusService {
 
     try {
       const { data: churchCampuses, totalRecords } =
-        await this.campusRepository.findAndCountAll({ churchId }, page, limit);
+        await this.campusRepository.findAndCountAll(
+          { churchId },
+          currentPage,
+          pageSize,
+        );
 
       if (churchCampuses.length === 0) {
         return {
@@ -144,8 +148,8 @@ class CampusService {
       const { data: campusPersonnels, totalRecords } =
         await this.campusPersonnelRepository.findAndCountAll(
           { campusId },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (campusPersonnels.length === 0) {

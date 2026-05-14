@@ -12,14 +12,13 @@ import {
 } from "@shared/middlewares/validator.middleware";
 import { loginRules } from "../../auth/validations/login.validator";
 import { changePasswordRules } from "../validations/change-password.validator";
-import { profilePictureUploadRules } from "../../userManagement/validations/profile-picture.validator";
 import { deleteReasonRules } from "../../userManagement/validations/delete-reason.validator";
 import { getSingleUserRules } from "../../userManagement/validations/get-single-user.validator";
-
 import MemberController from "../controller/member.controller";
 import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
 import { AccessControls } from "../../accessControlManagement/enums/access-control.enum";
 import authMiddleware from "@shared/middlewares/auth.middleware";
+import { uploadMiddleware } from "@shared/utils/files";
 
 const memberController = container.resolve(MemberController);
 
@@ -78,7 +77,6 @@ router.get(
   "/members/profile",
   [
     authMiddleware,
-    // accessControlMiddleware(AccessControls.USER_LIST),
   ],
   (req: Request, res: Response, next) => {
     memberController.getMemberProfile(req, res).catch((e) => next(e));
@@ -89,7 +87,6 @@ router.put(
   "/members/:id/update",
   [
     authMiddleware,
-    // accessControlMiddleware(AccessControls.USER_PROFILE_UPDATE),
     validate(updateMemberRules),
   ],
   (req: Request, res: Response, next) => {
@@ -101,8 +98,7 @@ router.put(
   "/members/:id/upload-dp",
   [
     authMiddleware,
-    // accessControlMiddleware(AccessControls.USER_PROFILE_UPDATE),
-    validate(profilePictureUploadRules),
+    uploadMiddleware.single("profilePicture"),
   ],
   (req: Request, res: Response, next) => {
     memberController

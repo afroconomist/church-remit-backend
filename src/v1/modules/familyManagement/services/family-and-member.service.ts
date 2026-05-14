@@ -101,8 +101,8 @@ class FamilyAndMemberService {
           {
             church: churchId,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (families.length === 0) {
@@ -240,8 +240,8 @@ class FamilyAndMemberService {
             churchId,
             linkedToFamily: false,
           },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (unlinkedMembers.length === 0) {
