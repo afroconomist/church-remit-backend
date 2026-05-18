@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { container } from "tsyringe";
 import { submitPrayerRequestRules } from "../validations/submit-prayer-request.validator";
 import { addCommentOnPrayerRequestRules } from "../validations/add-comment-on-prayer-request.validator";
+import { createTestimonyRules } from "../validations/create-testimony.validator";
 import { addPrayerWarriorRules } from "../validations/add-prayer-warrior.validator";
 import { assignPrayerToWarriorRules } from "../validations/assign-prayer-to-warrior.validator";
 import { validate } from "@shared/middlewares/validator.middleware";
@@ -123,6 +124,15 @@ router.delete(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .deleteCommentOnPrayerRequest(req, res)
+      .catch((err) => next(err))
+);
+
+router.post(
+  "/testimonies/create",
+  [authMiddleware, validate(createTestimonyRules)],
+  (req: Request, res: Response, next) =>
+    prayerAndWarriorController
+      .createTestimony(req, res)
       .catch((err) => next(err))
 );
 

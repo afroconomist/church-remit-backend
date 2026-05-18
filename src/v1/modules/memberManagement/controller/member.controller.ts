@@ -227,6 +227,11 @@ class MemberController {
         .json(ErrorResponse("Internal Server Error: ", error.message));
     }
   };
+
+  sendBirthdayMessage = async (req: Request, res: Response) => {
+    const response = await this.memberService.sendBirthdayMessage(req);
+    return res.status(httpStatus.OK).send(SuccessResponse(response.message));
+  };
 }
 
 export default MemberController;

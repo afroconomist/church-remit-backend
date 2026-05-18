@@ -1,13 +1,13 @@
 import { injectable } from "tsyringe";
-import PrayerFactory from "../factories/prayer.factory";
-import PrayerRepository from "../repositories/prayer.repository";
+import PrayerFactory from "../factories/prayer_request.factory";
+import PrayerRepository from "../repositories/prayer_request.repository";
 import PrayerRequestCommentRepository from "../repositories/prayer_request_comment.repository";
+import TestimonyRepository from "../repositories/testimony.repository";
 import PrayerWarriorFactory from "../factories/prayer_warrior.factory";
 import PrayerWarriorRepository from "../repositories/prayer_warrior.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
 import MemberRepository from "../../memberManagement/repositories/member.repository";
 import { SubmitPrayerRequest } from "../dtos/submit-prayer-request.dto";
-import { AddPrayerWarrior } from "../dtos/add-prayer-warrior.dto";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
 
@@ -16,6 +16,7 @@ class PrayerAndWarriorService {
   constructor(
     private readonly prayerRepository: PrayerRepository,
     private readonly prayerRequestCommentRepository: PrayerRequestCommentRepository,
+    private readonly testimonyRepository: TestimonyRepository,
     private readonly prayerWarriorRepository: PrayerWarriorRepository,
     private readonly userRepository: UserRepository,
     private readonly memberRepository: MemberRepository,
@@ -77,15 +78,27 @@ class PrayerAndWarriorService {
     }
   }
 
-  async addPrayerWarrior(data: AddPrayerWarrior, superAdminId: string) {
+  async addPrayerWarrior(req: any) {
     try {
-      const superAdmin = await this.userRepository.findById(superAdminId);
+      const superAdmin = await this.userRepository.findById(req.user.id);
       if (!superAdmin) throw new AppError(400, "Super admin does not exist");
 
+      const member = await this.memberRepository.findById(req.body.memberId);
+      if (!member) throw new AppError(400, "Member does not exist");
+
+      const prayerWarriorExists = await this.prayerWarriorRepository.findOne({
+        memberId: member.id,
+      });
+      if (prayerWarriorExists)
+        return {
+          success: false,
+          message: "Member is already a prayer warrior",
+        };
+
       const prayerWarrior = PrayerWarriorFactory.addPrayerWarrior({
-        name: data.name,
-        email: data.email,
-        phoneNumber: data.phoneNumber,
+        name: `${member.firstName} ${member.lastName}`,
+        email: member.email,
+        phoneNumber: member.phoneNumber,
         church: String(superAdmin.churchId),
       });
       const addedPrayerWarrior = await this.prayerWarriorRepository.save(
@@ -419,6 +432,40 @@ class PrayerAndWarriorService {
     await this.prayerRequestCommentRepository.deleteById(commentId);
 
     return "Comment has been deleted successfully";
+  }
+
+  async createTestimony(req: any) {
+    try {
+      const [admin, member] = await Promise.all([
+        this.userRepository.findById(req.user.id),
+        this.memberRepository.findById(req.user.id),
+      ]);
+      if (!admin && !member) throw new AppError(404, "User does not exist");
+
+      const memberName = member
+        ? `${member.firstName} ${member.lastName}`
+        : `${admin.firstName} ${admin.lastName}`;
+      const churchId = member ? member.churchId : admin.churchId;
+
+      const testimony = await this.testimonyRepository.save({
+        testimony: req.body.testimony,
+        memberName,
+        churchId: String(churchId),
+      });
+
+      return {
+        success: true,
+        message: "Testimony has been created successfully",
+        testimony,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error creating testimony");
+      throw new AppError(
+        error.statusCode || 400,
+        error.message ||
+          "An unexpected error occurred while creating testimony",
+      );
+    }
   }
 }
 

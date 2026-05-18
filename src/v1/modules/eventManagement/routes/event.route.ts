@@ -2,11 +2,13 @@ import express, { Request, Response } from "express";
 import { container } from "tsyringe";
 import { createNewEventRules } from "../validations/create-new-event.validator";
 import { addAgendaRules } from "../validations/add-agenda.validator";
-import { registerForEventRules } from "../validations/register-for-event.validator";
-import { volunteerForEventRules } from "../validations/volunteer-for-event.validator";
 import { submitReviewRules } from "../validations/submit-review.validator";
 import { editEventRules } from "../validations/edit-event.validator";
 import { editAgendaRules } from "../validations/edit-agenda.validator";
+import {
+  createEventBudgetRules,
+  editEventBudgetRules,
+} from "../validations/event-budget.validator";
 import { validate } from "@shared/middlewares/validator.middleware";
 import EventController from "../controller/event.controller";
 import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
@@ -29,7 +31,7 @@ router.post(
 );
 
 router.post(
-  "/events/:eventId/schedule",
+  "/events/:eventId/add-agenda",
   [authMiddleware, validate(addAgendaRules)],
   (req: Request, res: Response, next) =>
     eventController.addAgenda(req, res).catch((err) => next(err)),
@@ -37,7 +39,7 @@ router.post(
 
 router.post(
   "/events/:eventId/register",
-  [authMiddleware, validate(registerForEventRules)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     eventController.registerForEvent(req, res).catch((err) => next(err)),
 );
@@ -49,13 +51,6 @@ router.put(
     eventController
       .approveRegisteredAttendees(req, res)
       .catch((err) => next(err)),
-);
-
-router.post(
-  "/events/:eventId/volunteer",
-  [authMiddleware, validate(volunteerForEventRules)],
-  (req: Request, res: Response, next) =>
-    eventController.volunteerForEvent(req, res).catch((err) => next(err)),
 );
 
 router.post(
@@ -90,7 +85,9 @@ router.get(
   "/:churchId/events/recurring",
   [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
   (req: Request, res: Response, next) =>
-    eventController.getRecurringChurchEvents(req, res).catch((err) => next(err)),
+    eventController
+      .getRecurringChurchEvents(req, res)
+      .catch((err) => next(err)),
 );
 
 router.get(
@@ -98,13 +95,6 @@ router.get(
   [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
   (req: Request, res: Response, next) =>
     eventController.getPastChurchEvents(req, res).catch((err) => next(err)),
-);
-
-router.get(
-  "/events/:eventId/registered-attendees",
-  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_REGISTRATION)],
-  (req: Request, res: Response, next) =>
-    eventController.getRegisteredAttendees(req, res).catch((err) => next(err)),
 );
 
 router.get(
@@ -168,7 +158,45 @@ router.get(
   "/events/:eventId/info",
   [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
   (req: Request, res: Response, next) =>
-    eventController.getEvent(req, res).catch((err) => next(err)),
+    eventController.getEventAndAttendees(req, res).catch((err) => next(err)),
+);
+
+router.post(
+  "/events/:eventId/create-budget",
+  [
+    authMiddleware,
+    accessControlMiddleware(AccessControls.EVENT_CREATION),
+    validate(createEventBudgetRules),
+  ],
+  (req: Request, res: Response, next) =>
+    eventController.createEventBudget(req, res).catch((err) => next(err)),
+);
+
+router.put(
+  "/events/:budgetId/edit-budget",
+  [
+    authMiddleware,
+    accessControlMiddleware(AccessControls.EVENT_UPDATE),
+    validate(editEventBudgetRules),
+  ],
+  (req: Request, res: Response, next) =>
+    eventController.editEventBudget(req, res).catch((err) => next(err)),
+);
+
+router.delete(
+  "/events/:budgetId/delete-budget",
+  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_DELETION)],
+  (req: Request, res: Response, next) =>
+    eventController.deleteEventBudget(req, res).catch((err) => next(err)),
+);
+
+router.put(
+  "/events/recurring/update-dates",
+  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_UPDATE)],
+  (req: Request, res: Response, next) =>
+    eventController
+      .updateRecurringEventDates(req, res)
+      .catch((err) => next(err)),
 );
 
 export default router;

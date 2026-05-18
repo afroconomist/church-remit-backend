@@ -174,24 +174,24 @@ class FacilityService {
     }
   }
 
-  async putFacilityInMaintenanceStatus(facilityId: string) {
+  async changeFacilityStatus(req: any) {
     try {
+      const facilityId = req.params.facilityId;
       const facility = await this.facilityRepository.findById(facilityId);
       if (!facility) throw new AppError(400, "Facility does not exist");
 
       await this.facilityRepository.updateById(facility.id, {
-        status: "Maintenance",
-        eventBookedFor: "Under maintenance",
+        status: req.body.status,
       });
 
       return {
         success: true,
-        message: `${facility.facilityName} is now in maintenance status`,
+        message: `${facility.facilityName} is now in ${req.body.status} status`,
       };
     } catch (error: any) {
       logger.error(
         { error: error.message },
-        "Failed to put facicity in maintenance status",
+        "Failed to change facility status",
       );
       throw new AppError(400, error.message);
     }

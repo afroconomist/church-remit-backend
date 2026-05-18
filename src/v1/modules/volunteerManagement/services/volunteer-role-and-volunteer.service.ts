@@ -8,6 +8,7 @@ import VolunteerRepository from "../repositories/volunteer.repo";
 import UserRepository from "../../userManagement/repositories/user.repository";
 import MemberRepository from "../../memberManagement/repositories/member.repository";
 import MemberFactory from "../../memberManagement/factories/member.factory";
+import EventRepository from "../../eventManagement/repositories/event.repository";
 import MailService from "../../notificationAndEmailManagement/services/mail.service";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
@@ -21,20 +22,22 @@ class VolunteerAndRoleService {
     private readonly volunteerRepository: VolunteerRepository,
     private readonly userRepository: UserRepository,
     private readonly memberRepository: MemberRepository,
+    private readonly eventRepository: EventRepository,
     private readonly mailService: MailService,
     private readonly roleRepo: RoleRepo,
   ) {}
 
-  async createVolunteerRoleAndShifts(
-    data: CreateVolunteerRole,
-    superAdminId: string,
-  ) {
+  async createVolunteerRole(data: CreateVolunteerRole, superAdminId: string) {
     try {
       const superAdmin = await this.userRepository.findById(superAdminId);
       if (!superAdmin) throw new AppError(400, "Super admin does not exist");
 
+      const churchEvent = await this.eventRepository.findById(data.event_id);
+      if (!churchEvent) throw new AppError(400, "Church event does not exist");
+
       const volunteerRole = VolunteerRoleFactory.createVolunteerRole({
         ...data,
+        eventId: churchEvent.id,
         church: String(superAdmin.churchId),
       });
       const newVolunteerRole = await this.volunteerRoleRepository.save(
@@ -203,9 +206,23 @@ class VolunteerAndRoleService {
         };
       }
 
+      const volunteerRolesWithVolunteers = await Promise.all(
+        volunteerRoles.map(async (role) => {
+          const volunteers = await this.volunteerRepository.findAll({
+            volunteerRole: role.id,
+          });
+          return {
+            ...role,
+            volunteers,
+            availableSlots:
+              role.noOfVolunteersNeeded - Number(role.noOfAssignedVolunteers),
+          };
+        }),
+      );
+
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
-        volunteerRoles,
+        volunteerRoles: volunteerRolesWithVolunteers,
         total_result: totalRecords,
         current_page: currentPage,
         total_pages: totalPages,
@@ -272,6 +289,16 @@ class VolunteerAndRoleService {
       if (!volunteerRole)
         throw new AppError(400, "Volunteer role does not exist");
 
+      if (
+        volunteerRole.noOfVolunteersNeeded ===
+        volunteerRole.noOfAssignedVolunteers
+      ) {
+        return {
+          success: false,
+          message: "All volunteer slots for this role are filled",
+        };
+      }
+
       await this.volunteerRepository.updateById(volunteer.id, {
         volunteerRoleName: volunteerRole.name,
         section: volunteerRole.section,
@@ -279,7 +306,8 @@ class VolunteerAndRoleService {
       });
 
       await this.volunteerRoleRepository.updateById(volunteerRole.id, {
-        noOfVolunteersNeeded: volunteerRole.noOfVolunteersNeeded - 1,
+        noOfAssignedVolunteers:
+          Number(volunteerRole.noOfAssignedVolunteers) + 1,
       });
 
       return {
@@ -290,6 +318,32 @@ class VolunteerAndRoleService {
       logger.error(
         { error: error.message },
         "Failed to assign volunteer to role",
+      );
+      throw new AppError(400, error.message);
+    }
+  }
+
+  async changeVolunteerStatus(req: Request) {
+    try {
+      const { status } = req.body;
+
+      const volunteer = await this.volunteerRepository.findById(
+        req.params.volunteerId,
+      );
+      if (!volunteer) throw new AppError(400, "Volunteer does not exist");
+
+      await this.volunteerRepository.updateById(volunteer.id, {
+        status,
+      });
+
+      return {
+        success: true,
+        message: `Volunteer status has been successfully updated to ${status}`,
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Failed to change volunteer status",
       );
       throw new AppError(400, error.message);
     }

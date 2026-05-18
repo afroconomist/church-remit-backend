@@ -231,6 +231,10 @@ class CourseService {
       });
       await this.studentRepository.save(student);
 
+      await this.courseRepository.updateById(course.id, {
+        enrolled: Number(course.enrolled) + 1,
+      });
+
       return {
         success: true,
         message: "You have enrolled to the course successfully",
@@ -264,10 +268,6 @@ class CourseService {
         });
 
       await this.studentCourseProgressRepository.save(studentCourseProgress);
-
-      await this.courseRepository.updateById(course.id, {
-        enrolled: Number(course.enrolled) + 1,
-      });
 
       return {
         success: true,

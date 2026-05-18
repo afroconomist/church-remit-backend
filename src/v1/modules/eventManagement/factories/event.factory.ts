@@ -10,8 +10,9 @@ class EventFactory {
     event.category = data.category;
     event.location = data.location;
     event.eventDate = data.eventDate;
-    event.startTime = data.startTime;
-    event.endTime = data.endTime;
+    event.nextEventDate = data.nextEventDate;
+    event.eventStartTime = data.eventStartTime;
+    event.eventEndTime = data.eventEndTime;
     event.maximumCapacity = data.maximumCapacity;
     event.maximumCapacityTracker = data.maximumCapacityTracker;
     event.registration = data.registration;

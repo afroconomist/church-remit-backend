@@ -100,8 +100,22 @@ class MailService {
     } catch (error: any) {
       logger.error(
         { error: error.message },
-        "Failed to send password reset link"
+        "Failed to send password reset link",
       );
+    }
+  }
+
+  async sendBirthdayMessage(options: any): Promise<void> {
+    const data = {
+      name: options.name,
+      email: options.email,
+      subject: options.subject,
+      link: options.link,
+    };
+    try {
+      await this.sendMail(data, options, "birthday_message");
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to send birthday message");
     }
   }
 
@@ -134,7 +148,7 @@ class MailService {
   private async sendMail(
     data: any,
     options: any,
-    template: any
+    template: any,
   ): Promise<void> {
     const html = this.renderTemplate(`${template}.pug`, data);
 
@@ -156,7 +170,7 @@ class MailService {
     const templatePath = path.resolve(
       __dirname,
       "../../../../../src/shared/mailer/views",
-      templateName
+      templateName,
     );
     return pug.renderFile(templatePath, data);
   }

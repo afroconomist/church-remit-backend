@@ -1,3 +1,11 @@
+export interface GroupCriteriaInput {
+  criteriaType: "age" | "gender" | "marital-status";
+  minAge?: number;
+  maxAge?: number;
+  gender?: string;
+  maritalStatus?: string;
+}
+
 export type CreateGroup = {
   groupName: string;
   category: string;
@@ -12,6 +20,7 @@ export type CreateGroup = {
   criteriaType?: string;
   minAge?: number;
   maxAge?: number;
+  criterias?: GroupCriteriaInput[];
   publicGroup?: boolean;
   allowGuestInvites?: boolean;
   requireLeaderApproval?: boolean;

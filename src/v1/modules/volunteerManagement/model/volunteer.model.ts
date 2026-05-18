@@ -16,6 +16,7 @@ export class Volunteer extends Model {
   awards?: number;
   volunteerRoleName?: string;
   section?: string;
+  status?: string;
   volunteerRole?: string;
   church: string;
   churchMemberId?: string;

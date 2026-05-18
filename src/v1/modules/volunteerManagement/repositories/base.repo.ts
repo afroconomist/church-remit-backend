@@ -20,7 +20,7 @@ export class BaseRepository<T, M extends Model> {
   async updateById(
     id: string,
     data: Partial<M>,
-    trx?: Transaction
+    trx?: Transaction,
   ): Promise<M> {
     return await this.model
       .query(trx)
@@ -35,7 +35,7 @@ export class BaseRepository<T, M extends Model> {
   async findAndCountAll(
     filter: ObjectLiteral,
     page: number,
-    limit: number
+    limit: number,
   ): Promise<{ data: T[]; totalRecords: number }> {
     const query = this.model.query();
 
@@ -48,6 +48,21 @@ export class BaseRepository<T, M extends Model> {
       .offset((page - 1) * limit);
 
     return { data, totalRecords };
+  }
+
+  async findAll(filter: ObjectLiteral): Promise<T[]> {
+    const baseQuery = this.model.query();
+
+    Object.entries(filter).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        baseQuery.whereIn(key, value);
+      } else {
+        baseQuery.where(key, value);
+      }
+    });
+
+    const data = await baseQuery;
+    return data;
   }
 
   async save(data: Partial<T>, transaction?: Transaction): Promise<M> {
