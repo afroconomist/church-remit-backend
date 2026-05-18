@@ -10,12 +10,11 @@ class VolunteerAndRoleController {
     private readonly volunteerAndRoleService: VolunteerAndRoleService,
   ) {}
 
-  createVolunteerRoleAndShifts = async (req: Request, res: Response) => {
-    const result: any =
-      await this.volunteerAndRoleService.createVolunteerRoleAndShifts(
-        req.body,
-        req.user.id,
-      );
+  createVolunteerRole = async (req: Request, res: Response) => {
+    const result: any = await this.volunteerAndRoleService.createVolunteerRole(
+      req.body,
+      req.user.id,
+    );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
@@ -74,6 +73,14 @@ class VolunteerAndRoleController {
         message: "Failed to assign volunteer to role",
       });
     }
+  };
+
+  changeVolunteerStatus = async (req: Request, res: Response) => {
+    const result: any =
+      await this.volunteerAndRoleService.changeVolunteerStatus(req);
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
   };
 }
 

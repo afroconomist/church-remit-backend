@@ -8,13 +8,15 @@ import GroupChatFactory from "../factories/group_chat.factory";
 import GroupChatRepository from "../repositories/group_chat.repository";
 import GroupMeetingAttendanceFactory from "../factories/group_meeting_attendance.factory";
 import GroupMeetingAttendanceRepository from "../repositories/group_meeting_attendance.repository";
+import GroupCriteriaFactory from "../factories/group_criteria.factory";
+import GroupCriteriaRepository from "../repositories/group_criteria.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
 import MemberRepository from "../../memberManagement/repositories/member.repository";
 import { CreateGroup } from "../dtos/create-new-group.dto";
 import { RecordAttendance } from "../dtos/record-attendance.dto";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
-import { normalizeDate } from "@shared/utils/functions.util";
+import { normalizeDate, getAgeByDate } from "@shared/utils/functions.util";
 
 @injectable()
 class GroupService {
@@ -23,6 +25,7 @@ class GroupService {
     private readonly groupMemberRepository: GroupMemberRepository,
     private readonly groupChatRepository: GroupChatRepository,
     private readonly groupMeetingAttendanceRepository: GroupMeetingAttendanceRepository,
+    private readonly groupCriteriaRepository: GroupCriteriaRepository,
     private readonly userRepository: UserRepository,
     private readonly memberRepository: MemberRepository,
   ) {}
@@ -65,6 +68,18 @@ class GroupService {
       });
       await this.groupMemberRepository.save(groupMember);
 
+      if (data.criterias && data.criterias.length > 0) {
+        for (const criteria of data.criterias) {
+          const groupCriteria = GroupCriteriaFactory.createGroupCriteria({
+            criteriaType: criteria.criteriaType,
+            minAge: criteria.minAge,
+            maxAge: criteria.maxAge,
+            groupId: newGroup.id,
+          });
+          await this.groupCriteriaRepository.save(groupCriteria);
+        }
+      }
+
       return {
         success: true,
         message: "Group has been created successfully",
@@ -106,6 +121,23 @@ class GroupService {
           status: false,
           message: `Maximum capacity of ${group.capacity} group members have been met`,
         };
+      }
+
+      const groupCriterias = await this.groupCriteriaRepository.findAll({
+        groupId: group.id,
+      });
+
+      if (groupCriterias && groupCriterias.length > 0) {
+        const criteriaValidation = this.checkMemberCriteria(
+          churchMember,
+          groupCriterias,
+        );
+        if (!criteriaValidation.isValid) {
+          return {
+            status: false,
+            message: criteriaValidation.error,
+          };
+        }
       }
 
       const member = GroupMemberFactory.addMemberToGroup({
@@ -159,6 +191,23 @@ class GroupService {
           status: false,
           message: `Maximum capacity of ${group.capacity} group members have been met`,
         };
+      }
+
+      const groupCriterias = await this.groupCriteriaRepository.findAll({
+        groupId: group.id,
+      });
+
+      if (groupCriterias && groupCriterias.length > 0) {
+        const criteriaValidation = this.checkMemberCriteria(
+          churchMember,
+          groupCriterias,
+        );
+        if (!criteriaValidation.isValid) {
+          return {
+            status: false,
+            message: criteriaValidation.error,
+          };
+        }
       }
 
       if (group.requireLeaderApproval) {
@@ -235,13 +284,37 @@ class GroupService {
     }
   }
 
+  async getGroupMessages(req: any) {
+    try {
+      const group = await this.groupRepository.findById(req.params.groupId);
+      if (!group) throw new AppError(400, "Group does not exist");
+
+      const groupMessages = await this.groupChatRepository.findAll({
+        group: group.id,
+      });
+
+      return {
+        success: true,
+        groupMessages,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error fetching group messages");
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while fetching group messages",
+      );
+    }
+  }
+
   async recordAttendance(data: RecordAttendance, groupId: string) {
     try {
       const group = await this.groupRepository.findById(groupId);
       if (!group) throw new AppError(400, "Group does not exist");
 
-      const normalizedMeetingDate = normalizeDate(data.meetingDate);
+      const meetingDate = new Date(data.meetingDate);
       const today = normalizeDate(new Date());
+      const normalizedMeetingDate = normalizeDate(meetingDate);
       if (normalizedMeetingDate > today) {
         throw new AppError(400, "Cannot record attendance for future meetings");
       }
@@ -609,6 +682,75 @@ class GroupService {
         "An unexpected error occurred while fetching group join requests.",
       );
     }
+  }
+
+  private checkMemberCriteria(
+    member: any,
+    criterias: any[],
+  ): { isValid: boolean; error?: string } {
+    for (const criteria of criterias) {
+      if (criteria.criteriaType === "age") {
+        if (!member.dateOfBirth) {
+          return {
+            isValid: false,
+            error:
+              "Member does not have a date of birth recorded. Cannot validate age criteria.",
+          };
+        }
+
+        const memberAge = getAgeByDate(member.dateOfBirth);
+
+        if (criteria.minAge && memberAge < criteria.minAge) {
+          return {
+            isValid: false,
+            error: `Member age (${memberAge}) does not meet the minimum age requirement (${criteria.minAge}) for this group.`,
+          };
+        }
+
+        if (criteria.maxAge && memberAge > criteria.maxAge) {
+          return {
+            isValid: false,
+            error: `Member age (${memberAge}) exceeds the maximum age requirement (${criteria.maxAge}) for this group.`,
+          };
+        }
+      }
+
+      if (criteria.criteriaType === "gender") {
+        if (!member.gender) {
+          return {
+            isValid: false,
+            error:
+              "Member does not have a gender recorded. Cannot validate gender criteria.",
+          };
+        }
+
+        if (member.gender !== criteria.gender) {
+          return {
+            isValid: false,
+            error: `Member gender (${member.gender}) does not match the required gender (${criteria.gender}) for this group.`,
+          };
+        }
+      }
+
+      if (criteria.criteriaType === "marital-status") {
+        if (!member.maritalStatus) {
+          return {
+            isValid: false,
+            error:
+              "Member does not have a marital status recorded. Cannot validate marital status criteria.",
+          };
+        }
+
+        if (member.maritalStatus !== criteria.maritalStatus) {
+          return {
+            isValid: false,
+            error: `Member marital status (${member.maritalStatus}) does not match the required status (${criteria.maritalStatus}) for this group.`,
+          };
+        }
+      }
+    }
+
+    return { isValid: true };
   }
 }
 

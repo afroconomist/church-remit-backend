@@ -8,9 +8,10 @@ export class ChurchEvent extends Model {
   description: Text;
   category: string;
   location: string;
-  eventDate: Date;
-  startTime: string;
-  endTime: string;
+  eventDate: string;
+  nextEventDate?: string;
+  eventStartTime: Date;
+  eventEndTime: Date;
   maximumCapacity: number;
   maximumCapacityTracker: number;
   registration: boolean;

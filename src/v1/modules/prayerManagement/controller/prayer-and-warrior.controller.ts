@@ -22,8 +22,7 @@ class PrayerAndWarriorController {
 
   addPrayerWarrior = async (req: Request, res: Response) => {
     const result: any = await this.prayerAndWarriorService.addPrayerWarrior(
-      req.body,
-      req.user.id,
+      req,
     );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
@@ -161,6 +160,13 @@ class PrayerAndWarriorController {
       );
 
     return res.status(httpStatus.OK).send(SuccessResponse(response));
+  };
+
+  createTestimony = async (req: Request, res: Response) => {
+    const result: any = await this.prayerAndWarriorService.createTestimony(req);
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
   };
 }
 

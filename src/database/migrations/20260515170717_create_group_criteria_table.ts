@@ -3,19 +3,23 @@ import { DB_TABLES } from "../../shared/enums/db-tables.enum";
 
 export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable(
-    DB_TABLES.PRAYER_REQUEST_COMMENTS,
+    DB_TABLES.GROUP_CRITERIAS,
     (table: Knex.TableBuilder) => {
       table.uuid("id").primary().defaultTo(knex.fn.uuid());
-      table.string("commentedBy").notNullable();
-      table.text("message").notNullable();
-      table.uuid("prayerRequestId").notNullable();
       table
-        .foreign("prayerRequestId")
+        .string("criteriaType")
+        .notNullable()
+        .checkIn(["age", "gender", "marital-status"]);
+      table.integer("minAge").notNullable();
+      table.integer("maxAge").notNullable();
+      table.uuid("groupId").notNullable();
+      table
+        .foreign("groupId")
         .references("id")
-        .inTable(DB_TABLES.PRAYER_REQUESTS)
+        .inTable(DB_TABLES.GROUPS)
         .onDelete("CASCADE")
         .onUpdate("CASCADE");
-      table.index("prayerRequestId");
+      table.index("groupId");
 
       table.timestamps(true, true, true);
     },
@@ -23,5 +27,5 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  return knex.schema.dropTable(DB_TABLES.PRAYER_REQUEST_COMMENTS);
+  return knex.schema.dropTable(DB_TABLES.GROUP_CRITERIAS);
 }

@@ -1,8 +1,6 @@
 export const createVolunteerRoleRules = {
+  event_id: "required|string",
   name: "required|string",
   section: "required|string",
-  scheduledDate: "required|date",
-  noOfVolunteersNeeded: "required",
-  startTime: "required",
-  endTime: "required",
+  noOfVolunteersNeeded: "required|numeric",
 };

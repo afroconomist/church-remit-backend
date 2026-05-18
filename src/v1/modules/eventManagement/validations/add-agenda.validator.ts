@@ -1,5 +1,6 @@
 export const addAgendaRules = {
-  time: "required|string",
+  startTime: "required|string",
+  endTime: "required|string",
   duration: "string",
   title: "required|string",
   description: "string",

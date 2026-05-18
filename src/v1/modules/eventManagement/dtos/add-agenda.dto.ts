@@ -1,5 +1,6 @@
 export type AddNewAgenda = {
-  time: string;
+  startTime: Date;
+  endTime: Date;
   duration: string;
   title: string;
   description: Text;

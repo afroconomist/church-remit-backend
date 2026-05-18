@@ -886,6 +886,30 @@ class MemberService {
       );
     }
   }
+
+  async sendBirthdayMessage(req: Request) {
+    try {
+      const memberBirthday = await this.memberBirthdayRepository.findOne({
+        memberId: req.params.id,
+      });
+      if (!memberBirthday)
+        throw new AppError(400, "Member has not provided date of birth");
+
+      await this.mailService.sendBirthdayMessage({
+        name: memberBirthday.celebrantName,
+        email: memberBirthday.celebrantEmail,
+        subject: "Happy Birthday!",
+        link: `https://example.com/birthday/${memberBirthday.id}`,
+      });
+
+      return { message: "Birthday message sent successfully" };
+    } catch (error) {
+      logger.error({ error: "Error sending birthday message" });
+      throw new Error(
+        "An unexpected error occurred while sending birthday message.",
+      );
+    }
+  }
 }
 
 export default MemberService;

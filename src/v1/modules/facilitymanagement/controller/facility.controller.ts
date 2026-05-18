@@ -57,12 +57,9 @@ class FacilityController {
     }
   };
 
-  putFacilityInMaintenanceStatus = async (req: Request, res: Response) => {
+  changeFacilityStatus = async (req: Request, res: Response) => {
     try {
-      const result: any =
-        await this.facilityService.putFacilityInMaintenanceStatus(
-          req.params.facilityId,
-        );
+      const result: any = await this.facilityService.changeFacilityStatus(req);
       if (result.success) {
         return res.send(SuccessResponse(result.message));
       } else {

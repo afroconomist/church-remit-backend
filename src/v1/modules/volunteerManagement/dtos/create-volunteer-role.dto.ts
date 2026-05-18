@@ -1,10 +1,9 @@
 export type CreateVolunteerRole = {
+  event_id: string;
   name: string;
   section: string;
-  scheduledDate: Date;
   noOfVolunteersNeeded: number;
-  startTime: string;
-  endTime: string;
+  eventId: string;
   church: string;
   groupId?: string;
 };

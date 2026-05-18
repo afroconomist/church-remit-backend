@@ -5,7 +5,8 @@ class EventAgendaFactory {
   static addNewAgenda(data: AddNewAgenda) {
     const eventAgenda = {} as IEventAgenda;
 
-    eventAgenda.time = data.time;
+    eventAgenda.startTime = data.startTime;
+    eventAgenda.endTime = data.endTime;
     eventAgenda.duration = data.duration;
     eventAgenda.title = data.title;
     eventAgenda.description = data.description;

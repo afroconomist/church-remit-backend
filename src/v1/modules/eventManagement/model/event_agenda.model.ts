@@ -4,7 +4,8 @@ import { Model, ModelObject } from "objection";
 export class EventAgenda extends Model {
   static tableName = DB_TABLES.EVENT_AGENDAS;
   id: string;
-  time: string;
+  startTime: Date;
+  endTime: Date;
   duration: string;
   title: string;
   description: Text;

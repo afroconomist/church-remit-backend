@@ -235,3 +235,87 @@ export function daysUntilBirthday(dob: string, today = new Date()): number {
 
   return Math.ceil(diff / msPerDay);
 }
+
+export function validateAgendaTimeWithinEventDuration(
+  agendaStartTime: Date,
+  agendaEndTime: Date,
+  eventStartTime: Date,
+  eventEndTime: Date,
+): { isValid: boolean; error?: string } {
+  const agendaStart = new Date(agendaStartTime);
+  const agendaEnd = new Date(agendaEndTime);
+  const eventStart = new Date(eventStartTime);
+  const eventEnd = new Date(eventEndTime);
+
+  if (agendaStart < eventStart) {
+    return {
+      isValid: false,
+      error: "Agenda start time cannot be before event start time",
+    };
+  }
+
+  if (agendaEnd > eventEnd) {
+    return {
+      isValid: false,
+      error: "Agenda end time cannot be after event end time",
+    };
+  }
+
+  if (agendaEnd <= agendaStart) {
+    return {
+      isValid: false,
+      error: "Agenda end time must be after agenda start time",
+    };
+  }
+
+  return { isValid: true };
+}
+
+export function checkAgendaOverlap(
+  newAgendaStart: Date,
+  newAgendaEnd: Date,
+  existingAgendas: Array<{ startTime: Date; endTime: Date }>,
+): { hasOverlap: boolean; error?: string } {
+  const newStart = new Date(newAgendaStart);
+  const newEnd = new Date(newAgendaEnd);
+
+  for (const agenda of existingAgendas) {
+    const existingStart = new Date(agenda.startTime);
+    const existingEnd = new Date(agenda.endTime);
+
+    if (newStart < existingEnd && newEnd > existingStart) {
+      return {
+        hasOverlap: true,
+        error: `Agenda time overlaps with another agenda scheduled from ${existingStart.toLocaleTimeString()} to ${existingEnd.toLocaleTimeString()}`,
+      };
+    }
+  }
+
+  return { hasOverlap: false };
+}
+
+export function calculateNextEventDate(
+  currentDate: Date,
+  frequency: "weekly" | "monthly" | "quarterly" | "yearly",
+): Date {
+  const nextDate = new Date(currentDate);
+
+  switch (frequency) {
+    case "weekly":
+      nextDate.setDate(nextDate.getDate() + 7);
+      break;
+    case "monthly":
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      break;
+    case "quarterly":
+      nextDate.setMonth(nextDate.getMonth() + 3);
+      break;
+    case "yearly":
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+      break;
+    default:
+      return currentDate;
+  }
+
+  return nextDate;
+}

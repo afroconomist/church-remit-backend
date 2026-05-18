@@ -45,9 +45,7 @@ router.put(
   "/facilities/:facilityId/maintain",
   [authMiddleware, accessControlMiddleware(AccessControls.FACILITY_UPDATE)],
   (req: Request, res: Response, next) =>
-    facilityController
-      .putFacilityInMaintenanceStatus(req, res)
-      .catch((err) => next(err)),
+    facilityController.changeFacilityStatus(req, res).catch((err) => next(err)),
 );
 
 router.put(

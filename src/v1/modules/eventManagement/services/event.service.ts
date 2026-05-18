@@ -6,21 +6,51 @@ import EventAgendaFactory from "../factories/event_agenda.factory";
 import EventAgendaRepository from "../repositories/event_agenda.repository";
 import EventAttendeeFactory from "../factories/event_attendee.factory";
 import EventAttendeeRepository from "../repositories/event_attendee.repository";
-import EventVolunteerFactory from "../factories/event_volunteer.factory";
-import EventVolunteerRepository from "../repositories/event_volunteer.repository";
 import EventReviewFactory from "../factories/event_review.factory";
 import EventReviewRepository from "../repositories/event_review.repository";
+import EventBudgetFactory from "../factories/event_budget.factory";
+import EventBudgetRepository from "../repositories/event_budget.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
-// import MemberRepository from "../../memberManagement/repositories/member.repository";
-// import VolunteerRepository from "../../volunteerManagement/repositories/volunteer.repo";
-import { CreateNewEvent } from "../dtos/create-new-event.dto";
-import { AddNewAgenda } from "../dtos/add-agenda.dto";
-import { RegisterForEvent } from "../dtos/register-for-event.dto";
-import { VolunteerForEvent } from "../dtos/volunteer-for-event.dto";
+import MemberRepository from "../../memberManagement/repositories/member.repository";
+import VolunteerRoleRepository from "../../volunteerManagement/repositories/volunteer_role.repo";
+import VolunteerRepository from "../../volunteerManagement/repositories/volunteer.repo";
 import { SubmitReview } from "../dtos/submit-review.dto";
+import { CreateEventBudget } from "../dtos/event-budget.dto";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
-import { normalizeDate } from "@shared/utils/functions.util";
+import {
+  normalizeDate,
+  validateAgendaTimeWithinEventDuration,
+  checkAgendaOverlap,
+  calculateNextEventDate,
+} from "@shared/utils/functions.util";
+
+interface CreateNewEventPayload {
+  eventTitle: string;
+  description: Text;
+  category: string;
+  location: string;
+  eventDate: string;
+  nextEventDate?: string;
+  eventStartTime: string;
+  eventEndTime: string;
+  maximumCapacity: number;
+  maximumCapacityTracker: number;
+  registration: boolean;
+  recurring?: boolean;
+  eventFrequency?: "weekly" | "monthly" | "quarterly" | "yearly";
+  church: string;
+}
+
+interface AddNewAgendaPayload {
+  startTime: string;
+  endTime: string;
+  duration: string;
+  title: string;
+  description: string;
+  assignedTo: string;
+  role: string;
+}
 
 @injectable()
 class EventService {
@@ -28,12 +58,15 @@ class EventService {
     private readonly eventRepository: EventRepository,
     private readonly eventAgendaRepository: EventAgendaRepository,
     private readonly eventAttendeeRepository: EventAttendeeRepository,
-    private readonly eventVolunteerRepository: EventVolunteerRepository,
     private readonly eventReviewRepository: EventReviewRepository,
+    private readonly eventBudgetRepository: EventBudgetRepository,
     private readonly userRepository: UserRepository,
+    private readonly memberRepository: MemberRepository,
+    private readonly volunteerRoleRepository: VolunteerRoleRepository,
+    private readonly volunteerRepository: VolunteerRepository,
   ) {}
 
-  async createNewEvent(data: CreateNewEvent, superAdminId: string) {
+  async createNewEvent(data: CreateNewEventPayload, superAdminId: string) {
     try {
       const superAdmin = await this.userRepository.findById(superAdminId);
       if (!superAdmin) throw new AppError(400, "Super admin does not exist");
@@ -45,14 +78,27 @@ class EventService {
         throw new Error("You cannot schedule event in the past");
       }
 
+      let nextEventDateString: string | undefined;
+      if (data.recurring && data.eventFrequency) {
+        const nextEventDate = calculateNextEventDate(
+          eventDate,
+          data.eventFrequency,
+        );
+        nextEventDateString = nextEventDate.toISOString().split("T")[0];
+      }
+
+      const startTime = new Date(`${data.eventDate}T${data.eventStartTime}`);
+      const endTime = new Date(`${data.eventDate}T${data.eventEndTime}`);
+
       const newEvent = EventFactory.createNewEvent({
         eventTitle: data.eventTitle,
         description: data.description,
         category: data.category,
         location: data.location,
         eventDate: data.eventDate,
-        startTime: data.startTime,
-        endTime: data.endTime,
+        nextEventDate: nextEventDateString,
+        eventStartTime: startTime,
+        eventEndTime: endTime,
         maximumCapacity: data.maximumCapacity,
         maximumCapacityTracker: 0,
         registration: data.registration,
@@ -77,13 +123,49 @@ class EventService {
     }
   }
 
-  async addAgenda(data: AddNewAgenda, eventId: string) {
+  async addAgenda(data: AddNewAgendaPayload, eventId: string) {
     try {
       const churchEvent = await this.eventRepository.findById(eventId);
       if (!churchEvent) throw new AppError(400, "Church event does not exist");
 
+      const eventDate = new Date(churchEvent.eventDate)
+        .toISOString()
+        .split("T")[0];
+      const startTime = new Date(`${eventDate}T${data.startTime}`);
+      const endTime = new Date(`${eventDate}T${data.endTime}`);
+
+      console.log("Agenda Start Time:", startTime);
+      console.log("Agenda End Time:", endTime);
+      console.log("Church Event Start Time:", churchEvent.eventStartTime);
+      console.log("Church Event End Time:", churchEvent.eventEndTime);
+      const timeValidation = validateAgendaTimeWithinEventDuration(
+        startTime,
+        endTime,
+        churchEvent.eventStartTime,
+        churchEvent.eventEndTime,
+      );
+
+      if (!timeValidation.isValid) {
+        throw new AppError(400, timeValidation.error);
+      }
+
+      const existingAgendas = await this.eventAgendaRepository.findAll({
+        churchEvent: churchEvent.id,
+      });
+
+      const overlapCheck = checkAgendaOverlap(
+        startTime,
+        endTime,
+        existingAgendas,
+      );
+
+      if (overlapCheck.hasOverlap) {
+        throw new AppError(400, overlapCheck.error);
+      }
+
       const agenda = EventAgendaFactory.addNewAgenda({
-        time: data.time,
+        startTime,
+        endTime,
         duration: data.duration,
         title: data.title,
         description: data.description,
@@ -101,15 +183,17 @@ class EventService {
     } catch (error: any) {
       logger.error({ error: error.message }, "Error adding agenda");
       throw new AppError(
-        400,
+        error.statusCode || 400,
         error.message || "An unexpected error occurred while adding agenda",
       );
     }
   }
 
-  async registerForEvent(data: RegisterForEvent, eventId: string) {
+  async registerForEvent(req: any) {
     try {
-      const churchEvent = await this.eventRepository.findById(eventId);
+      const churchEvent = await this.eventRepository.findById(
+        req.params.eventId,
+      );
       if (!churchEvent) throw new AppError(400, "Church event does not exist");
 
       if (
@@ -122,8 +206,20 @@ class EventService {
         };
       }
 
+      const [member, admin] = await Promise.all([
+        this.memberRepository.findById(req.user.id),
+        this.userRepository.findById(req.user.id),
+      ]);
+
+      let attendeeName;
+      if (member) {
+        attendeeName = `${member.firstName} ${member.lastName}`;
+      } else if (admin) {
+        attendeeName = `${admin.firstName} ${admin.lastName}`;
+      }
+
       const attendee = EventAttendeeFactory.registerForEvent({
-        name: data.name,
+        name: attendeeName,
         churchEvent: churchEvent.id,
       });
       const registeredAttendee = await this.eventAttendeeRepository.save(
@@ -169,37 +265,6 @@ class EventService {
         error: "Error approving attendee",
       });
       throw new Error("An unexpected error occurred while approving attendee.");
-    }
-  }
-
-  async volunteerForEvent(data: VolunteerForEvent, eventId: string) {
-    try {
-      const churchEvent = await this.eventRepository.findById(eventId);
-      if (!churchEvent) throw new AppError(400, "Church event does not exist");
-
-      const volunteer = EventVolunteerFactory.volunteerForEvent({
-        name: data.name,
-        email: data.email,
-        phoneNumber: data.phoneNumber,
-        role: data.role,
-        churchEvent: churchEvent.id,
-      });
-      const eventVolunteer = await this.eventVolunteerRepository.save(
-        volunteer,
-      );
-
-      return {
-        success: true,
-        message: "You have volunteered for this event successfully",
-        volunteer: eventVolunteer,
-      };
-    } catch (error: any) {
-      logger.error({ error: error.message }, "Error volunteering for event");
-      throw new AppError(
-        400,
-        error.message ||
-          "An unexpected error occurred while volunteering for event",
-      );
     }
   }
 
@@ -478,49 +543,6 @@ class EventService {
     }
   }
 
-  async getRegisteredAttendees(req: any) {
-    const eventId = req.params.eventId;
-    const { page, limit } = req.query;
-
-    const pageSize = parseInt(limit, 10) || 10;
-    const currentPage = parseInt(page, 10) || 1;
-
-    try {
-      const { data: registeredAttendees, totalRecords } =
-        await this.eventAttendeeRepository.findAndCountAll(
-          {
-            churchEvent: eventId,
-          },
-          currentPage,
-          pageSize,
-        );
-
-      if (registeredAttendees.length === 0) {
-        return {
-          registeredAttendees: [],
-          total_result: 0,
-          current_page: currentPage,
-          total_pages: 0,
-        };
-      }
-
-      const totalPages = Math.ceil(totalRecords / pageSize);
-      return {
-        registeredAttendees,
-        total_result: totalRecords,
-        current_page: currentPage,
-        total_pages: totalPages,
-      };
-    } catch (error: any) {
-      logger.error({
-        error: "Error fetching registered attendees for this event",
-      });
-      throw new Error(
-        "An unexpected error occurred while fetching registered attendees for this event.",
-      );
-    }
-  }
-
   async getEventAgendas(req: any) {
     const eventId = req.params.eventId;
     const { page, limit } = req.query;
@@ -572,10 +594,13 @@ class EventService {
     const currentPage = parseInt(page, 10) || 1;
 
     try {
+      const event = await this.eventRepository.findById(eventId);
+      if (!event) throw new AppError(400, "Event does not exist");
+
       const { data: eventVolunteers, totalRecords } =
-        await this.eventVolunteerRepository.findAndCountAll(
+        await this.volunteerRepository.findAndCountAll(
           {
-            churchEvent: eventId,
+            eventId: event.id,
           },
           currentPage,
           pageSize,
@@ -653,8 +678,8 @@ class EventService {
         category: data.category,
         location: data.location,
         eventDate: data.eventDate,
-        startTime: data.startTime,
-        endTime: data.endTime,
+        eventStartTime: data.eventStartTime,
+        eventEndTime: data.eventEndTime,
         maximumCapacity: data.maximumCapacity,
         registration: data.registration,
       });
@@ -686,13 +711,48 @@ class EventService {
       );
       if (!agenda) throw new AppError(400, "Agenda does not exist");
 
+      const churchEvent = await this.eventRepository.findById(
+        String(agenda.churchEvent),
+      );
+      if (!churchEvent) throw new AppError(400, "Church event does not exist");
+
+      const timeValidation = validateAgendaTimeWithinEventDuration(
+        data.startTime || agenda.startTime,
+        data.endTime || agenda.endTime,
+        churchEvent.eventStartTime,
+        churchEvent.eventEndTime,
+      );
+
+      if (!timeValidation.isValid) {
+        throw new AppError(400, timeValidation.error);
+      }
+
+      const existingAgendas = await this.eventAgendaRepository.findAll({
+        churchEvent: churchEvent.id,
+      });
+
+      const otherAgendas = existingAgendas.filter(
+        (ag: any) => ag.id !== agenda.id,
+      );
+
+      const overlapCheck = checkAgendaOverlap(
+        data.startTime || agenda.startTime,
+        data.endTime || agenda.endTime,
+        otherAgendas,
+      );
+
+      if (overlapCheck.hasOverlap) {
+        throw new AppError(400, overlapCheck.error);
+      }
+
       await this.eventAgendaRepository.updateById(agenda.id, {
-        time: data.time,
-        duration: data.duration,
-        title: data.title,
-        description: data.description,
-        assignedTo: data.assignedTo,
-        role: data.role,
+        startTime: data.startTime || agenda.startTime,
+        endTime: data.endTime || agenda.endTime,
+        duration: data.duration || agenda.duration,
+        title: data.title || agenda.title,
+        description: data.description || agenda.description,
+        assignedTo: data.assignedTo || agenda.assignedTo,
+        role: data.role || agenda.role,
       });
 
       return {
@@ -701,7 +761,7 @@ class EventService {
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Failed to edit agenda");
-      throw new AppError(400, error.message);
+      throw new AppError(error.statusCode || 400, error.message);
     }
   }
 
@@ -716,11 +776,184 @@ class EventService {
     return "Agenda has been deleted successfully";
   }
 
-  async getEvent(req: Request) {
-    const churchEvent = await this.eventRepository.findById(req.params.eventId);
-    if (!churchEvent) throw new AppError(400, "Church event does not exist");
+  async getEventAndAttendees(req: any) {
+    const eventId = req.params.eventId;
+    const { page, limit } = req.query;
 
-    return { success: true, churchEvent };
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const churchEvent = await this.eventRepository.findById(eventId);
+      if (!churchEvent) throw new AppError(400, "Church event does not exist");
+
+      const { data: registeredAttendees, totalRecords } =
+        await this.eventAttendeeRepository.findAndCountAll(
+          {
+            churchEvent: churchEvent.id,
+          },
+          currentPage,
+          pageSize,
+        );
+
+      const eventVolunteerRoles = await this.volunteerRoleRepository.findAll({
+        eventId: churchEvent.id,
+      });
+      const eventVolunteerRolesIds = eventVolunteerRoles.map((role) => role.id);
+      const eventVolunteers = await this.volunteerRepository.findAll({
+        volunteerRole: eventVolunteerRolesIds,
+      });
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        churchEvent,
+        registeredAttendees:
+          registeredAttendees.length > 0 ? registeredAttendees : [],
+        eventVolunteers: eventVolunteers.length > 0 ? eventVolunteers : [],
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({
+        error: "Error fetching event and registered attendees for this event",
+      });
+      throw new Error(
+        "An unexpected error occurred while fetching event and registered attendees for this event.",
+      );
+    }
+  }
+
+  async createEventBudget(data: CreateEventBudget, eventId: string) {
+    try {
+      const churchEvent = await this.eventRepository.findById(eventId);
+      if (!churchEvent) throw new AppError(400, "Church event does not exist");
+
+      const eventBudget = EventBudgetFactory.createEventBudget({
+        category: data.category,
+        itemDescription: data.itemDescription,
+        budgetedAmount: data.budgetedAmount,
+        eventId: churchEvent.id,
+      });
+
+      const createdEventBudget = await this.eventBudgetRepository.save(
+        eventBudget,
+      );
+
+      return {
+        success: true,
+        message: "Event budget has been created successfully",
+        eventBudget: createdEventBudget,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error creating event budget");
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while creating event budget",
+      );
+    }
+  }
+
+  async editEventBudget(req: any) {
+    try {
+      const eventBudget = await this.eventBudgetRepository.findById(
+        req.params.budgetId,
+      );
+      if (!eventBudget) throw new AppError(400, "Event budget does not exist");
+
+      const updatedData: any = {};
+
+      if (req.body.category) updatedData.category = req.body.category;
+      if (req.body.itemDescription)
+        updatedData.itemDescription = req.body.itemDescription;
+      if (req.body.budgetedAmount)
+        updatedData.budgetedAmount = req.body.budgetedAmount;
+      if (req.body.actualAmount !== undefined)
+        updatedData.actualAmount = req.body.actualAmount;
+      if (req.body.status) updatedData.status = req.body.status;
+
+      if (
+        updatedData.budgetedAmount ||
+        updatedData.actualAmount !== undefined
+      ) {
+        const budgetedAmount =
+          updatedData.budgetedAmount || eventBudget.budgetedAmount;
+        const actualAmount =
+          updatedData.actualAmount !== undefined
+            ? updatedData.actualAmount
+            : eventBudget.actualAmount;
+        updatedData.variance = actualAmount - budgetedAmount;
+      }
+
+      await this.eventBudgetRepository.updateById(eventBudget.id, updatedData);
+
+      return {
+        success: true,
+        message: "Event budget has been updated successfully",
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error editing event budget");
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while editing event budget",
+      );
+    }
+  }
+
+  async deleteEventBudget(budgetId: string) {
+    const eventBudget = await this.eventBudgetRepository.findById(budgetId);
+    if (!eventBudget) throw new AppError(400, "Event budget does not exist");
+
+    await this.eventBudgetRepository.deleteById(budgetId);
+
+    return "Event budget has been deleted successfully";
+  }
+
+  async updateRecurringEventDates() {
+    try {
+      const allRecurringEvents = await this.eventRepository.findAll({
+        recurring: true,
+      });
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      for (const event of allRecurringEvents) {
+        const eventDate = new Date(event.eventDate);
+        eventDate.setHours(0, 0, 0, 0);
+
+        // Check if event date is in the past or today
+        if (eventDate <= today && event.nextEventDate && event.eventFrequency) {
+          const nextEventDate = new Date(event.nextEventDate);
+          const calculatedNextDate = calculateNextEventDate(
+            nextEventDate,
+            event.eventFrequency,
+          );
+
+          await this.eventRepository.updateById(event.id, {
+            eventDate: nextEventDate.toISOString().split("T")[0],
+            nextEventDate: calculatedNextDate.toISOString().split("T")[0],
+          });
+        }
+      }
+
+      return {
+        success: true,
+        message: "Recurring event dates have been updated successfully",
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Error updating recurring event dates",
+      );
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while updating recurring event dates",
+      );
+    }
   }
 }
 

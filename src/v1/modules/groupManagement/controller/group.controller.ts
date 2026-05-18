@@ -42,6 +42,13 @@ class GroupController {
       .json(result);
   };
 
+  getGroupMessages = async (req: Request, res: Response) => {
+    const result: any = await this.groupService.getGroupMessages(req);
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
+
   recordAttendance = async (req: Request, res: Response) => {
     const result: any = await this.groupService.recordAttendance(
       req.body,

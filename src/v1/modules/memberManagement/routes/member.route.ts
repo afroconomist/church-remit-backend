@@ -75,9 +75,7 @@ router.post(
 
 router.get(
   "/members/profile",
-  [
-    authMiddleware,
-  ],
+  [authMiddleware],
   (req: Request, res: Response, next) => {
     memberController.getMemberProfile(req, res).catch((e) => next(e));
   },
@@ -85,10 +83,7 @@ router.get(
 
 router.put(
   "/members/:id/update",
-  [
-    authMiddleware,
-    validate(updateMemberRules),
-  ],
+  [authMiddleware, validate(updateMemberRules)],
   (req: Request, res: Response, next) => {
     memberController.updateMember(req, res).catch((err) => next(err));
   },
@@ -96,10 +91,7 @@ router.put(
 
 router.put(
   "/members/:id/upload-dp",
-  [
-    authMiddleware,
-    uploadMiddleware.single("profilePicture"),
-  ],
+  [authMiddleware, uploadMiddleware.single("profilePicture")],
   (req: Request, res: Response, next) => {
     memberController
       .uploadMemberProfilePicture(req, res)
@@ -182,6 +174,13 @@ router.get(
   [authMiddleware],
   (req: Request, res: Response, next) =>
     memberController.getMemberCelebrations(req, res).catch((err) => next(err)),
+);
+
+router.post(
+  "/members/:id/send-birthday-message",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController.sendBirthdayMessage(req, res).catch((err) => next(err)),
 );
 
 export default router;

@@ -29,10 +29,7 @@ class EventController {
   };
 
   registerForEvent = async (req: Request, res: Response) => {
-    const result: any = await this.eventService.registerForEvent(
-      req.body,
-      req.params.eventId,
-    );
+    const result: any = await this.eventService.registerForEvent(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
@@ -55,16 +52,6 @@ class EventController {
         .status(500)
         .json({ status: false, message: "Failed to approve attendee" });
     }
-  };
-
-  volunteerForEvent = async (req: Request, res: Response) => {
-    const result: any = await this.eventService.volunteerForEvent(
-      req.body,
-      req.params.eventId,
-    );
-    return res
-      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
-      .json(result);
   };
 
   submitEventReview = async (req: Request, res: Response) => {
@@ -105,7 +92,9 @@ class EventController {
 
   getUpcomingChurchEvents = async (req: Request, res: Response) => {
     try {
-      const upcomingEvents = await this.eventService.getUpcomingChurchEvents(req);
+      const upcomingEvents = await this.eventService.getUpcomingChurchEvents(
+        req,
+      );
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", upcomingEvents));
@@ -118,7 +107,9 @@ class EventController {
 
   getRecurringChurchEvents = async (req: Request, res: Response) => {
     try {
-      const recurringEvents = await this.eventService.getRecurringChurchEvents(req);
+      const recurringEvents = await this.eventService.getRecurringChurchEvents(
+        req,
+      );
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", recurringEvents));
@@ -135,20 +126,6 @@ class EventController {
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", pastEvents));
-    } catch (error: any) {
-      return res
-        .status(httpStatus.INTERNAL_SERVER_ERROR)
-        .json(ErrorResponse("Internal Server Error: ", error.message));
-    }
-  };
-
-  getRegisteredAttendees = async (req: Request, res: Response) => {
-    try {
-      const registeredAttendees =
-        await this.eventService.getRegisteredAttendees(req);
-      return res
-        .status(httpStatus.OK)
-        .send(SuccessResponse("Operation successful", registeredAttendees));
     } catch (error: any) {
       return res
         .status(httpStatus.INTERNAL_SERVER_ERROR)
@@ -245,11 +222,65 @@ class EventController {
     return res.status(httpStatus.OK).send(SuccessResponse(response));
   };
 
-  getEvent = async (req: Request, res: Response) => {
-    const result: any = await this.eventService.getEvent(req);
+  getEventAndAttendees = async (req: Request, res: Response) => {
+    try {
+      const eventAndAttendees = await this.eventService.getEventAndAttendees(
+        req,
+      );
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", eventAndAttendees));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  createEventBudget = async (req: Request, res: Response) => {
+    const result: any = await this.eventService.createEventBudget(
+      req.body,
+      req.params.eventId,
+    );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
+  };
+
+  editEventBudget = async (req: Request, res: Response) => {
+    try {
+      const result: any = await this.eventService.editEventBudget(req);
+      if (result.success) {
+        return res.send(SuccessResponse(result.message));
+      } else {
+        return res
+          .status(400)
+          .json({ status: result.success, message: result.message });
+      }
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  deleteEventBudget = async (req: Request, res: Response) => {
+    const response = await this.eventService.deleteEventBudget(
+      req.params.budgetId,
+    );
+
+    return res.status(httpStatus.OK).send(SuccessResponse(response));
+  };
+
+  updateRecurringEventDates = async (_req: Request, res: Response) => {
+    try {
+      const result: any = await this.eventService.updateRecurringEventDates();
+      return res.status(httpStatus.OK).send(SuccessResponse(result.message));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
   };
 }
 
