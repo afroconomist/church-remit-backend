@@ -5,8 +5,8 @@ export type CreateNewEvent = {
   location: string;
   eventDate: string;
   nextEventDate?: string;
-  eventStartTime: Date;
-  eventEndTime: Date;
+  eventStartTime: string;
+  eventEndTime: string;
   maximumCapacity: number;
   maximumCapacityTracker: number;
   registration: boolean;

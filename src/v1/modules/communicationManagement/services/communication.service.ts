@@ -1,5 +1,4 @@
 import { injectable } from "tsyringe";
-import { CreateNews } from "../dtos/create-news.dto";
 import { CreateNewsletter } from "../dtos/create-newsletter.dto";
 import { CreateDiscussionBoard } from "../dtos/create-board.dto";
 import { CreateTag } from "../dtos/create-tag.dto";
@@ -46,21 +45,56 @@ class CommunicationService {
     private readonly memberRepository: MemberRepository,
   ) {}
 
-  async createNews(data: CreateNews, superAdminId: string) {
+  async createNews(req: any) {
+    const media = req.file;
+    const rawData = req.body.data;
+    const superAdminId = req.user.id;
+
+    if (!media) throw new AppError(400, "No media uploaded");
+
+    let parsedData;
+
     try {
+      parsedData = JSON.parse(rawData);
+      const {
+        headline,
+        shortSummary,
+        fullArticle,
+        province,
+        publishDate,
+        publishTime,
+        featureThisNews,
+        showOnHomepage,
+      } = parsedData;
+
       const superAdmin = await this.userRepository.findById(superAdminId);
       if (!superAdmin) throw new AppError(400, "Super admin does not exist");
 
+      const newsPublishDate = new Date(publishDate);
+      const today = normalizeDate(new Date());
+      const normalizedPublishDate = normalizeDate(newsPublishDate);
+      if (normalizedPublishDate < today) {
+        throw new Error("News cannot be published in the past");
+      }
+
+      const fileData = await uploadFileToS3(
+        media,
+        `news/${media.originalname}`,
+      );
+      if (!fileData) {
+        throw new AppError(400, "News media upload failed");
+      }
+
       const news = NewsFactory.createNews({
-        headline: data.headline,
-        shortSummary: data.shortSummary,
-        fullArticle: data.fullArticle,
-        media: data.media,
-        province: data.province,
-        publishDate: data.publishDate,
-        publishTime: data.publishTime,
-        featureThisNews: data.featureThisNews,
-        showOnHomepage: data.showOnHomepage,
+        headline,
+        shortSummary,
+        fullArticle,
+        media: fileData.url,
+        province,
+        publishDate,
+        publishTime,
+        featureThisNews,
+        showOnHomepage,
         postedAt: new Date(),
         churchId: String(superAdmin.churchId),
       });

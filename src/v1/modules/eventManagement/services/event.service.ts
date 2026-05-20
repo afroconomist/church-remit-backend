@@ -87,9 +87,6 @@ class EventService {
         nextEventDateString = nextEventDate.toISOString().split("T")[0];
       }
 
-      const startTime = new Date(`${data.eventDate}T${data.eventStartTime}`);
-      const endTime = new Date(`${data.eventDate}T${data.eventEndTime}`);
-
       const newEvent = EventFactory.createNewEvent({
         eventTitle: data.eventTitle,
         description: data.description,
@@ -97,8 +94,8 @@ class EventService {
         location: data.location,
         eventDate: data.eventDate,
         nextEventDate: nextEventDateString,
-        eventStartTime: startTime,
-        eventEndTime: endTime,
+        eventStartTime: data.eventStartTime,
+        eventEndTime: data.eventEndTime,
         maximumCapacity: data.maximumCapacity,
         maximumCapacityTracker: 0,
         registration: data.registration,
@@ -128,19 +125,9 @@ class EventService {
       const churchEvent = await this.eventRepository.findById(eventId);
       if (!churchEvent) throw new AppError(400, "Church event does not exist");
 
-      const eventDate = new Date(churchEvent.eventDate)
-        .toISOString()
-        .split("T")[0];
-      const startTime = new Date(`${eventDate}T${data.startTime}`);
-      const endTime = new Date(`${eventDate}T${data.endTime}`);
-
-      console.log("Agenda Start Time:", startTime);
-      console.log("Agenda End Time:", endTime);
-      console.log("Church Event Start Time:", churchEvent.eventStartTime);
-      console.log("Church Event End Time:", churchEvent.eventEndTime);
       const timeValidation = validateAgendaTimeWithinEventDuration(
-        startTime,
-        endTime,
+        data.startTime,
+        data.endTime,
         churchEvent.eventStartTime,
         churchEvent.eventEndTime,
       );
@@ -154,8 +141,8 @@ class EventService {
       });
 
       const overlapCheck = checkAgendaOverlap(
-        startTime,
-        endTime,
+        data.startTime,
+        data.endTime,
         existingAgendas,
       );
 
@@ -164,8 +151,8 @@ class EventService {
       }
 
       const agenda = EventAgendaFactory.addNewAgenda({
-        startTime,
-        endTime,
+        startTime: data.startTime,
+        endTime: data.endTime,
         duration: data.duration,
         title: data.title,
         description: data.description,
@@ -851,6 +838,49 @@ class EventService {
         400,
         error.message ||
           "An unexpected error occurred while creating event budget",
+      );
+    }
+  }
+
+  async getAllEventBudgets(req: any) {
+    const eventId = req.params.eventId;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: eventBudgets, totalRecords } =
+        await this.eventBudgetRepository.findAndCountAll(
+          {
+            churchEvent: eventId,
+          },
+          currentPage,
+          pageSize,
+        );
+
+      if (eventBudgets.length === 0) {
+        return {
+          eventBudgets: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        eventBudgets,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({
+        error: "Error fetching budgets for this event",
+      });
+      throw new Error(
+        "An unexpected error occurred while fetching budgets for this event.",
       );
     }
   }

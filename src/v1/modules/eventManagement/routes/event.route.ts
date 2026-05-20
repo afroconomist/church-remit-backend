@@ -172,6 +172,13 @@ router.post(
     eventController.createEventBudget(req, res).catch((err) => next(err)),
 );
 
+router.get(
+  "/events/:eventId/budgets",
+  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
+  (req: Request, res: Response, next) =>
+    eventController.getAllEventBudgets(req, res).catch((err) => next(err)),
+);
+
 router.put(
   "/events/:budgetId/edit-budget",
   [

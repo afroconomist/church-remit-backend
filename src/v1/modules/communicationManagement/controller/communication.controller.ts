@@ -9,10 +9,7 @@ class CommunicationController {
   constructor(private readonly communicationService: CommunicationService) {}
 
   createNews = async (req: Request, res: Response) => {
-    const result: any = await this.communicationService.createNews(
-      req.body,
-      req.user.id,
-    );
+    const result: any = await this.communicationService.createNews(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);

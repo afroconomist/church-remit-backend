@@ -247,6 +247,19 @@ class EventController {
       .json(result);
   };
 
+  getAllEventBudgets = async (req: Request, res: Response) => {
+    try {
+      const eventBudgets = await this.eventService.getAllEventBudgets(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", eventBudgets));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
   editEventBudget = async (req: Request, res: Response) => {
     try {
       const result: any = await this.eventService.editEventBudget(req);

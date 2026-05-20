@@ -1,6 +1,5 @@
 import express, { Request, Response } from "express";
 import { container } from "tsyringe";
-import { createNewsRules } from "../validations/create-news.validator";
 import { createNewsletterRules } from "../validations/create-newsletter.validator";
 import { createDiscussionBoardRules } from "../validations/create-discussion-board.validator";
 import { createTopicRules } from "../validations/create-topic.validator";
@@ -23,8 +22,8 @@ router.post(
   "/communications/create-news",
   [
     authMiddleware,
+    uploadMiddleware.single("media"),
     accessControlMiddleware(AccessControls.NEWS_CREATION),
-    validate(createNewsRules),
   ],
   (req: Request, res: Response, next) =>
     communicationController.createNews(req, res).catch((err) => next(err)),

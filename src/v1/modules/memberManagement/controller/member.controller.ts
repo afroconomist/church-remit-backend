@@ -186,6 +186,27 @@ class MemberController {
     return res.status(httpStatus.OK).send(SuccessResponse(response));
   };
 
+  categorizeMembers = async (req: Request, res: Response) => {
+    try {
+      const result: any = await this.memberService.categorizeMembers(req);
+      if (result.success) {
+        return res
+          .status(httpStatus.OK)
+          .send(SuccessResponse(result.message, result.data));
+      } else {
+        return res
+          .status(httpStatus.BAD_REQUEST)
+          .json({ status: result.success, message: result.message });
+      }
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(
+          ErrorResponse("Internal Server Error: ", error.message),
+        );
+    }
+  };
+
   getChurchUpcomingMembersBirthdays = async (req: Request, res: Response) => {
     try {
       const membersBirthdays =

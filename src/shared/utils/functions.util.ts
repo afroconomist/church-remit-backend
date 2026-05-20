@@ -236,28 +236,36 @@ export function daysUntilBirthday(dob: string, today = new Date()): number {
   return Math.ceil(diff / msPerDay);
 }
 
+function parseTimeString(timeStr: string | Date): string {
+  if (timeStr instanceof Date) {
+    return timeStr.toLocaleTimeString("en-GB", { hour12: false });
+  }
+  return timeStr;
+}
+
 export function validateAgendaTimeWithinEventDuration(
-  agendaStartTime: Date,
-  agendaEndTime: Date,
-  eventStartTime: Date,
-  eventEndTime: Date,
+  agendaStartTime: Date | string,
+  agendaEndTime: Date | string,
+  eventStartTime: Date | string,
+  eventEndTime: Date | string,
 ): { isValid: boolean; error?: string } {
-  const agendaStart = new Date(agendaStartTime);
-  const agendaEnd = new Date(agendaEndTime);
-  const eventStart = new Date(eventStartTime);
-  const eventEnd = new Date(eventEndTime);
+  // Convert to time strings for comparison (HH:MM:SS format)
+  const agendaStart = parseTimeString(agendaStartTime);
+  const agendaEnd = parseTimeString(agendaEndTime);
+  const eventStart = parseTimeString(eventStartTime);
+  const eventEnd = parseTimeString(eventEndTime);
 
   if (agendaStart < eventStart) {
     return {
       isValid: false,
-      error: "Agenda start time cannot be before event start time",
+      error: `Agenda start time (${agendaStart}) cannot be before event start time (${eventStart})`,
     };
   }
 
   if (agendaEnd > eventEnd) {
     return {
       isValid: false,
-      error: "Agenda end time cannot be after event end time",
+      error: `Agenda end time (${agendaEnd}) cannot be after event end time (${eventEnd})`,
     };
   }
 
@@ -272,21 +280,23 @@ export function validateAgendaTimeWithinEventDuration(
 }
 
 export function checkAgendaOverlap(
-  newAgendaStart: Date,
-  newAgendaEnd: Date,
-  existingAgendas: Array<{ startTime: Date; endTime: Date }>,
+  newAgendaStart: Date | string,
+  newAgendaEnd: Date | string,
+  existingAgendas: Array<{ startTime: Date | string; endTime: Date | string }>,
 ): { hasOverlap: boolean; error?: string } {
-  const newStart = new Date(newAgendaStart);
-  const newEnd = new Date(newAgendaEnd);
+  // Convert to time strings for comparison (HH:MM:SS format)
+  const newStart = parseTimeString(newAgendaStart);
+  const newEnd = parseTimeString(newAgendaEnd);
 
   for (const agenda of existingAgendas) {
-    const existingStart = new Date(agenda.startTime);
-    const existingEnd = new Date(agenda.endTime);
+    const existingStart = parseTimeString(agenda.startTime);
+    const existingEnd = parseTimeString(agenda.endTime);
 
+    // Check if times overlap
     if (newStart < existingEnd && newEnd > existingStart) {
       return {
         hasOverlap: true,
-        error: `Agenda time overlaps with another agenda scheduled from ${existingStart.toLocaleTimeString()} to ${existingEnd.toLocaleTimeString()}`,
+        error: `Agenda time overlaps with another agenda scheduled from ${existingStart} to ${existingEnd}`,
       };
     }
   }
