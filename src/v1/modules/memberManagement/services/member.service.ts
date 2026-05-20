@@ -732,6 +732,183 @@ class MemberService {
     }
   }
 
+  async categorizeMembers(req: any) {
+    try {
+      const { churchId, categoryId } = req.body;
+
+      // Validate church and category exist
+      const church = await this.churchRepository.findById(churchId);
+      if (!church) throw new AppError(400, "Church does not exist");
+
+      const category = await this.categoryRepository.findById(categoryId);
+      if (!category) throw new AppError(400, "Category does not exist");
+
+      // Get all members in the church that don't have this category yet
+      const allMembers = await this.memberRepository.findAll({
+        churchId: churchId,
+      });
+
+      const membersToUpdate: any[] = [];
+      const categorizedMembers: any[] = [];
+      const categoryType = category.categoryType?.toLowerCase();
+
+      for (const member of allMembers) {
+        let shouldCategorize = false;
+
+        // Categorization logic based on category type
+        switch (categoryType) {
+          case "age-based":
+            shouldCategorize = this.checkAgeBasedCategory(member, categoryId);
+            break;
+
+          case "marital-status":
+            shouldCategorize = this.checkMaritalStatusCategory(member, category);
+            break;
+
+          case "occupation-based":
+            shouldCategorize = this.checkOccupationCategory(member, category);
+            break;
+
+          case "gender-based":
+            shouldCategorize = this.checkGenderCategory(member, category);
+            break;
+
+          case "membership-status":
+            shouldCategorize = this.checkMembershipStatusCategory(member, category);
+            break;
+
+          case "custom":
+            // For custom categories, categorize all members who don't already have this category
+            shouldCategorize = !member.memberCategoryId || member.memberCategoryId !== categoryId;
+            break;
+
+          default:
+            // Default: categorize all members without a category
+            shouldCategorize = !member.memberCategoryId;
+        }
+
+        if (shouldCategorize && member.memberCategoryId !== categoryId) {
+          membersToUpdate.push({
+            memberId: member.id,
+            currentCategory: member.memberCategoryId,
+          });
+          categorizedMembers.push(member);
+        }
+      }
+
+      // Update all matched members with the new category
+      let updatedCount = 0;
+      for (const member of membersToUpdate) {
+        await this.memberRepository.updateById(member.memberId, {
+          memberCategoryId: categoryId,
+        });
+        updatedCount++;
+      }
+
+      // Update category member count
+      const currentCount = Number(category.members) || 0;
+      await this.categoryRepository.updateById(categoryId, {
+        members: currentCount + updatedCount,
+      });
+
+      return {
+        success: true,
+        message: `${updatedCount} member(s) have been categorized successfully`,
+        data: {
+          categoryId: category.id,
+          categoryName: category.categoryName,
+          membersRecategorized: updatedCount,
+          totalMembers: allMembers.length,
+          categorizedMembers: categorizedMembers.map((m) => ({
+            id: m.id,
+            name: `${m.firstName} ${m.lastName}`,
+            email: m.email,
+            previousCategory: m.memberCategoryId || "Uncategorized",
+          })),
+        },
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error categorizing members");
+      throw new AppError(
+        error.statusCode || 400,
+        error.message ||
+          "An unexpected error occurred while categorizing members",
+      );
+    }
+  }
+
+  private checkAgeBasedCategory(member: any, categoryId: string): boolean {
+    // Youth: 18-35, Adults: 35-60, Seniors: 60+
+    if (!member.dateOfBirth) return false;
+
+    const age = getAgeByDate(String(member.dateOfBirth));
+
+    // This would need category configuration, for now using defaults
+    // You might want to add min/max age fields to Category model
+    if (age >= 18 && age < 35) return categoryId === "youth"; // Example
+    if (age >= 35 && age < 60) return categoryId === "adults"; // Example
+    if (age >= 60) return categoryId === "seniors"; // Example
+
+    return false;
+  }
+
+  private checkMaritalStatusCategory(member: any, category: any): boolean {
+    if (!member.maritalStatus) return false;
+
+    const categoryName = category.categoryName?.toLowerCase();
+
+    // Match category by marital status
+    if (categoryName.includes("married") && member.maritalStatus === "married") {
+      return true;
+    }
+    if (categoryName.includes("single") && member.maritalStatus === "single") {
+      return true;
+    }
+    if (categoryName.includes("divorced") && member.maritalStatus === "divorced") {
+      return true;
+    }
+    if (categoryName.includes("widowed") && member.maritalStatus === "widowed") {
+      return true;
+    }
+
+    return false;
+  }
+
+  private checkOccupationCategory(member: any, category: any): boolean {
+    if (!member.occupation) return false;
+
+    const categoryName = category.categoryName?.toLowerCase();
+    const memberOccupation = member.occupation.toLowerCase();
+
+    // Match occupation keywords
+    return memberOccupation.includes(categoryName) || categoryName.includes(memberOccupation);
+  }
+
+  private checkGenderCategory(member: any, category: any): boolean {
+    if (!member.gender) return false;
+
+    const categoryName = category.categoryName?.toLowerCase();
+    const memberGender = member.gender.toLowerCase();
+
+    return (
+      categoryName.includes("male") && memberGender === "male" ||
+      categoryName.includes("female") && memberGender === "female"
+    );
+  }
+
+  private checkMembershipStatusCategory(member: any, category: any): boolean {
+    if (!member.membershipStatus) return false;
+
+    const categoryName = category.categoryName?.toLowerCase();
+    const membershipStatus = member.membershipStatus.toLowerCase();
+
+    return (
+      categoryName.includes("active") && membershipStatus === "active" ||
+      categoryName.includes("inactive") && membershipStatus === "inactive" ||
+      categoryName.includes("pending") && membershipStatus === "pending"
+    );
+  }
+
   async getChurchMemberCategories(req: any) {
     const churchId = req.params.churchId;
     const { page, limit } = req.query;

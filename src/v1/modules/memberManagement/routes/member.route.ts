@@ -153,6 +153,13 @@ router.delete(
     memberController.deleteMemberCategory(req, res).catch((err) => next(err)),
 );
 
+router.post(
+  "/categories/categorize-members",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController.categorizeMembers(req, res).catch((err) => next(err)),
+);
+
 router.get(
   "/:churchId/members-birthdays",
   [authMiddleware],

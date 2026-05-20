@@ -289,6 +289,16 @@ class VolunteerAndRoleService {
       if (!volunteerRole)
         throw new AppError(400, "Volunteer role does not exist");
 
+      const assignedVolunteer = await this.volunteerRepository.findOne({
+        id: volunteer.id,
+        volunteerRole: volunteerRole.id,
+      });
+      if (assignedVolunteer)
+        return {
+          success: false,
+          message: "Volunteer is already assigned to this role",
+        };
+
       if (
         volunteerRole.noOfVolunteersNeeded ===
         volunteerRole.noOfAssignedVolunteers
