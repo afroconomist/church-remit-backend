@@ -853,7 +853,7 @@ class EventService {
       const { data: eventBudgets, totalRecords } =
         await this.eventBudgetRepository.findAndCountAll(
           {
-            churchEvent: eventId,
+            eventId,
           },
           currentPage,
           pageSize,
