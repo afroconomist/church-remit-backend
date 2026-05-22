@@ -201,9 +201,7 @@ class MemberController {
     } catch (error: any) {
       return res
         .status(httpStatus.INTERNAL_SERVER_ERROR)
-        .json(
-          ErrorResponse("Internal Server Error: ", error.message),
-        );
+        .json(ErrorResponse("Internal Server Error: ", error.message));
     }
   };
 
@@ -252,6 +250,23 @@ class MemberController {
   sendBirthdayMessage = async (req: Request, res: Response) => {
     const response = await this.memberService.sendBirthdayMessage(req);
     return res.status(httpStatus.OK).send(SuccessResponse(response.message));
+  };
+
+  // controllers for forms dropdowns
+  getAllChurchMembersForDropdown = async (req: Request, res: Response) => {
+    try {
+      const churchMembers =
+        await this.memberService.getAllChurchMembersForDropdown(
+          req.params.churchId,
+        );
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", churchMembers));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
   };
 }
 

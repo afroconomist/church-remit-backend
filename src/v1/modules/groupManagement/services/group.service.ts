@@ -17,6 +17,8 @@ import { RecordAttendance } from "../dtos/record-attendance.dto";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
 import { normalizeDate, getAgeByDate } from "@shared/utils/functions.util";
+import { transaction } from "objection";
+import { Group } from "../model/group.model";
 
 @injectable()
 class GroupService {
@@ -36,54 +38,65 @@ class GroupService {
       if (!groupCreator)
         throw new AppError(400, "Group creator does not exist");
 
-      const group = GroupFactory.createGroup({
-        groupName: data.groupName,
-        category: data.category,
-        description: data.description,
-        groupLeader: "",
-        capacity: data.capacity,
-        capacityTracker: 1,
-        meetingDay: data.meetingDay,
-        meetingTime: data.meetingTime,
-        frequency: data.frequency,
-        location: data.location,
-        criteriaType: data.criteriaType,
-        minAge: data.minAge,
-        maxAge: data.maxAge,
-        publicGroup: data.publicGroup,
-        allowGuestInvites: data.allowGuestInvites,
-        requireLeaderApproval: data.requireLeaderApproval,
-        enableGroupChat: data.enableGroupChat,
-        groupCreator: `${groupCreator.firstName} ${groupCreator.lastName}`,
-        church: String(groupCreator.churchId),
-      });
-      const newGroup = await this.groupRepository.save(group);
-
-      const groupMember = GroupMemberFactory.addMemberToGroup({
-        groupMemberName: `${groupCreator.firstName} ${groupCreator.lastName}`,
-        groupMemberRole: "Leader",
-        joined: new Date(),
-        group: newGroup.id,
-        churchMemberId: groupCreator.id,
-      });
-      await this.groupMemberRepository.save(groupMember);
-
-      if (data.criterias && data.criterias.length > 0) {
-        for (const criteria of data.criterias) {
-          const groupCriteria = GroupCriteriaFactory.createGroupCriteria({
-            criteriaType: criteria.criteriaType,
-            minAge: criteria.minAge,
-            maxAge: criteria.maxAge,
-            groupId: newGroup.id,
+      const { newGroup, group_leader, group_criterias } = await transaction(
+        Group.knex(),
+        async (trx) => {
+          const group = GroupFactory.createGroup({
+            groupName: data.groupName,
+            category: data.category,
+            description: data.description,
+            capacity: data.capacity,
+            capacityTracker: 1,
+            meetingDay: data.meetingDay,
+            meetingTime: data.meetingTime,
+            frequency: data.frequency,
+            location: data.location,
+            publicGroup: data.publicGroup,
+            allowGuestInvites: data.allowGuestInvites,
+            requireLeaderApproval: data.requireLeaderApproval,
+            enableGroupChat: data.enableGroupChat,
+            groupCreator: `${groupCreator.firstName} ${groupCreator.lastName}`,
+            church: String(groupCreator.churchId),
           });
-          await this.groupCriteriaRepository.save(groupCriteria);
-        }
-      }
+          const newGroup = await this.groupRepository.save(group, trx);
+
+          const groupLeader = GroupMemberFactory.addMemberToGroup({
+            groupMemberName: `${groupCreator.firstName} ${groupCreator.lastName}`,
+            groupMemberRole: "Leader",
+            joined: new Date(),
+            group: newGroup.id,
+            churchMemberId: groupCreator.id,
+          });
+          const group_leader = await this.groupMemberRepository.save(
+            groupLeader,
+            trx,
+          );
+
+          const groupCriterias = data.criterias?.map((criteria) =>
+            GroupCriteriaFactory.createGroupCriteria({
+              criteriaType: criteria.criteriaType,
+              minAge: criteria.minAge,
+              maxAge: criteria.maxAge,
+              sex: criteria.sex,
+              status: criteria.status,
+              groupId: newGroup.id,
+            }),
+          );
+          const group_criterias = await this.groupCriteriaRepository.saveBulk(
+            groupCriterias,
+            trx,
+          );
+
+          return { newGroup, group_leader, group_criterias };
+        },
+      );
 
       return {
         success: true,
         message: "Group has been created successfully",
         group: newGroup,
+        group_leader,
+        group_criterias,
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Error creating new group");
@@ -323,6 +336,12 @@ class GroupService {
         meetingDate: data.meetingDate,
         guestCount: data.guestCount,
         attended: data.attended,
+        absent: data.absent,
+        excused: data.excused,
+        guestNames: JSON.stringify(data.guestNames),
+        presentMembers: JSON.stringify(data.presentMembers),
+        absentMembers: JSON.stringify(data.absentMembers),
+        excusedMembers: JSON.stringify(data.excusedMembers),
         meetingTopic: data.meetingTopic,
         meetingNotes: data.meetingNotes,
         testimonies: data.testimonies,
@@ -346,6 +365,32 @@ class GroupService {
         400,
         error.message ||
           "An unexpected error occurred while recording attendance for group meeting",
+      );
+    }
+  }
+
+  async getGroupMeetingAttendance(meetingAttendanceId: string) {
+    try {
+      const meetingAttendance =
+        await this.groupMeetingAttendanceRepository.findById(
+          meetingAttendanceId,
+        );
+      if (!meetingAttendance)
+        throw new AppError(400, "Meeting attendance record does not exist");
+
+      return {
+        success: true,
+        meetingAttendance,
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Error fetching group meeting attendance",
+      );
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while fetching group meeting attendance",
       );
     }
   }
@@ -431,11 +476,56 @@ class GroupService {
     }
   }
 
-  async getGroupProfile(req: Request) {
-    const group = await this.groupRepository.findById(req.params.groupId);
-    if (!group) throw new AppError(400, "Group does not exist");
+  async getGroupAndMembers(req: any) {
+    const groupId = req.params.groupId;
+    const userId = req.user.id;
+    const { page, limit } = req.query;
 
-    return { success: true, group };
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const group = await this.groupRepository.findById(groupId);
+      if (!group) throw new AppError(400, "Group does not exist");
+
+      const { data: groupMembers, totalRecords } =
+        await this.groupMemberRepository.findAndCountAll(
+          {
+            status: "Approved",
+            group: group.id,
+          },
+          currentPage,
+          pageSize,
+        );
+
+      if (groupMembers.length === 0) {
+        return {
+          groupMembers: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const isMember = groupMembers.some(
+        (member) => member.churchMemberId === userId,
+      );
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        group,
+        groupMembers,
+        isMember,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching group and group members" });
+      throw new Error(
+        "An unexpected error occurred while fetching group and group members.",
+      );
+    }
   }
 
   async approveNewMembers(newMemberId: string) {
@@ -557,48 +647,6 @@ class GroupService {
     await this.groupRepository.deleteById(group.id);
 
     return `${group.groupName} has been deleted successfully`;
-  }
-
-  async getGroupMembers(req: any) {
-    const groupId = req.params.groupId;
-    const { page, limit } = req.query;
-
-    const pageSize = parseInt(limit, 10) || 10;
-    const currentPage = parseInt(page, 10) || 1;
-
-    try {
-      const { data: groupMembers, totalRecords } =
-        await this.groupMemberRepository.findAndCountAll(
-          {
-            status: "Approved",
-            group: groupId,
-          },
-          currentPage,
-          pageSize,
-        );
-
-      if (groupMembers.length === 0) {
-        return {
-          groupMembers: [],
-          total_result: 0,
-          current_page: currentPage,
-          total_pages: 0,
-        };
-      }
-
-      const totalPages = Math.ceil(totalRecords / pageSize);
-      return {
-        groupMembers,
-        total_result: totalRecords,
-        current_page: currentPage,
-        total_pages: totalPages,
-      };
-    } catch (error: any) {
-      logger.error({ error: "Error fetching group members" });
-      throw new Error(
-        "An unexpected error occurred while fetching group members.",
-      );
-    }
   }
 
   async getGroupMeetings(req: any) {
@@ -724,10 +772,10 @@ class GroupService {
           };
         }
 
-        if (member.gender !== criteria.gender) {
+        if (member.gender !== criteria.sex) {
           return {
             isValid: false,
-            error: `Member gender (${member.gender}) does not match the required gender (${criteria.gender}) for this group.`,
+            error: `Member gender (${member.gender}) does not match the required sex (${criteria.sex}) for this group.`,
           };
         }
       }
@@ -741,16 +789,41 @@ class GroupService {
           };
         }
 
-        if (member.maritalStatus !== criteria.maritalStatus) {
+        if (member.maritalStatus !== criteria.status) {
           return {
             isValid: false,
-            error: `Member marital status (${member.maritalStatus}) does not match the required status (${criteria.maritalStatus}) for this group.`,
+            error: `Member marital status (${member.maritalStatus}) does not match the required status (${criteria.status}) for this group.`,
           };
         }
       }
     }
 
     return { isValid: true };
+  }
+
+  // services for form dropdowns
+  async getAllGroupMembersForDropdown(
+    groupId: string,
+  ): Promise<{ id: string; name: string }[]> {
+    return await this.groupMemberRepository.findAllForDropdown(
+      { group: groupId },
+      "id",
+      "groupMemberName",
+    );
+  }
+
+  async getNonGroupMembersForDropdown(
+    churchId: string,
+    groupId: string,
+  ): Promise<{ id: string; name: string }[]> {
+    return await this.memberRepository.findNonGroupMembersForDropdown(
+      { churchId },
+      "group_members",
+      groupId,
+      "id",
+      "firstName",
+      "lastName",
+    );
   }
 }
 

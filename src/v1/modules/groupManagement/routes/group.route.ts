@@ -67,6 +67,15 @@ router.post(
 );
 
 router.get(
+  "/groups/:meetingAttendanceId/meeting-attendance",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    groupController
+      .getGroupMeetingAttendance(req, res)
+      .catch((err) => next(err)),
+);
+
+router.get(
   "/:churchId/groups",
   [authMiddleware, accessControlMiddleware(AccessControls.GROUP_LIST)],
   (req: Request, res: Response, next) =>
@@ -83,10 +92,10 @@ router.get(
 );
 
 router.get(
-  "/groups/:groupId/profile",
-  [authMiddleware, accessControlMiddleware(AccessControls.GROUP_LIST)],
+  "/groups/:groupId/group-and-members",
+  [authMiddleware, accessControlMiddleware(AccessControls.GROUP_MEMBERS)],
   (req: Request, res: Response, next) =>
-    groupController.getGroupProfile(req, res).catch((err) => next(err)),
+    groupController.getGroupAndMembers(req, res).catch((err) => next(err)),
 );
 
 router.put(
@@ -133,13 +142,6 @@ router.delete(
 );
 
 router.get(
-  "/groups/:groupId/members",
-  [authMiddleware, accessControlMiddleware(AccessControls.GROUP_MEMBERS)],
-  (req: Request, res: Response, next) =>
-    groupController.getGroupMembers(req, res).catch((err) => next(err)),
-);
-
-router.get(
   "/groups/:groupId/meetings",
   [authMiddleware, accessControlMiddleware(AccessControls.GROUP_LIST)],
   (req: Request, res: Response, next) =>
@@ -151,6 +153,25 @@ router.get(
   [authMiddleware, accessControlMiddleware(AccessControls.GROUP_MEMBERS)],
   (req: Request, res: Response, next) =>
     groupController.getGroupJoinRequests(req, res).catch((err) => next(err)),
+);
+
+// routes for form dropdowns
+router.get(
+  "/dropdowns/:groupId/group-members",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    groupController
+      .getAllGroupMembersForDropdown(req, res)
+      .catch((err) => next(err)),
+);
+
+router.get(
+  "/dropdowns/:churchId/groups/:groupId/non-group-members",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    groupController
+      .getNonGroupMembersForDropdown(req, res)
+      .catch((err) => next(err)),
 );
 
 export default router;

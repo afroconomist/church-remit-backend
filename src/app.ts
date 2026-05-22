@@ -16,6 +16,7 @@ import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import { QueueService } from "./v1/modules/userManagement/queues/wallet-creation.queue";
 import { container } from "tsyringe";
+import { initializeCronJobs } from "./jobs/cron";
 
 class App {
   private app: express.Application;
@@ -29,6 +30,7 @@ class App {
     this.globalErrorHandler();
     this.undefinedRoutesErrorHandler();
     this.registerBullBoard(); // Register Bull Board here
+    this.initializeCronJobs(); // Initialize all cron jobs
     this.server = http.createServer(this.app);
   }
 
@@ -76,6 +78,17 @@ class App {
     });
 
     this.app.use('/admin/queues', serverAdapter.getRouter());
+  }
+
+  private initializeCronJobs() {
+    try {
+      initializeCronJobs();
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Failed to initialize cron jobs"
+      );
+    }
   }
 
   public getInstance() {

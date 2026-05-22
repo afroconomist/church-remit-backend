@@ -4,8 +4,8 @@ export interface CreateGroupCriteria {
   criteriaType: "age" | "gender" | "marital-status";
   minAge?: number;
   maxAge?: number;
-  gender?: string;
-  maritalStatus?: string;
+  status?: string;
+  sex?: string;
   groupId: string;
 }
 
@@ -16,8 +16,8 @@ class GroupCriteriaFactory {
     criteria.criteriaType = data.criteriaType;
     criteria.minAge = data.minAge;
     criteria.maxAge = data.maxAge;
-    criteria.gender = data.gender;
-    criteria.maritalStatus = data.maritalStatus;
+    criteria.sex = data.sex;
+    criteria.status = data.status;
     criteria.groupId = data.groupId;
 
     return criteria;

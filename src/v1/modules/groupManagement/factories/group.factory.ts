@@ -8,16 +8,12 @@ class GroupFactory {
     group.groupName = data.groupName;
     group.category = data.category;
     group.description = data.description;
-    group.groupLeader = data.groupLeader;
     group.capacity = data.capacity;
     group.capacityTracker = data.capacityTracker;
     group.meetingDay = data.meetingDay;
     group.meetingTime = data.meetingTime;
     group.frequency = data.frequency;
     group.location = data.location;
-    group.criteriaType = data.criteriaType;
-    group.minAge = data.minAge;
-    group.maxAge = data.maxAge;
     group.publicGroup = data.publicGroup;
     group.allowGuestInvites = data.allowGuestInvites;
     group.requireLeaderApproval = data.requireLeaderApproval;

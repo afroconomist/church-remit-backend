@@ -6,7 +6,8 @@ export const createNewEventRules = {
   eventDate: "required|date",
   eventStartTime: "required|string",
   eventEndTime: "required|string",
-  maximumCapacity: "required|numeric",
+  maximumCapacity: "numeric",
+  registration: "boolean",
   recurring: "boolean",
   eventFrequency: "string|in:weekly,monthly,quarterly,yearly",
 };

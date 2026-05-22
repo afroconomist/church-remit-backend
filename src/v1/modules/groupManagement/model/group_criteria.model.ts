@@ -7,8 +7,8 @@ export class GroupCriteria extends Model {
   criteriaType: "age" | "gender" | "marital-status";
   minAge?: number;
   maxAge?: number;
-  gender?: string;
-  maritalStatus?: string;
+  sex?: string;
+  status?: string;
   groupId: string;
   createdAt: Date;
   updatedAt: Date;

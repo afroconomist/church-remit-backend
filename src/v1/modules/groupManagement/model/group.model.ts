@@ -14,9 +14,6 @@ export class Group extends Model {
   meetingTime: string;
   frequency: string;
   location: string;
-  criteriaType?: string;
-  minAge?: number;
-  maxAge?: number;
   publicGroup?: boolean;
   allowGuestInvites?: boolean;
   requireLeaderApproval?: boolean;
