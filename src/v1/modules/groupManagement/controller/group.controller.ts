@@ -59,6 +59,15 @@ class GroupController {
       .json(result);
   };
 
+  getGroupMeetingAttendance = async (req: Request, res: Response) => {
+    const result: any = await this.groupService.getGroupMeetingAttendance(
+      req.params.meetingAttendanceId,
+    );
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
+
   getAllChurchGroups = async (req: Request, res: Response) => {
     try {
       const churchGroups = await this.groupService.getAllChurchGroups(req);
@@ -88,11 +97,17 @@ class GroupController {
     }
   };
 
-  getGroupProfile = async (req: Request, res: Response) => {
-    const result: any = await this.groupService.getGroupProfile(req);
-    return res
-      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
-      .json(result);
+  getGroupAndMembers = async (req: Request, res: Response) => {
+    try {
+      const groupAndMembers = await this.groupService.getGroupAndMembers(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", groupAndMembers));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
   };
 
   approveNewMembers = async (req: Request, res: Response) => {
@@ -166,19 +181,6 @@ class GroupController {
     return res.status(httpStatus.OK).send(SuccessResponse(response));
   };
 
-  getGroupMembers = async (req: Request, res: Response) => {
-    try {
-      const groupMembers = await this.groupService.getGroupMembers(req);
-      return res
-        .status(httpStatus.OK)
-        .send(SuccessResponse("Operation successful", groupMembers));
-    } catch (error: any) {
-      return res
-        .status(httpStatus.INTERNAL_SERVER_ERROR)
-        .json(ErrorResponse("Internal Server Error: ", error.message));
-    }
-  };
-
   getGroupMeetings = async (req: Request, res: Response) => {
     try {
       const groupMeetings = await this.groupService.getGroupMeetings(req);
@@ -200,6 +202,40 @@ class GroupController {
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", groupJoinRequests));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  // controllers for forms dropdowns
+  getAllGroupMembersForDropdown = async (req: Request, res: Response) => {
+    try {
+      const groupMembers =
+        await this.groupService.getAllGroupMembersForDropdown(
+          req.params.groupId,
+        );
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", groupMembers));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getNonGroupMembersForDropdown = async (req: Request, res: Response) => {
+    try {
+      const nonGroupMembers =
+        await this.groupService.getNonGroupMembersForDropdown(
+          req.params.churchId,
+          req.params.groupId,
+        );
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", nonGroupMembers));
     } catch (error: any) {
       return res
         .status(httpStatus.INTERNAL_SERVER_ERROR)

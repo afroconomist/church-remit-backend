@@ -54,8 +54,18 @@ export class BaseRepository<T, M extends Model> {
   }
 
   async findAll(filter: ObjectLiteral): Promise<T[]> {
-    const query = this.model.query();
-    return await query.where(filter);
+    const baseQuery = this.model.query();
+
+    Object.entries(filter).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        baseQuery.whereIn(key, value);
+      } else {
+        baseQuery.where(key, value);
+      }
+    });
+
+    const data = await baseQuery;
+    return data;
   }
 
   async findAndCountAll(
@@ -86,6 +96,69 @@ export class BaseRepository<T, M extends Model> {
 
   async deleteById(id: string) {
     return await this.model.query().deleteById(id);
+  }
+
+  async findAllForDropdown(
+    filter: ObjectLiteral,
+    idColumn: string,
+    firstNameColumn: string,
+    lastNameColumn: string,
+    anyColumn?: string,
+    anyColumnName?: string,
+  ): Promise<{ id: string; name: string; anyField?: string }[]> {
+    const query = this.model
+      .query()
+      .select(
+        `id as ${idColumn}`,
+        raw(`CONCAT(??, ' ', ??) as memberName`, [
+          firstNameColumn,
+          lastNameColumn,
+        ]),
+      )
+      .where(filter);
+
+    if (anyColumn) {
+      query.select(`${anyColumn} as ${anyColumnName}`);
+    }
+
+    return await query;
+  }
+
+  async getAllForDropdown(
+    idColumn: string,
+    nameColumn: string,
+  ): Promise<{ id: string; name: string }[]> {
+    return await this.model
+      .query()
+      .select(`id as ${idColumn}`, `${nameColumn} as name`)
+      .orderBy(nameColumn);
+  }
+
+  async findNonGroupMembersForDropdown(
+    filter: ObjectLiteral,
+    groupMembersTable: string,
+    groupId: string,
+    idColumn: string,
+    firstNameColumn: string,
+    lastNameColumn: string,
+  ): Promise<{ id: string; name: string }[]> {
+    return await this.model
+      .query()
+      .select(
+        `id as ${idColumn}`,
+        raw(`CONCAT(??, ' ', ??) as name`, [firstNameColumn, lastNameColumn]),
+      )
+      .where(filter)
+      .whereNotIn(
+        "id",
+        this.model
+          .query()
+          .select("churchMemberId")
+          .from(groupMembersTable)
+          .where("group", groupId)
+          .whereNotNull("churchMemberId"),
+      )
+      .orderBy("name");
   }
 
   async findUpcomingBirthdays(

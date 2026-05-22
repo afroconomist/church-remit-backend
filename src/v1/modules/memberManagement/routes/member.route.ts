@@ -6,6 +6,7 @@ import { uploadBulkMembersRules } from "../validations/create-bulk-members.valid
 import { updateMemberRules } from "../validations/update-member.validator";
 import { createCategoryRules } from "../validations/create-category.validator";
 import { editCategoryRules } from "../validations/edit-category.validator";
+import { categorizeMembersRules } from "../validations/categorize-members.validator";
 import {
   validate,
   validateArray,
@@ -154,8 +155,8 @@ router.delete(
 );
 
 router.post(
-  "/categories/categorize-members",
-  [authMiddleware],
+  "/categories/:categoryId/categorize-members",
+  [authMiddleware, validate(categorizeMembersRules)],
   (req: Request, res: Response, next) =>
     memberController.categorizeMembers(req, res).catch((err) => next(err)),
 );
@@ -188,6 +189,16 @@ router.post(
   [authMiddleware],
   (req: Request, res: Response, next) =>
     memberController.sendBirthdayMessage(req, res).catch((err) => next(err)),
+);
+
+// routes for form dropdowns
+router.get(
+  "/dropdowns/:churchId/members",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController
+      .getAllChurchMembersForDropdown(req, res)
+      .catch((err) => next(err)),
 );
 
 export default router;

@@ -20,7 +20,7 @@ export class BaseRepository<T, M extends Model> {
   async updateById(
     id: string,
     data: Partial<M>,
-    trx?: Transaction
+    trx?: Transaction,
   ): Promise<M> {
     return await this.model
       .query(trx)
@@ -30,7 +30,7 @@ export class BaseRepository<T, M extends Model> {
 
   async getAndCountAll(
     page: number,
-    limit: number
+    limit: number,
   ): Promise<{ data: T[]; totalRecords: number }> {
     const query = this.model.query();
 
@@ -53,7 +53,7 @@ export class BaseRepository<T, M extends Model> {
   async findAndCountAll(
     filter: ObjectLiteral,
     page: number,
-    limit: number
+    limit: number,
   ): Promise<{ data: T[]; totalRecords: number }> {
     const query = this.model.query();
 
@@ -72,7 +72,41 @@ export class BaseRepository<T, M extends Model> {
     return await this.model.query(transaction).insert(data).returning("*");
   }
 
+  async saveBulk(data?: Partial<T>[], trx?: Transaction): Promise<M[]> {
+    return this.model.query(trx).insert(data).returning("*");
+  }
+
   async deleteById(id: string) {
     return await this.model.query().deleteById(id);
+  }
+
+  async findAllForDropdown(
+    filter: ObjectLiteral,
+    idColumn: string,
+    nameColumn: string,
+    anyColumn?: string,
+    anyColumnName?: string,
+  ): Promise<{ id: string; name: string; anyField?: string }[]> {
+    const query = this.model
+      .query()
+      .select(`id as ${idColumn}`, `${nameColumn} as name`)
+      .where(filter)
+      .orderBy(nameColumn);
+
+    if (anyColumn) {
+      query.select(`${anyColumn} as ${anyColumnName}`);
+    }
+
+    return await query;
+  }
+
+  async getAllForDropdown(
+    idColumn: string,
+    nameColumn: string,
+  ): Promise<{ id: string; name: string }[]> {
+    return await this.model
+      .query()
+      .select(`id as ${idColumn}`, `${nameColumn} as name`)
+      .orderBy(nameColumn);
   }
 }

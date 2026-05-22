@@ -87,7 +87,7 @@ class PrayerAndWarriorService {
       if (!member) throw new AppError(400, "Member does not exist");
 
       const prayerWarriorExists = await this.prayerWarriorRepository.findOne({
-        memberId: member.id,
+        churchMemberId: member.id,
       });
       if (prayerWarriorExists)
         return {
@@ -100,6 +100,7 @@ class PrayerAndWarriorService {
         email: member.email,
         phoneNumber: member.phoneNumber,
         church: String(superAdmin.churchId),
+        churchMemberId: member.id,
       });
       const addedPrayerWarrior = await this.prayerWarriorRepository.save(
         prayerWarrior,
@@ -464,6 +465,47 @@ class PrayerAndWarriorService {
         error.statusCode || 400,
         error.message ||
           "An unexpected error occurred while creating testimony",
+      );
+    }
+  }
+
+  async getAllTestimonies(req: any) {
+    const churchId = req.params.churchId;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const { data: testimonies, totalRecords } =
+        await this.testimonyRepository.findAndCountAll(
+          {
+            churchId,
+          },
+          currentPage,
+          pageSize,
+        );
+
+      if (testimonies.length === 0) {
+        return {
+          testimonies: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        testimonies,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error) {
+      logger.error({ error: "Error fetching testimonies" });
+      throw new Error(
+        "An unexpected error occurred while fetching testimonies.",
       );
     }
   }

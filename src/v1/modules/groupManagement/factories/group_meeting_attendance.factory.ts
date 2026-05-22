@@ -8,6 +8,12 @@ class GroupMeetingAttendanceFactory {
     groupMeetingAttendance.meetingDate = data.meetingDate;
     groupMeetingAttendance.guestCount = data.guestCount;
     groupMeetingAttendance.attended = data.attended;
+    groupMeetingAttendance.absent = data.absent;
+    groupMeetingAttendance.excused = data.excused;
+    groupMeetingAttendance.guestNames = data.guestNames;
+    groupMeetingAttendance.presentMembers = data.presentMembers;
+    groupMeetingAttendance.absentMembers = data.absentMembers;
+    groupMeetingAttendance.excusedMembers = data.excusedMembers;
     groupMeetingAttendance.meetingTopic = data.meetingTopic;
     groupMeetingAttendance.meetingNotes = data.meetingNotes;
     groupMeetingAttendance.testimonies = data.testimonies;

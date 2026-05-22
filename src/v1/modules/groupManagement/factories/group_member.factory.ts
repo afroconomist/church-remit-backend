@@ -9,9 +9,6 @@ class GroupMemberFactory {
     groupMember.groupMemberRole = data.groupMemberRole;
     groupMember.joined = data.joined;
     groupMember.status = data.status;
-    groupMember.present = data.present;
-    groupMember.absent = data.absent;
-    groupMember.excused = data.excused;
     groupMember.group = data.group;
     groupMember.churchMemberId = data.churchMemberId;
 

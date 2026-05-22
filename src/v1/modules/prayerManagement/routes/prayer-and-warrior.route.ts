@@ -12,7 +12,7 @@ import { AccessControls } from "../../accessControlManagement/enums/access-contr
 import authMiddleware from "@shared/middlewares/auth.middleware";
 
 const prayerAndWarriorController = container.resolve(
-  PrayerAndWarriorController
+  PrayerAndWarriorController,
 );
 
 const router = express.Router();
@@ -23,7 +23,7 @@ router.post(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .submitPrayerRequest(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.post(
@@ -36,7 +36,7 @@ router.post(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .addPrayerWarrior(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.get(
@@ -45,7 +45,7 @@ router.get(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .getAllPrayerRequests(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.get(
@@ -54,7 +54,7 @@ router.get(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .getPrayerWarriors(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.put(
@@ -67,7 +67,7 @@ router.put(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .assignPrayerToWarrior(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.get(
@@ -79,7 +79,7 @@ router.get(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .getPrayerWarriorAssignments(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.put(
@@ -88,7 +88,7 @@ router.put(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .markPrayerAnswered(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.put(
@@ -97,7 +97,7 @@ router.put(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .prayOnPrayerRequests(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.post(
@@ -106,7 +106,7 @@ router.post(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .commentOnPrayerRequest(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.get(
@@ -115,7 +115,7 @@ router.get(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .getCommentsOnPrayerRequest(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.delete(
@@ -124,7 +124,7 @@ router.delete(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .deleteCommentOnPrayerRequest(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
 );
 
 router.post(
@@ -133,7 +133,16 @@ router.post(
   (req: Request, res: Response, next) =>
     prayerAndWarriorController
       .createTestimony(req, res)
-      .catch((err) => next(err))
+      .catch((err) => next(err)),
+);
+
+router.get(
+  "/prayer/:churchId/testimonies",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    prayerAndWarriorController
+      .getAllTestimonies(req, res)
+      .catch((err) => next(err)),
 );
 
 export default router;
