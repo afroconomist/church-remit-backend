@@ -13,6 +13,7 @@ export class Course extends Model {
   mandatoryCourse?: boolean;
   modules?: number;
   enrolled?: number;
+  campusId?: string;
   churchId: string;
 }
 

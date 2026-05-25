@@ -6,4 +6,5 @@ export const addAssetRules = {
   purchaseDate: "required|string",
   location: "required|string",
   condition: "required|string|in:excellent,good,fair,needs-repair,retired",
+  campusId: "string",
 };

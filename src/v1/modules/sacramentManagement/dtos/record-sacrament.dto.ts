@@ -6,5 +6,6 @@ export type RecordSacrament = {
   parentsGuardians: Text;
   sponsorsGodparentsWitnesses: Text;
   additionalNotes: Text;
+  campusId?: string;
   church: string;
 };

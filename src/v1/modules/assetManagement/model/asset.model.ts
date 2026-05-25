@@ -11,6 +11,7 @@ export class Asset extends Model {
   location: string;
   condition: string;
   groupId?: string;
+  campusId?: string;
   churchId: string;
 }
 

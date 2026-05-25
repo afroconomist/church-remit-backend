@@ -14,6 +14,7 @@ export class Newsletter extends Model {
   sendTime?: string;
   postedAt: Date;
   recipients?: number;
+  campusId?: string;
   churchId: string;
 }
 

@@ -36,6 +36,7 @@ export class Member extends Model {
   refreshToken?: string;
   addedBy: string;
   churchId: string;
+  campusId?: string;
   linkedToFamily?: boolean;
   memberCategoryId?: string;
 

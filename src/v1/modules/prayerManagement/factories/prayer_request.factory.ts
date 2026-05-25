@@ -15,6 +15,7 @@ class PrayerRequestFactory {
     prayerRequest.submittedBy = data.submittedBy;
     prayerRequest.prayerWarrior = data.prayerWarrior;
     prayerRequest.answered = data.answered;
+    prayerRequest.campusId = data.campusId;
     prayerRequest.church = data.church;
 
     return prayerRequest;

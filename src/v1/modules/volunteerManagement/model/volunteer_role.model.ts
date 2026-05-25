@@ -9,6 +9,7 @@ export class VolunteerRole extends Model {
   noOfVolunteersNeeded: number;
   noOfAssignedVolunteers?: number;
   eventId: string;
+  campusId?: string;
   church: string;
   groupId?: string;
 }

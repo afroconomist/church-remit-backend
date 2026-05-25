@@ -12,6 +12,7 @@ class SacramentFactory {
     sacrament.parentsGuardians = data.parentsGuardians;
     sacrament.sponsorsGodparentsWitnesses = data.sponsorsGodparentsWitnesses;
     sacrament.additionalNotes = data.additionalNotes;
+    sacrament.campusId = data.campusId;
     sacrament.church = data.church;
 
     return sacrament;

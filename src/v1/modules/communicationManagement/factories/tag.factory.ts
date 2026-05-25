@@ -11,6 +11,7 @@ class TagFactory {
     tag.color = data.color;
     tag.defaultAssignment = data.defaultAssignment;
     tag.slug = slugify(data.tagName, { lower: true });
+    tag.campusId = data.campusId;
     tag.churchId = data.churchId;
 
     return tag;

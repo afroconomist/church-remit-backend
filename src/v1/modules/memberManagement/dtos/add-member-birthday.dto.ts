@@ -5,5 +5,6 @@ export type AddMemberBirthday = {
   celebrantPhone: string;
   campus: string;
   memberId: string;
+  campusId?: string;
   churchId: string;
 };

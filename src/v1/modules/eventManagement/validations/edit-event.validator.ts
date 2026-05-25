@@ -4,6 +4,10 @@ export const editEventRules = {
   category: "required|string",
   location: "required|string",
   eventDate: "required|date",
-  startTime: "required|string",
-  endTime: "required|string",
+  eventStartTime: "required|string",
+  eventEndTime: "required|string",
+  maximumCapacity: "numeric",
+  registration: "boolean",
+  recurring: "boolean",
+  eventFrequency: "string",
 };

@@ -11,6 +11,7 @@ export class Sacrament extends Model {
   parentsGuardians: Text;
   sponsorsGodparentsWitnesses: Text;
   additionalNotes: Text;
+  campusId?: string;
   church: string;
 }
 

@@ -76,4 +76,14 @@ router.delete(
     campusController.deleteCampus(req, res).catch((err) => next(err)),
 );
 
+// routes for form dropdowns
+router.get(
+  "/dropdowns/:churchId/campuses",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    campusController
+      .getAllChurchCampusesForDropdown(req, res)
+      .catch((err) => next(err)),
+);
+
 export default router;

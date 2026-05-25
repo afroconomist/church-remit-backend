@@ -71,6 +71,14 @@ class EventService {
       const superAdmin = await this.userRepository.findById(superAdminId);
       if (!superAdmin) throw new AppError(400, "Super admin does not exist");
 
+      const startTime = data.eventStartTime;
+      const endTime = data.eventEndTime;
+      if (endTime <= startTime)
+        return {
+          success: false,
+          message: "Event end time must be after event start time",
+        };
+
       const eventDate = new Date(data.eventDate);
       const today = normalizeDate(new Date());
       const normalizedStart = normalizeDate(eventDate);
@@ -101,6 +109,7 @@ class EventService {
         registration: data.registration,
         recurring: data.recurring,
         eventFrequency: data.eventFrequency,
+        campusId: String(superAdmin.campusId),
         church: String(superAdmin.churchId),
       });
       const createdNewEvent = await this.eventRepository.save(newEvent);
@@ -203,6 +212,17 @@ class EventService {
         attendeeName = `${member.firstName} ${member.lastName}`;
       } else if (admin) {
         attendeeName = `${admin.firstName} ${admin.lastName}`;
+      }
+
+      const attendeeExist = await this.eventAttendeeRepository.findOne({
+        name: attendeeName,
+        churchEvent: churchEvent.id,
+      });
+      if (attendeeExist) {
+        return {
+          status: false,
+          message: `${attendeeName} is already registered for this event`,
+        };
       }
 
       const attendee = EventAttendeeFactory.registerForEvent({
@@ -659,6 +679,42 @@ class EventService {
       );
       if (!churchEvent) throw new AppError(400, "Church event does not exist");
 
+      const startTime = data.eventStartTime;
+      const endTime = data.eventEndTime;
+      if (endTime <= startTime)
+        return {
+          success: false,
+          message: "Event end time must be after event start time",
+        };
+
+      const pastEventDate = new Date(churchEvent.eventDate);
+      const today = normalizeDate(new Date());
+      const normalizedPastEventDate = normalizeDate(pastEventDate);
+      if (normalizedPastEventDate < today && !churchEvent.recurring) {
+        throw new AppError(400, "Cannot edit past events");
+      }
+
+      const existingAgendas = await this.eventAgendaRepository.findAll({
+        churchEvent: churchEvent.id,
+      });
+
+      if (existingAgendas && existingAgendas.length > 0) {
+        for (const agenda of existingAgendas) {
+          const agendaValidation = validateAgendaTimeWithinEventDuration(
+            agenda.startTime,
+            agenda.endTime,
+            data.eventStartTime,
+            data.eventEndTime,
+          );
+
+          if (!agendaValidation.isValid)
+            return {
+              success: false,
+              message: `Existing agenda ${agenda.title} does not fit within the new event duration. ${agendaValidation.error}. Please adjust the agenda durations to meet the new event duration.`,
+            };
+        }
+      }
+
       await this.eventRepository.updateById(churchEvent.id, {
         eventTitle: data.eventTitle,
         description: data.description,
@@ -765,6 +821,7 @@ class EventService {
 
   async getEventAndAttendees(req: any) {
     const eventId = req.params.eventId;
+    const userId = req.user.id;
     const { page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
@@ -791,12 +848,29 @@ class EventService {
         volunteerRole: eventVolunteerRolesIds,
       });
 
+      let isRegistered;
+      if (churchEvent.registration) {
+        const [member, admin] = await Promise.all([
+          this.memberRepository.findById(userId),
+          this.userRepository.findById(userId),
+        ]);
+        let registeredAttendeeName;
+        registeredAttendeeName = member
+          ? `${member.firstName} ${member.lastName}`
+          : `${admin.firstName} ${admin.lastName}`;
+
+        isRegistered = registeredAttendees.some(
+          (attendee: any) => attendee.name === registeredAttendeeName,
+        );
+      }
+
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
         churchEvent,
         registeredAttendees:
           registeredAttendees.length > 0 ? registeredAttendees : [],
         eventVolunteers: eventVolunteers.length > 0 ? eventVolunteers : [],
+        isRegistered,
         total_result: totalRecords,
         current_page: currentPage,
         total_pages: totalPages,

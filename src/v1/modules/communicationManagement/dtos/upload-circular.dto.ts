@@ -5,5 +5,6 @@ export type UploadCircular = {
   category: string;
   documentUrl: string;
   uploadedAt: string;
+  campusId?: string;
   churchId: string;
 };

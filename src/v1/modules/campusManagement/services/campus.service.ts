@@ -207,6 +207,17 @@ class CampusService {
 
     return `${campus.campusName} has been deleted successfully`;
   }
+
+  // services for form dropdowns
+  async getAllChurchCampusesForDropdown(
+    churchId: string,
+  ): Promise<{ id: string; name: string }[]> {
+    return await this.campusRepository.findAllForDropdown(
+      { churchId },
+      "id",
+      "campusName",
+    );
+  }
 }
 
 export default CampusService;

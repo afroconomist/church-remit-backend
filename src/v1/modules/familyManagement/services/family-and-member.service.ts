@@ -49,6 +49,7 @@ class FamilyAndMemberService {
         familyName: `${churchMember.firstName} Family`,
         primaryMember,
         familyAddress: familyAddress,
+        campusId: churchMember.campusId,
         church: churchMember.churchId,
         members: 1,
       });

@@ -12,6 +12,7 @@ class DiscussionBoardFactory {
     discussionBoard.whoCanPost = data.whoCanPost;
     discussionBoard.notifyMembers = data.notifyMembers;
     discussionBoard.members = data.members;
+    discussionBoard.campusId = data.campusId;
     discussionBoard.churchId = data.churchId;
 
     return discussionBoard;

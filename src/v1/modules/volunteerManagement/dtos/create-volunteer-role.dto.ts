@@ -4,6 +4,7 @@ export type CreateVolunteerRole = {
   section: string;
   noOfVolunteersNeeded: number;
   eventId: string;
+  campusId?: string;
   church: string;
   groupId?: string;
 };

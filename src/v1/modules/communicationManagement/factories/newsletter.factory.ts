@@ -15,6 +15,7 @@ class NewsletterFactory {
     newsletter.sendTime = data.sendTime;
     newsletter.postedAt = data.postedAt;
     newsletter.recipients = data.recipients;
+    newsletter.campusId = data.campusId;
     newsletter.churchId = data.churchId;
 
     return newsletter;

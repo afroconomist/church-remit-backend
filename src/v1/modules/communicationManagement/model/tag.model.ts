@@ -10,6 +10,7 @@ export class Tag extends Model {
   defaultAssignment: string;
   slug: string;
   members?: number;
+  campusId?: string;
   churchId: string;
 }
 

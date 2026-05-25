@@ -13,4 +13,5 @@ export type CreateNewEvent = {
   recurring?: boolean;
   eventFrequency?: "weekly" | "monthly" | "quarterly" | "yearly";
   church: string;
+  campusId?: string;
 };

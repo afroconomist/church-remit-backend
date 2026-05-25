@@ -9,5 +9,6 @@ export type SubmitPrayerRequest = {
   submittedBy?: string;
   prayerWarrior?: string;
   answered?: boolean;
+  campusId?: string;
   church: string;
 };

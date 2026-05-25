@@ -19,6 +19,7 @@ class EventFactory {
     event.recurring = data.recurring;
     event.eventFrequency = data.eventFrequency;
     event.church = data.church;
+    event.campusId = data.campusId;
 
     return event;
   }

@@ -82,6 +82,23 @@ class CampusController {
 
     return res.status(httpStatus.OK).send(SuccessResponse(response));
   };
+
+  // controllers for form dropdowns
+  async getAllChurchCampusesForDropdown(req: Request, res: Response) {
+    try {
+      const churchCampuses =
+        await this.campusService.getAllChurchCampusesForDropdown(
+          req.params.churchId,
+        );
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", churchCampuses));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  }
 }
 
 export default CampusController;

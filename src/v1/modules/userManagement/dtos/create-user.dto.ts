@@ -14,6 +14,7 @@ export type CreateUser = {
   refreshToken?: string;
   addedBy?: string;
   churchId?: string;
+  campusId?: string;
   createdAt?: Date;
   updatedAt?: Date;
 };

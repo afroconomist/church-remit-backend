@@ -10,6 +10,7 @@ import {
 import MemberFactory from "../factories/member.factory";
 import MemberRepository from "../repositories/member.repository";
 import ChurchRepository from "../../churchManagement/repositories/church.repository";
+import CampusRepository from "../../campusManagement/repositories/campus.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
 import MemberBirthdayFactory from "../factories/member_birthday.factory";
 import MemberBirthdayRepository from "../repositories/member_birthday.repository";
@@ -34,6 +35,7 @@ class MemberService {
   constructor(
     private readonly memberRepository: MemberRepository,
     private readonly churchRepository: ChurchRepository,
+    private readonly campusRepository: CampusRepository,
     private readonly userRepository: UserRepository,
     private readonly memberBirthdayRepository: MemberBirthdayRepository,
     private readonly mailService: MailService,
@@ -65,6 +67,12 @@ class MemberService {
       if (!churchExists)
         return { success: false, message: "Church does not exist" };
 
+      const campusExists = await this.campusRepository.findById(
+        String(member_data.campusId),
+      );
+      if (!campusExists)
+        return { success: false, message: "Campus does not exist" };
+
       const role = await this.roleRepo.findByName("member");
       if (!role) return { success: false, message: "Role not found" };
 
@@ -86,6 +94,7 @@ class MemberService {
       if (ageOfMember > 18 && ageOfMember < 35) {
         const member = MemberFactory.addMember({
           ...member_data,
+          campusId: campusExists.id,
           password: memberPassword,
           roleId: role.id,
           addedBy: superAdminId,
@@ -100,8 +109,9 @@ class MemberService {
             dateOfBirth: addedMember.dateOfBirth,
             celebrantEmail: addedMember.email,
             celebrantPhone: addedMember.phoneNumber,
-            campus: "Member campus",
+            campus: campusExists.campusName,
             memberId: addedMember.id,
+            campusId: addedMember.campusId,
             churchId: addedMember.churchId,
           });
           await this.memberBirthdayRepository.save(memberBirthday);
@@ -140,8 +150,9 @@ class MemberService {
           dateOfBirth: addedMember.dateOfBirth,
           celebrantEmail: addedMember.email,
           celebrantPhone: addedMember.phoneNumber,
-          campus: "Member campus",
+          campus: campusExists.campusName,
           memberId: addedMember.id,
+          campusId: addedMember.campusId,
           churchId: addedMember.churchId,
         });
         await this.memberBirthdayRepository.save(memberBirthday);
@@ -361,16 +372,15 @@ class MemberService {
         throw new AppError(400, "Member does not exist");
       }
 
+      const memberCampus = await this.campusRepository.findById(String(member.campusId));
+      if (!memberCampus) {
+        throw new AppError(400, "Member campus does not exist");
+      }
+
       const memberBirthdayExist = await this.memberBirthdayRepository.findOne({
         memberId: member.id,
         churchId: member.churchId,
       });
-
-      // const superAdminExists = await this.userRepository.findById(
-      //   member.addedBy
-      // );
-      // if (!superAdminExists)
-      //   return { success: false, message: "Super admin does not exist" };
 
       await this.memberRepository.updateById(req.params.id, {
         firstName: data.firstName,
@@ -398,8 +408,9 @@ class MemberService {
           dateOfBirth: data.dateOfBirth,
           celebrantEmail: member.email,
           celebrantPhone: member.phoneNumber,
-          campus: "Member campus",
+          campus: memberCampus.campusName,
           memberId: member.id,
+          campusId: member.campusId,
           churchId: member.churchId,
         });
         await this.memberBirthdayRepository.save(memberBirthday);

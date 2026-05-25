@@ -26,6 +26,7 @@ class SacramentService {
         parentsGuardians: data.parentsGuardians,
         sponsorsGodparentsWitnesses: data.sponsorsGodparentsWitnesses,
         additionalNotes: data.additionalNotes,
+        campusId: String(member.campusId),
         church: String(member.churchId),
       });
       const recordedSacrament = await this.sacramentRepository.save(sacrament);

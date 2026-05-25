@@ -7,5 +7,6 @@ export type AddAsset = {
   location: string;
   condition: string;
   groupId?: string;
+  campusId?: string;
   churchId: string;
 };

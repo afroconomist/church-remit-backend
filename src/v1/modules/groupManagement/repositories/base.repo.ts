@@ -68,6 +68,18 @@ export class BaseRepository<T, M extends Model> {
     return { data, totalRecords };
   }
 
+  async findAndUpdate(
+    filter: ObjectLiteral,
+    data: Partial<M>,
+    trx?: Transaction,
+  ): Promise<M> {
+    return await this.model
+      .query(trx)
+      .where(filter)
+      .update(data)
+      .returning("*");
+  }
+
   async save(data: Partial<T>, transaction?: Transaction): Promise<M> {
     return await this.model.query(transaction).insert(data).returning("*");
   }

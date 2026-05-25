@@ -11,6 +11,7 @@ class MemberBirthdayFactory {
     memberBirthday.celebrantPhone = data.celebrantPhone;
     memberBirthday.campus = data.campus;
     memberBirthday.memberId = data.memberId;
+    memberBirthday.campusId = data.campusId;
     memberBirthday.churchId = data.churchId;
 
     return memberBirthday;

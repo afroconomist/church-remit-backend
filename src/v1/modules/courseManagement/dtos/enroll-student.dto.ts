@@ -4,5 +4,6 @@ export type EnrollStudent = {
   department: string;
   memberId: string;
   courseId: string;
+  campusId?: string;
   churchId: string;
 };

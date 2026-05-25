@@ -15,6 +15,7 @@ export class News extends Model {
   postedAt: Date;
   featureThisNews?: boolean;
   showOnHomepage?: boolean;
+  campusId?: string;
   churchId: string;
 }
 

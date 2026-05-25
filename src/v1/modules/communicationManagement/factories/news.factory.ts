@@ -15,6 +15,7 @@ class NewsFactory {
     news.postedAt = data.postedAt;
     news.featureThisNews = data.featureThisNews;
     news.showOnHomepage = data.showOnHomepage;
+    news.campusId = data.campusId;
     news.churchId = data.churchId;
 
     return news;

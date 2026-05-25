@@ -19,6 +19,7 @@ export class Group extends Model {
   requireLeaderApproval?: boolean;
   enableGroupChat?: boolean;
   groupCreator: string;
+  campusId?: string;
   church: string;
 }
 

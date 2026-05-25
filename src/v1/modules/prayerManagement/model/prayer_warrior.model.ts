@@ -10,6 +10,7 @@ export class PrayerWarrior extends Model {
   assigned?: number;
   completed?: number;
   avgResponse?: string;
+  campusId?: string;
   church: string;
   churchMemberId?: string;
 }

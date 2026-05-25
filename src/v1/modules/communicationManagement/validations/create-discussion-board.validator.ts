@@ -4,4 +4,5 @@ export const createDiscussionBoardRules = {
   welcomeMessage: "required|string",
   visibility: "required|string",
   whoCanPost: "required|string",
+  campusId: "string",
 };

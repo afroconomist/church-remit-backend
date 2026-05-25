@@ -24,8 +24,11 @@ class PrayerAndWarriorService {
 
   async submitPrayerRequest(data: SubmitPrayerRequest, memberId: string) {
     try {
-      const member = await this.userRepository.findById(memberId);
-      if (!member) throw new AppError(400, "Member does not exist");
+      const [admin, member] = await Promise.all([
+        this.userRepository.findById(memberId),
+        this.memberRepository.findById(memberId),
+      ]);
+      const user = admin ? admin : member;
 
       if (
         data.privacySetting === "Public" ||
@@ -37,8 +40,9 @@ class PrayerAndWarriorService {
           category: data.category,
           urgency: data.urgency,
           privacySetting: data.privacySetting,
-          submittedBy: `${member.firstName} ${member.lastName}`,
-          church: String(member.churchId),
+          submittedBy: `${user.firstName} ${user.lastName}`,
+          campusId: String(user.campusId),
+          church: String(user.churchId),
         });
         const submittedPrayerRequest = await this.prayerRepository.save(
           prayerRequest,
@@ -99,7 +103,8 @@ class PrayerAndWarriorService {
         name: `${member.firstName} ${member.lastName}`,
         email: member.email,
         phoneNumber: member.phoneNumber,
-        church: String(superAdmin.churchId),
+        campusId: String(member.campusId),
+        church: String(member.churchId),
         churchMemberId: member.id,
       });
       const addedPrayerWarrior = await this.prayerWarriorRepository.save(

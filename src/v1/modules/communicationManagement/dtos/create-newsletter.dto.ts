@@ -9,5 +9,6 @@ export type CreateNewsletter = {
   sendTime?: string;
   postedAt: Date;
   recipients?: number;
+  campusId?: string;
   churchId: string;
 };

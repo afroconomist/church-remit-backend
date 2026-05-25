@@ -65,6 +65,7 @@ class CommunicationService {
         publishTime,
         featureThisNews,
         showOnHomepage,
+        campusId
       } = parsedData;
 
       const superAdmin = await this.userRepository.findById(superAdminId);
@@ -96,6 +97,7 @@ class CommunicationService {
         featureThisNews,
         showOnHomepage,
         postedAt: new Date(),
+        campusId,
         churchId: String(superAdmin.churchId),
       });
       const createdNews = await this.newsRepository.save(news);
@@ -180,6 +182,7 @@ class CommunicationService {
         sendDate: data.sendDate,
         sendTime: data.sendTime,
         postedAt: new Date(),
+        campusId: String(data.campusId),
         churchId: String(superAdmin.churchId),
       });
       const createdNewsletter = await this.newsletterRepository.save(
@@ -249,7 +252,7 @@ class CommunicationService {
   async uploadCircular(req: any) {
     const file = req.file;
     const superAdminId = req.user.id;
-    const { title, description, province, category } = req.body;
+    const { title, description, province, category, campusId } = req.body;
 
     if (!file) {
       throw new AppError(400, "No file uploaded");
@@ -274,6 +277,7 @@ class CommunicationService {
         category,
         documentUrl: fileData.url,
         uploadedAt: new Date().toISOString(),
+        campusId,
         churchId: String(superAdmin.churchId),
       });
       const uploadedCircular = await this.circularRepository.save(circular);
@@ -348,6 +352,7 @@ class CommunicationService {
         whoCanPost: data.whoCanPost,
         notifyMembers: data.notifyMembers,
         members: 1,
+        campusId: String(data.campusId),
         churchId: String(superAdmin.churchId),
       });
       const createdDiscussionBoard = await this.discussionBoardRepository.save(
@@ -747,6 +752,7 @@ class CommunicationService {
         displayOnWebsite: data.displayOnWebsite,
         sendEmailNotification: data.sendEmailNotification,
         sendSMSNotification: data.sendSMSNotification,
+        campusId: String(data.campusId),
         churchId: String(superAdmin.churchId),
       });
       const newAnnouncement = await this.announcementRepository.save(

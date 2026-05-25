@@ -4,4 +4,5 @@ export const createNewAnnoucementRules = {
   category: "required|string",
   priority: "required|string",
   startDate: "required|string",
+  campusId: "string",
 };

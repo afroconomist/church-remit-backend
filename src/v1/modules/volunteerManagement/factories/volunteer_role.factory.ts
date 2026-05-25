@@ -9,6 +9,7 @@ class VolunteerRoleFactory {
     volunteerRole.section = data.section;
     volunteerRole.noOfVolunteersNeeded = data.noOfVolunteersNeeded;
     volunteerRole.eventId = data.eventId;
+    volunteerRole.campusId = data.campusId;
     volunteerRole.church = data.church;
     volunteerRole.groupId = data.groupId;
 

@@ -13,6 +13,7 @@ export class DiscussionBoard extends Model {
   topics?: number;
   members?: number;
   lastActive?: string;
+  campusId?: string;
   churchId: string;
 }
 

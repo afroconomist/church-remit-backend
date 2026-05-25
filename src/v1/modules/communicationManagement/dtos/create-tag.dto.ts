@@ -4,5 +4,6 @@ export type CreateTag = {
   color: string;
   defaultAssignment: string;
   slug?: string;
+  campusId?: string;
   churchId: string;
 };

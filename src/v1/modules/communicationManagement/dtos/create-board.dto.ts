@@ -6,5 +6,6 @@ export type CreateDiscussionBoard = {
   whoCanPost: string;
   notifyMembers: boolean;
   members: number;
+  campusId?: string;
   churchId: string;
 };
