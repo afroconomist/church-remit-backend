@@ -1,7 +1,9 @@
 import { injectable } from "tsyringe";
 import ChurchFactory from "../factories/church.factory";
+import CampusFactory from "../../campusManagement/factories/campus.factory";
 import UserFactory from "../../userManagement/factories/user.factory";
 import ChurchRepository from "../repositories/church.repository";
+import CampusRepository from "../../campusManagement/repositories/campus.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
 import MemberRepository from "../../memberManagement/repositories/member.repository";
 import RoleRepo from "../../accessControlManagement/repositories/role.repo";
@@ -37,6 +39,7 @@ interface OnboardingPayload {
 class ChurchService {
   constructor(
     private readonly churchRepository: ChurchRepository,
+    private readonly campusRepository: CampusRepository,
     private readonly userRepository: UserRepository,
     private readonly memberRepository: MemberRepository,
     private readonly otpService: OTPService,
@@ -68,9 +71,8 @@ class ChurchService {
       const role = await this.roleRepo.findByName("super-admin");
       if (!role) return { success: false, message: "Role not found" };
 
-      const { createdChurch, createdUser } = await transaction(
-        Church.knex(),
-        async (trx) => {
+      const { createdChurch, createdMainCampus, createdUser } =
+        await transaction(Church.knex(), async (trx) => {
           const church = ChurchFactory.createChurch({
             churchName: church_user_data.churchName,
             churchType: church_user_data.churchType,
@@ -90,6 +92,24 @@ class ChurchService {
           });
           const createdChurch = await this.churchRepository.save(church, trx);
 
+          const mainCampus = CampusFactory.addCampus({
+            campusName: `${createdChurch.churchName} - Main Campus`,
+            campusCode: "main-campus-code",
+            campusAddress: createdChurch.streetAddress,
+            campusEmail: createdChurch.email,
+            campusPhoneNumber: createdChurch.phoneNumber,
+            campusPastor: "campus pastor",
+            localCurrency: createdChurch.baseCurrency,
+            timezone: createdChurch.timeZone,
+            established: `${new Date().toISOString()}`,
+            status: "Active",
+            churchId: createdChurch.id,
+          });
+          const createdMainCampus = await this.campusRepository.save(
+            mainCampus,
+            trx,
+          );
+
           const user = UserFactory.createUser({
             firstName: church_user_data.userFirstName,
             lastName: church_user_data.userLastName,
@@ -97,13 +117,13 @@ class ChurchService {
             password: church_user_data.userPassword,
             roleId: role.id,
             isDefaultPassword: false,
+            campusId: createdMainCampus.id,
             churchId: createdChurch.id,
           });
           const createdUser = await this.userRepository.save(user, trx);
 
-          return { createdChurch, createdUser };
-        },
-      );
+          return { createdChurch, createdMainCampus, createdUser };
+        });
 
       const token = generateCode(6);
       await this.otpService.sendOTP({
@@ -126,6 +146,7 @@ class ChurchService {
         message: "Church and user account has been created successfully",
         otp_message: `Kindly check your email address ${newUser.email} for OTP`,
         church_data: createdChurch,
+        campus_data: createdMainCampus,
         user_data: newUser,
       };
     } catch (error: any) {
@@ -284,7 +305,11 @@ class ChurchService {
 
     try {
       const { data: churchMembers, totalRecords } =
-        await this.memberRepository.findAndCountAll({ churchId }, currentPage, pageSize);
+        await this.memberRepository.findAndCountAll(
+          { churchId },
+          currentPage,
+          pageSize,
+        );
 
       if (churchMembers.length === 0) {
         return {

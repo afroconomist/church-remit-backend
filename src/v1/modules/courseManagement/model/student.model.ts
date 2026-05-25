@@ -10,6 +10,7 @@ export class Student extends Model {
   isEnrolled: boolean;
   memberId: string;
   courseId: string;
+  campusId?: string;
   churchId: string;
 }
 

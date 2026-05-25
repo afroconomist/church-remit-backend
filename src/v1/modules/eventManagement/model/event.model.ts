@@ -20,6 +20,7 @@ export class ChurchEvent extends Model {
   upcoming?: boolean;
   past?: boolean;
   church: string;
+  campusId?: string;
 }
 
 export type IChurchEvent = ModelObject<ChurchEvent>;

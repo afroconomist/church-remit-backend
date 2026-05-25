@@ -3,5 +3,6 @@ export type UploadDocument = {
   category: string;
   confidentiality: string;
   documentUrl: string;
+  campusId: string;
   churchId: string;
 };

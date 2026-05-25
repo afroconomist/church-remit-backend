@@ -3,4 +3,5 @@ export const createNewsletterRules = {
   emailSubjectLine: "required|string",
   emailContent: "required",
   audience: "required",
+  campusId: "string",
 };

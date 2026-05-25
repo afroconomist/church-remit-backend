@@ -6,5 +6,6 @@ export type AddPrayerWarrior = {
   completed?: number;
   avgResponse?: string;
   church: string;
+  campusId?: string;
   churchMemberId?: string;
 };

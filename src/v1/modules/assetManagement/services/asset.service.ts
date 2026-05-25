@@ -35,6 +35,7 @@ class AssetService {
         ...data,
         assetName,
         groupId,
+        campusId: String(data.campusId),
         churchId: String(superAdmin.churchId),
       });
       const addedAsset = await this.assetRepository.save(asset);

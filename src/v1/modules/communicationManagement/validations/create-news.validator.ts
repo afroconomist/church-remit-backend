@@ -5,4 +5,5 @@ export const createNewsRules = {
   province: "required|string",
   publishDate: "required|string",
   publishTime: "required|string",
+  campusId: "string",
 };

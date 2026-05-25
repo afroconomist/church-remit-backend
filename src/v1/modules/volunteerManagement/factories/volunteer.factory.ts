@@ -11,6 +11,7 @@ class VolunteerFactory {
     volunteer.skills = data.skills;
     volunteer.availability = data.availability;
     volunteer.memberSince = data.memberSince;
+    volunteer.campusId = data.campusId;
     volunteer.church = data.church;
     volunteer.churchMemberId = data.churchMemberId;
 

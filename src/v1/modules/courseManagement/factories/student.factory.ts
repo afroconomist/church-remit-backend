@@ -10,6 +10,7 @@ class StudentFactory {
     student.department = data.department;
     student.memberId = data.memberId;
     student.courseId = data.courseId;
+    student.campusId = data.campusId;
     student.churchId = data.churchId;
 
     return student;

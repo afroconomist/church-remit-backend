@@ -22,6 +22,7 @@ export class User extends Model {
   refreshToken!: string;
   addedBy?: string;
   churchId?: string;
+  campusId?: string;
 
   static relationMappings = {
     userRole: {

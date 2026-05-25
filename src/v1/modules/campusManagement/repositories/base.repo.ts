@@ -50,6 +50,36 @@ export class BaseRepository<T, M extends Model> {
     return { data, totalRecords };
   }
 
+  async findAllForDropdown(
+    filter: ObjectLiteral,
+    idColumn: string,
+    nameColumn: string,
+    anyColumn?: string,
+    anyColumnName?: string,
+  ): Promise<{ id: string; name: string; anyField?: string }[]> {
+    const query = this.model
+      .query()
+      .select(`id as ${idColumn}`, `${nameColumn} as name`)
+      .where(filter)
+      .orderBy(nameColumn);
+
+    if (anyColumn) {
+      query.select(`${anyColumn} as ${anyColumnName}`);
+    }
+
+    return await query;
+  }
+
+  async getAllForDropdown(
+    idColumn: string,
+    nameColumn: string,
+  ): Promise<{ id: string; name: string }[]> {
+    return await this.model
+      .query()
+      .select(`id as ${idColumn}`, `${nameColumn} as name`)
+      .orderBy(nameColumn);
+  }
+
   async save(data: Partial<T>, transaction?: Transaction): Promise<M> {
     return await this.model.query(transaction).insert(data).returning("*");
   }

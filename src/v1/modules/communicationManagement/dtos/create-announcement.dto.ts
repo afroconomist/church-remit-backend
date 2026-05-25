@@ -8,5 +8,6 @@ export type CreateAnnouncement = {
   displayOnWebsite?: boolean;
   sendEmailNotification?: boolean;
   sendSMSNotification?: boolean;
+  campusId?: string;
   churchId: string;
 };

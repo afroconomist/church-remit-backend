@@ -9,5 +9,6 @@ export type CreateNews = {
   postedAt: Date;
   featureThisNews?: boolean;
   showOnHomepage?: boolean;
+  campusId?: string;
   churchId: string;
 };

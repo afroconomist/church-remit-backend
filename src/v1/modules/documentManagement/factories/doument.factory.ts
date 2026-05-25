@@ -9,6 +9,7 @@ class DocumentFactory {
     document.category = data.category;
     document.confidentiality = data.confidentiality;
     document.documentUrl = data.documentUrl;
+    document.campusId = data.campusId;
     document.churchId = data.churchId;
 
     return document;

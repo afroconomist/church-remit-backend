@@ -14,6 +14,7 @@ class AnnouncementFactory {
     announcement.displayOnWebsite = data.displayOnWebsite;
     announcement.sendEmailNotification = data.sendEmailNotification;
     announcement.sendSMSNotification = data.sendSMSNotification;
+    announcement.campusId = data.campusId;
     announcement.churchId = data.churchId;
 
     return announcement;

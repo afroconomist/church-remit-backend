@@ -46,6 +46,7 @@ class DocumentService {
         category,
         confidentiality,
         documentUrl: fileData.url,
+        campusId: String(superAdmin.campusId),
         churchId: String(superAdmin.churchId),
       });
       const uploadedDocument = await this.documentRepository.save(document);

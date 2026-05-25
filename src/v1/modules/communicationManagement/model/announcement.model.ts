@@ -13,6 +13,7 @@ export class Announcement extends Model {
   displayOnWebsite?: boolean;
   sendEmailNotification?: boolean;
   sendSMSNotification?: boolean;
+  campusId?: string;
   churchId: string;
 }
 

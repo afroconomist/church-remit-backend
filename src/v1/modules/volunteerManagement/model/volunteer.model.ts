@@ -18,6 +18,7 @@ export class Volunteer extends Model {
   section?: string;
   status?: string;
   volunteerRole?: string;
+  campusId?: string;
   church: string;
   churchMemberId?: string;
 }

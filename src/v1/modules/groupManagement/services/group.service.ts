@@ -34,9 +34,11 @@ class GroupService {
 
   async createGroup(data: CreateGroup, groupCreatorId: string) {
     try {
-      const groupCreator = await this.userRepository.findById(groupCreatorId);
-      if (!groupCreator)
-        throw new AppError(400, "Group creator does not exist");
+      const [admin, member] = await Promise.all([
+        this.userRepository.findById(groupCreatorId),
+        this.memberRepository.findById(groupCreatorId),
+      ]);
+      const groupCreator = admin ? admin : member;
 
       const { newGroup, group_leader, group_criterias } = await transaction(
         Group.knex(),
@@ -56,6 +58,7 @@ class GroupService {
             requireLeaderApproval: data.requireLeaderApproval,
             enableGroupChat: data.enableGroupChat,
             groupCreator: `${groupCreator.firstName} ${groupCreator.lastName}`,
+            campusId: String(groupCreator.campusId),
             church: String(groupCreator.churchId),
           });
           const newGroup = await this.groupRepository.save(group, trx);
@@ -72,20 +75,22 @@ class GroupService {
             trx,
           );
 
-          const groupCriterias = data.criterias?.map((criteria) =>
-            GroupCriteriaFactory.createGroupCriteria({
-              criteriaType: criteria.criteriaType,
-              minAge: criteria.minAge,
-              maxAge: criteria.maxAge,
-              sex: criteria.sex,
-              status: criteria.status,
-              groupId: newGroup.id,
-            }),
-          );
-          const group_criterias = await this.groupCriteriaRepository.saveBulk(
-            groupCriterias,
-            trx,
-          );
+          const groupCriterias =
+            data.criterias?.map((criteria) =>
+              GroupCriteriaFactory.createGroupCriteria({
+                criteriaType: criteria.criteriaType,
+                minAge: criteria.minAge,
+                maxAge: criteria.maxAge,
+                sex: criteria.sex,
+                status: criteria.status,
+                groupId: newGroup.id,
+              }),
+            ) || [];
+
+          const group_criterias =
+            groupCriterias.length > 0
+              ? await this.groupCriteriaRepository.saveBulk(groupCriterias, trx)
+              : [];
 
           return { newGroup, group_leader, group_criterias };
         },
@@ -507,6 +512,10 @@ class GroupService {
         };
       }
 
+      const groupCriterias = await this.groupCriteriaRepository.findAll({
+        groupId: group.id,
+      });
+
       const isMember = groupMembers.some(
         (member) => member.churchMemberId === userId,
       );
@@ -515,6 +524,7 @@ class GroupService {
       return {
         group,
         groupMembers,
+        groupCriterias,
         isMember,
         total_result: totalRecords,
         current_page: currentPage,
@@ -597,24 +607,55 @@ class GroupService {
       const group = await this.groupRepository.findById(req.params.groupId);
       if (!group) throw new AppError(400, "Group does not exist");
 
-      await this.groupRepository.updateById(group.id, {
-        groupName: data.groupName,
-        category: data.category,
-        description: data.description,
-        capacity: data.capacity,
-        meetingDay: data.meetingDay,
-        meetingTime: data.meetingTime,
-        frequency: data.frequency,
-        location: data.location,
-        publicGroup: data.publicGroup,
-        allowGuestInvites: data.allowGuestInvites,
-        requireLeaderApproval: data.requireLeaderApproval,
-        enableGroupChat: data.enableGroupChat,
+      await transaction(Group.knex(), async (trx) => {
+        await this.groupRepository.updateById(
+          group.id,
+          {
+            groupName: data.groupName,
+            category: data.category,
+            description: data.description,
+            groupLeader: data.groupLeader,
+            capacity: data.capacity,
+            meetingDay: data.meetingDay,
+            meetingTime: data.meetingTime,
+            frequency: data.frequency,
+            location: data.location,
+            publicGroup: data.publicGroup,
+            allowGuestInvites: data.allowGuestInvites,
+            requireLeaderApproval: data.requireLeaderApproval,
+            enableGroupChat: data.enableGroupChat,
+          },
+          trx,
+        );
+
+        await this.groupMemberRepository.findAndUpdate(
+          { groupMemberName: data.groupLeader },
+          { groupMemberRole: "Leader" },
+        );
+
+        if (data.criterias !== undefined) {
+          await trx.from("group_criterias").where("groupId", group.id).delete();
+
+          if (data.criterias.length > 0) {
+            const groupCriterias = data.criterias.map((criteria: any) =>
+              GroupCriteriaFactory.createGroupCriteria({
+                criteriaType: criteria.criteriaType,
+                minAge: criteria.minAge,
+                maxAge: criteria.maxAge,
+                sex: criteria.sex,
+                status: criteria.status,
+                groupId: group.id,
+              }),
+            );
+
+            await this.groupCriteriaRepository.saveBulk(groupCriterias, trx);
+          }
+        }
       });
 
       return {
         success: true,
-        message: "Group info has been updated successfully",
+        message: "Group info and criterias have been updated successfully",
       };
     } catch (error: any) {
       logger.error({ error: error.message }, "Failed to edit group");

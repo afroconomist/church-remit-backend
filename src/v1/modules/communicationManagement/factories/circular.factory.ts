@@ -11,6 +11,7 @@ class CircularFactory {
     circular.category = data.category;
     circular.documentUrl = data.documentUrl;
     circular.uploadedAt = data.uploadedAt;
+    circular.campusId = data.campusId;
     circular.churchId = data.churchId;
 
     return circular;

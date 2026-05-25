@@ -10,6 +10,7 @@ export class MemberBirthday extends Model {
   celebrantPhone: string;
   campus: string;
   memberId: string;
+  campusId?: string;
   churchId: string;
 }
 

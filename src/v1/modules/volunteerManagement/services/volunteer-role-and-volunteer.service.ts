@@ -38,6 +38,7 @@ class VolunteerAndRoleService {
       const volunteerRole = VolunteerRoleFactory.createVolunteerRole({
         ...data,
         eventId: churchEvent.id,
+        campusId: String(superAdmin.campusId),
         church: String(superAdmin.churchId),
       });
       const newVolunteerRole = await this.volunteerRoleRepository.save(
@@ -85,7 +86,8 @@ class VolunteerAndRoleService {
           memberSince: new Date(),
           skills: JSON.stringify(data.skills),
           availability: JSON.stringify(data.availability),
-          church: String(superAdmin.churchId),
+          campusId: String(member.campusId),
+          church: String(member.churchId),
           churchMemberId: member.id,
         });
         const newVolunteer = await this.volunteerRepository.save(volunteer);
@@ -122,7 +124,8 @@ class VolunteerAndRoleService {
         memberSince: new Date(),
         skills: JSON.stringify(data.skills),
         availability: JSON.stringify(data.availability),
-        church: String(superAdmin.churchId),
+        campusId: String(addedMember.campusId),
+        church: String(addedMember.churchId),
         churchMemberId: addedMember.id,
       });
       const newVolunteer = await this.volunteerRepository.save(volunteer);

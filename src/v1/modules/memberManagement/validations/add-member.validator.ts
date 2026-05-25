@@ -20,4 +20,5 @@ export const addMemberRules = {
   baptismDate: "date",
   notes: "string",
   avatar: "string",
+  campusId: "string",
 };

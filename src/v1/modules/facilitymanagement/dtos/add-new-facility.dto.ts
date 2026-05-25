@@ -7,5 +7,6 @@ export type AddNewFacility = {
   status?: string;
   eventBookedFor?: string;
   eventTime?: string;
+  campusId?: string;
   churchId: string;
 };

@@ -12,6 +12,7 @@ export class Facility extends Model {
   status?: string;
   eventBookedFor?: string;
   eventTime?: string;
+  campusId?: string;
   churchId: string;
 }
 

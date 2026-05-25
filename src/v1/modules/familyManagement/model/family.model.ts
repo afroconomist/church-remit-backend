@@ -8,6 +8,7 @@ export class Family extends Model {
   familyName?: string;
   primaryMember: string;
   familyAddress: string;
+  campusId?: string;
   church: string;
   members?: number;
 

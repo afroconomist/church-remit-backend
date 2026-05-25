@@ -9,6 +9,7 @@ export class Category extends Model {
   categoryType: string;
   slug?: string;
   members?: number;
+  campusId?: string;
   churchId: string;
 }
 

@@ -11,6 +11,7 @@ class PrayerWarriorFactory {
     prayerWarrior.assigned = data.assigned;
     prayerWarrior.completed = data.completed;
     prayerWarrior.avgResponse = data.avgResponse;
+    prayerWarrior.campusId = data.campusId;
     prayerWarrior.church = data.church;
     prayerWarrior.churchMemberId = data.churchMemberId;
 

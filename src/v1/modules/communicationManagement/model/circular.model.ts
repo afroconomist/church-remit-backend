@@ -11,6 +11,7 @@ export class Circular extends Model {
   documentUrl: string;
   uploadedAt: string;
   downloads?: number;
+  campusId?: string;
   churchId: string;
 }
 

@@ -13,6 +13,7 @@ class FacilityFactory {
     facility.status = data.status;
     facility.eventBookedFor = data.eventBookedFor;
     facility.eventTime = data.eventTime;
+    facility.campusId = data.campusId;
     facility.churchId = data.churchId;
 
     return facility;

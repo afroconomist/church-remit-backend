@@ -3,4 +3,5 @@ export const createTagRules = {
   description: "required|string",
   color: "required|string",
   defaultAssignment: "required|string",
+  campusId: "string",
 };

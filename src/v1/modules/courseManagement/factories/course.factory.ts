@@ -14,6 +14,7 @@ class CourseFactory {
     course.mandatoryCourse = data.mandatoryCourse;
     course.modules = data.modules;
     course.enrolled = data.enrolled;
+    course.campusId = data.campusId;
     course.churchId = data.churchId;
 
     return course;

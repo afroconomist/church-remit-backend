@@ -12,6 +12,7 @@ class AssetFactory {
     asset.location = data.location;
     asset.condition = data.condition;
     asset.groupId = data.groupId;
+    asset.campusId = data.campusId;
     asset.churchId = data.churchId;
 
     return asset;
