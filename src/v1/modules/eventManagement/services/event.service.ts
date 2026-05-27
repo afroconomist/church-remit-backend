@@ -40,6 +40,7 @@ interface CreateNewEventPayload {
   recurring?: boolean;
   eventFrequency?: "weekly" | "monthly" | "quarterly" | "yearly";
   church: string;
+  campusId?: string;
 }
 
 interface AddNewAgendaPayload {
@@ -109,7 +110,7 @@ class EventService {
         registration: data.registration,
         recurring: data.recurring,
         eventFrequency: data.eventFrequency,
-        campusId: String(superAdmin.campusId),
+        campusId: data.campusId,
         church: String(superAdmin.churchId),
       });
       const createdNewEvent = await this.eventRepository.save(newEvent);
@@ -715,6 +716,7 @@ class EventService {
         }
       }
 
+      const eventFrequency = data.eventFrequency ? data.eventFrequency : null;
       await this.eventRepository.updateById(churchEvent.id, {
         eventTitle: data.eventTitle,
         description: data.description,
@@ -725,6 +727,9 @@ class EventService {
         eventEndTime: data.eventEndTime,
         maximumCapacity: data.maximumCapacity,
         registration: data.registration,
+        recurring: data.recurring,
+        eventFrequency,
+        campusId: data.campusId,
       });
 
       return {

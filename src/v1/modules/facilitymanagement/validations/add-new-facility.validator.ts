@@ -4,4 +4,5 @@ export const addNewFacilityRules = {
   capacity: "required",
   location: "required|string",
   features: "string",
+  campusId: "string",
 };

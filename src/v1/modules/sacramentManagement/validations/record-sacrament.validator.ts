@@ -6,4 +6,5 @@ export const recordSacramentRules = {
   parentsGuardians: "required",
   sponsorsGodparentsWitnesses: "required",
   additionalNotes: "required",
+  campusId: "string",
 };

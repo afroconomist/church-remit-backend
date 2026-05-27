@@ -30,7 +30,7 @@ class FacilityService {
         location: data.location,
         features: data.features,
         status: "Available",
-        campusId: String(superAdmin.campusId),
+        campusId: data.campusId,
         churchId: String(superAdmin.churchId),
       });
       const newFacility = await this.facilityRepository.save(facility);
@@ -212,6 +212,7 @@ class FacilityService {
         capacity: data.capacity,
         location: data.location,
         features: data.features,
+        campusId: data.campusId,
       });
 
       return {

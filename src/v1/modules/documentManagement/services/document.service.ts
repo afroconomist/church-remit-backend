@@ -16,7 +16,7 @@ class DocumentService {
   async uploadDocument(req: any) {
     const file = req.file;
     const superAdminId = req.user.id;
-    const { category, confidentiality } = req.body;
+    const { category, confidentiality, campusId } = req.body;
 
     if (!file) {
       throw new AppError(400, "No file uploaded");
@@ -46,7 +46,7 @@ class DocumentService {
         category,
         confidentiality,
         documentUrl: fileData.url,
-        campusId: String(superAdmin.campusId),
+        campusId,
         churchId: String(superAdmin.churchId),
       });
       const uploadedDocument = await this.documentRepository.save(document);

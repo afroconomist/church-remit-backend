@@ -58,7 +58,6 @@ class GroupService {
             requireLeaderApproval: data.requireLeaderApproval,
             enableGroupChat: data.enableGroupChat,
             groupCreator: `${groupCreator.firstName} ${groupCreator.lastName}`,
-            campusId: String(groupCreator.campusId),
             church: String(groupCreator.churchId),
           });
           const newGroup = await this.groupRepository.save(group, trx);

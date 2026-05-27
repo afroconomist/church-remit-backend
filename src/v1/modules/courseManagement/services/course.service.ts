@@ -78,7 +78,6 @@ class CourseService {
             enrollmentType: data.enrollmentType,
             mandatoryCourse: data.mandatoryCourse,
             modules: data.courseModules.length,
-            campusId: String(superAdmin.campusId),
             churchId: String(superAdmin.churchId),
           });
 
@@ -229,7 +228,6 @@ class CourseService {
         department: "null",
         memberId: enrollingStudent.id,
         courseId: course.id,
-        campusId: String(enrollingStudent.campusId),
         churchId: String(enrollingStudent.churchId),
       });
       await this.studentRepository.save(student);

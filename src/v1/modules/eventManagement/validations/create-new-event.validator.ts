@@ -10,4 +10,5 @@ export const createNewEventRules = {
   registration: "boolean",
   recurring: "boolean",
   eventFrequency: "string|in:weekly,monthly,quarterly,yearly",
+  campusId: "string",
 };

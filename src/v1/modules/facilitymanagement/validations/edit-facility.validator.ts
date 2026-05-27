@@ -4,4 +4,5 @@ export const editFacilityRules = {
   capacity: "required",
   location: "required|string",
   features: "required|string",
+  campusId: "string",
 };

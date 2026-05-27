@@ -19,7 +19,6 @@ class GroupFactory {
     group.requireLeaderApproval = data.requireLeaderApproval;
     group.enableGroupChat = data.enableGroupChat;
     group.groupCreator = data.groupCreator;
-    group.campusId = data.campusId;
     group.church = data.church;
 
     return group;

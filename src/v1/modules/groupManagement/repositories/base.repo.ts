@@ -55,12 +55,20 @@ export class BaseRepository<T, M extends Model> {
     page: number,
     limit: number,
   ): Promise<{ data: T[]; totalRecords: number }> {
-    const query = this.model.query();
+    const baseQuery = this.model.query();
 
-    const totalRecords = await this.model.query().where(filter).resultSize();
+    Object.entries(filter).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        baseQuery.whereIn(key, value);
+      } else {
+        baseQuery.where(key, value);
+      }
+    });
 
-    const data = await query
-      .where(filter)
+    const totalRecords = await baseQuery.clone().resultSize();
+
+    const data = await baseQuery
+      .clone()
       .orderBy("createdAt", "desc")
       .limit(limit)
       .offset((page - 1) * limit);

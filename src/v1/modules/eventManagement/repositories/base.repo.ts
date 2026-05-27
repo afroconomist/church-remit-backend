@@ -20,7 +20,7 @@ export class BaseRepository<T, M extends Model> {
   async updateById(
     id: string,
     data: Partial<M>,
-    trx?: Transaction
+    trx?: Transaction,
   ): Promise<M> {
     return await this.model
       .query(trx)
@@ -30,7 +30,7 @@ export class BaseRepository<T, M extends Model> {
 
   async getAndCountAll(
     page: number,
-    limit: number
+    limit: number,
   ): Promise<{ data: T[]; totalRecords: number }> {
     const query = this.model.query();
 
@@ -53,7 +53,7 @@ export class BaseRepository<T, M extends Model> {
   async findAndCountAll(
     filter: ObjectLiteral,
     page: number,
-    limit: number
+    limit: number,
   ): Promise<{ data: T[]; totalRecords: number }> {
     const query = this.model.query();
 
@@ -73,5 +73,25 @@ export class BaseRepository<T, M extends Model> {
 
   async deleteById(id: string) {
     return await this.model.query().deleteById(id);
+  }
+
+  async findAllWithOrConditions(
+    conditions: { field: string; value: any }[],
+  ): Promise<T[]> {
+    const query = this.model.query();
+
+    if (conditions.length === 0) {
+      return await query;
+    }
+
+    return await query.where((builder) => {
+      conditions.forEach((condition, index) => {
+        if (index === 0) {
+          builder.where(condition.field, condition.value);
+        } else {
+          builder.orWhere(condition.field, condition.value);
+        }
+      });
+    });
   }
 }

@@ -16,4 +16,5 @@ export const updateMemberRules = {
   membershipStatus: "string",
   joinDate: "date",
   baptismDate: "date",
+  campusId: "string",
 };
