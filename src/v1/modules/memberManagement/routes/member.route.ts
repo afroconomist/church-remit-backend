@@ -7,6 +7,7 @@ import { updateMemberRules } from "../validations/update-member.validator";
 import { createCategoryRules } from "../validations/create-category.validator";
 import { editCategoryRules } from "../validations/edit-category.validator";
 import { categorizeMembersRules } from "../validations/categorize-members.validator";
+import { becomeAVolunteerRules } from "../validations/become-a-volunteer.validator";
 import {
   validate,
   validateArray,
@@ -189,6 +190,13 @@ router.post(
   [authMiddleware],
   (req: Request, res: Response, next) =>
     memberController.sendBirthdayMessage(req, res).catch((err) => next(err)),
+);
+
+router.post(
+  "/members/become-a-volunteer",
+  [authMiddleware, validate(becomeAVolunteerRules)],
+  (req: Request, res: Response, next) =>
+    memberController.becomeAVolunteer(req, res).catch((err) => next(err)),
 );
 
 router.get(

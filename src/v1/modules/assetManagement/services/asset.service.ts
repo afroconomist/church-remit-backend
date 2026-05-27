@@ -4,6 +4,7 @@ import AssetFactory from "../factories/asset.factory";
 import AssetRepository from "../repositories/asset.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
 import GroupRepository from "../../groupManagement/repositories/group.repository";
+import CampusRepository from "../../campusManagement/repositories/campus.repository";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
 
@@ -13,6 +14,7 @@ class AssetService {
     private readonly assetRepository: AssetRepository,
     private readonly userRepository: UserRepository,
     private readonly groupRepository: GroupRepository,
+    private readonly campusRepository: CampusRepository,
   ) {}
 
   async addAsset(data: AddAsset, superAdminId: string) {
@@ -56,15 +58,20 @@ class AssetService {
 
   async getAllChurchAssets(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
+      const filter: any = { churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
       const { data: churchAssets, totalRecords } =
         await this.assetRepository.findAndCountAll(
-          { churchId },
+          filter,
           currentPage,
           pageSize,
         );
@@ -99,9 +106,17 @@ class AssetService {
     const asset = await this.assetRepository.findById(assetId);
     if (!asset) throw new AppError(400, "Asset does not exist");
 
+    const assetCampus = await this.campusRepository.findById(
+      String(asset.campusId),
+    );
+    if (!assetCampus) throw new AppError(400, "Campus does not exist");
+
     return {
       success: true,
-      asset,
+      asset: {
+        ...asset,
+        campusName: assetCampus.campusName,
+      },
     };
   }
 

@@ -23,6 +23,7 @@ import AnnouncementFactory from "../factories/announcement.factory";
 import AnnouncementRepository from "../repositories/announcement.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
 import MemberRepository from "../../memberManagement/repositories/member.repository";
+import CampusRepository from "../../campusManagement/repositories/campus.repository";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
 import slugify from "slugify";
@@ -43,6 +44,7 @@ class CommunicationService {
     private readonly announcementRepository: AnnouncementRepository,
     private readonly userRepository: UserRepository,
     private readonly memberRepository: MemberRepository,
+    private readonly campusRepository: CampusRepository,
   ) {}
 
   async createNews(req: any) {
@@ -65,7 +67,7 @@ class CommunicationService {
         publishTime,
         featureThisNews,
         showOnHomepage,
-        campusId
+        campusId,
       } = parsedData;
 
       const superAdmin = await this.userRepository.findById(superAdminId);
@@ -118,14 +120,19 @@ class CommunicationService {
 
   async getAllChurchNews(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
+      const filter: any = { churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
       const { data: churchNews, totalRecords } =
-        await this.newsRepository.findAndCountAll({ churchId }, page, limit);
+        await this.newsRepository.findAndCountAll(filter, page, limit);
 
       if (churchNews.length === 0) {
         return {
@@ -155,7 +162,16 @@ class CommunicationService {
     const news = await this.newsRepository.findById(newsId);
     if (!news) throw new AppError(400, "News not found");
 
-    return { success: true, news };
+    const campus = await this.campusRepository.findById(String(news.campusId));
+    if (!campus) throw new AppError(400, "Campus does not exist");
+
+    return {
+      success: true,
+      news: {
+        ...news,
+        campusName: campus.campusName,
+      },
+    };
   }
 
   async createNewsletter(data: CreateNewsletter, superAdminId: string) {
@@ -207,23 +223,35 @@ class CommunicationService {
     const newsletter = await this.newsletterRepository.findById(newsletterId);
     if (!newsletter) throw new AppError(400, "Newsletter not found");
 
-    return { success: true, newsletter };
+    const campus = await this.campusRepository.findById(
+      String(newsletter.campusId),
+    );
+    if (!campus) throw new AppError(400, "Campus does not exist");
+
+    return {
+      success: true,
+      newsletter: {
+        ...newsletter,
+        campusName: campus.campusName,
+      },
+    };
   }
 
   async getAllChurchNewsletters(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
+      const filter: any = { churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
       const { data: churchNewsletters, totalRecords } =
-        await this.newsletterRepository.findAndCountAll(
-          { churchId },
-          page,
-          limit,
-        );
+        await this.newsletterRepository.findAndCountAll(filter, page, limit);
 
       if (churchNewsletters.length === 0) {
         return {
@@ -299,18 +327,19 @@ class CommunicationService {
 
   async getAllChurchCirculars(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
+      const filter: any = { churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
       const { data: churchCirculars, totalRecords } =
-        await this.circularRepository.findAndCountAll(
-          { churchId },
-          page,
-          limit,
-        );
+        await this.circularRepository.findAndCountAll(filter, page, limit);
 
       if (churchCirculars.length === 0) {
         return {
@@ -352,7 +381,7 @@ class CommunicationService {
         whoCanPost: data.whoCanPost,
         notifyMembers: data.notifyMembers,
         members: 1,
-        campusId: String(data.campusId),
+        campusId: data.campusId,
         churchId: String(superAdmin.churchId),
       });
       const createdDiscussionBoard = await this.discussionBoardRepository.save(
@@ -504,15 +533,20 @@ class CommunicationService {
 
   async getAllChurchDiscussionBoards(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
+      const filter: any = { churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
       const { data: churchDiscussionBoards, totalRecords } =
         await this.discussionBoardRepository.findAndCountAll(
-          { churchId },
+          filter,
           page,
           limit,
         );
@@ -575,9 +609,17 @@ class CommunicationService {
         topics: totalRecords,
       });
 
+      const campus = await this.campusRepository.findById(
+        String(discussionBoard.campusId),
+      );
+      if (!campus) throw new AppError(400, "Campus does not exist");
+
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
-        discussionBoard,
+        discussionBoard: {
+          ...discussionBoard,
+          campusName: campus.campusName,
+        },
         discussionBoardTopics,
         total_result: totalRecords,
         current_page: currentPage,
@@ -779,15 +821,20 @@ class CommunicationService {
 
   async getAllChurchAnnouncements(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
+      const filter: any = { churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
       const { data: churchAnnouncements, totalRecords } =
         await this.announcementRepository.findAndCountAll(
-          { churchId },
+          filter,
           currentPage,
           pageSize,
         );
@@ -822,7 +869,18 @@ class CommunicationService {
     );
     if (!announcement) throw new AppError(400, "Announcement not found");
 
-    return { success: true, announcement };
+    const campus = await this.campusRepository.findById(
+      String(announcement.campusId),
+    );
+    if (!campus) throw new AppError(400, "Campus does not exist");
+
+    return {
+      success: true,
+      announcement: {
+        ...announcement,
+        campusName: campus.campusName,
+      },
+    };
   }
 }
 

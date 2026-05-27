@@ -252,6 +252,13 @@ class MemberController {
     return res.status(httpStatus.OK).send(SuccessResponse(response.message));
   };
 
+  becomeAVolunteer = async (req: Request, res: Response) => {
+    const result: any = await this.memberService.becomeAVolunteer(req);
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
+
   getVolunteerRolesForMember = async (req: Request, res: Response) => {
     try {
       const volunteerRoles =

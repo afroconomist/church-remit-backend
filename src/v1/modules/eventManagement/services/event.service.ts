@@ -14,6 +14,7 @@ import UserRepository from "../../userManagement/repositories/user.repository";
 import MemberRepository from "../../memberManagement/repositories/member.repository";
 import VolunteerRoleRepository from "../../volunteerManagement/repositories/volunteer_role.repo";
 import VolunteerRepository from "../../volunteerManagement/repositories/volunteer.repo";
+import CampusRepository from "../../campusManagement/repositories/campus.repository";
 import { SubmitReview } from "../dtos/submit-review.dto";
 import { CreateEventBudget } from "../dtos/event-budget.dto";
 import logger from "@shared/utils/logger";
@@ -65,6 +66,7 @@ class EventService {
     private readonly memberRepository: MemberRepository,
     private readonly volunteerRoleRepository: VolunteerRoleRepository,
     private readonly volunteerRepository: VolunteerRepository,
+    private readonly campusRepository: CampusRepository,
   ) {}
 
   async createNewEvent(data: CreateNewEventPayload, superAdminId: string) {
@@ -351,15 +353,20 @@ class EventService {
 
   async getAllChurchEvents(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
+      const filter: any = { church: churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
       const { data: churchEvents, totalRecords } =
         await this.eventRepository.findAndCountAll(
-          { church: churchId },
+          filter,
           currentPage,
           pageSize,
         );
@@ -390,7 +397,7 @@ class EventService {
 
   async getUpcomingChurchEvents(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -399,9 +406,12 @@ class EventService {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const allEvents = await this.eventRepository.findAll({
-        church: churchId,
-      });
+      const filter: any = { church: churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
+      const allEvents = await this.eventRepository.findAll(filter);
 
       const upcomingEvents = allEvents.filter((event: any) => {
         const eventDate = new Date(event.eventDate);
@@ -446,15 +456,18 @@ class EventService {
 
   async getRecurringChurchEvents(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
-      const allEvents = await this.eventRepository.findAll({
-        church: churchId,
-      });
+      const filter: any = { church: churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
+      const allEvents = await this.eventRepository.findAll(filter);
 
       const recurringEvents = allEvents.filter(
         (event: any) => event.recurring === true,
@@ -497,7 +510,7 @@ class EventService {
 
   async getPastChurchEvents(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
@@ -506,9 +519,12 @@ class EventService {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const allEvents = await this.eventRepository.findAll({
-        church: churchId,
-      });
+      const filter: any = { church: churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
+      const allEvents = await this.eventRepository.findAll(filter);
 
       const pastEvents = allEvents.filter((event: any) => {
         const eventDate = new Date(event.eventDate);
@@ -869,9 +885,17 @@ class EventService {
         );
       }
 
+      const campus = await this.campusRepository.findById(
+        String(churchEvent.campusId),
+      );
+      if (!campus) throw new AppError(400, "Campus does not exist");
+
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
-        churchEvent,
+        churchEvent: {
+          ...churchEvent,
+          campusName: campus.campusName,
+        },
         registeredAttendees:
           registeredAttendees.length > 0 ? registeredAttendees : [],
         eventVolunteers: eventVolunteers.length > 0 ? eventVolunteers : [],

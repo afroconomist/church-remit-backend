@@ -48,15 +48,20 @@ class SacramentService {
 
   async getChurchSacraments(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
+      const filter: any = { church: churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
       const { data: churchSacraments, totalRecords } =
         await this.sacramentRepository.findAndCountAll(
-          { church: churchId },
+          filter,
           currentPage,
           pageSize,
         );

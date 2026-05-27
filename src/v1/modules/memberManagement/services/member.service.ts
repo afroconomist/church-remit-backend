@@ -17,6 +17,7 @@ import MemberBirthdayRepository from "../repositories/member_birthday.repository
 import ReasonRepository from "../../userManagement/repositories/reason.repository";
 import ActionReasonFactory from "../../userManagement/factories/action_reason.factory";
 import CategoryFactory from "../factories/category.factory";
+import VolunteerFactory from "../../volunteerManagement/factories/volunteer.factory";
 import CategoryRepository from "../repositories/category.repository";
 import FamilyMemberRepository from "../../familyManagement/repositories/family_member.repository";
 import EventRepository from "../../eventManagement/repositories/event.repository";
@@ -444,21 +445,14 @@ class MemberService {
       throw new AppError(400, "Member does not exist");
     }
 
-    const [addedBy, reason, role] = await Promise.all([
-      member.addedBy ? this.memberRepository.findById(member.addedBy) : null,
-      this.reasonRepository.findWhere({ userId: member.id }),
-      this.roleRepo.findByNameWithRelations(String(member.roleId)),
-    ]);
-
-    const permissions = role
-      ? (await this.accessControlManagementService.getRole(role.id)).permissions
-      : [];
+    const campus = await this.campusRepository.findById(
+      String(member.campusId),
+    );
+    if (!campus) throw new AppError(400, "Campus does not exist");
 
     return {
       ...member,
-      addedBy: addedBy ? `${addedBy.firstName} ${addedBy.lastName}` : "",
-      reasons: reason || [],
-      permissions,
+      campusName: campus.campusName,
     };
   }
 
@@ -851,16 +845,21 @@ class MemberService {
 
   async getChurchUpcomingMembersBirthdays(req: any) {
     const churchId = req.params.churchId;
-    const { range, page, limit } = req.query;
+    const { range, page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
     const rangeNumber = parseInt(range, 10) || 0;
 
     try {
+      const filter: any = { churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
       const { data: membersBirthdays, totalRecords } =
         await this.memberBirthdayRepository.findUpcomingBirthdays(
-          { churchId },
+          filter,
           rangeNumber,
           currentPage,
           pageSize,
@@ -955,6 +954,41 @@ class MemberService {
       logger.error({ error: "Error sending birthday message" });
       throw new Error(
         "An unexpected error occurred while sending birthday message.",
+      );
+    }
+  }
+
+  async becomeAVolunteer(req: any) {
+    const data = req.body;
+    const memberId = req.user.id;
+
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) throw new AppError(400, "Member does not exist");
+
+      const volunteer = VolunteerFactory.addNewVolunteer({
+        name: `${member.firstName} ${member.lastName}`,
+        email: member.email,
+        phoneNumber: member.phoneNumber,
+        memberSince: new Date(),
+        skills: JSON.stringify(data.skills),
+        availability: JSON.stringify(data.availability),
+        campusId: member.campusId,
+        church: member.churchId,
+        churchMemberId: member.id,
+      });
+      await this.volunteerRepository.save(volunteer);
+
+      return {
+        success: true,
+        message: "You are now a volunteer!",
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error becoming a volunteer");
+      throw new AppError(
+        400,
+        error.message ||
+          "An unexpected error occurred while becoming a volunteer",
       );
     }
   }
