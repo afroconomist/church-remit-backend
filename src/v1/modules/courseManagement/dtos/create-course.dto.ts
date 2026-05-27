@@ -8,6 +8,5 @@ export type CreateCourse = {
   mandatoryCourse?: boolean;
   modules?: number;
   enrolled?: number;
-  campusId?: string;
   churchId: string;
 };

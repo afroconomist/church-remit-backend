@@ -22,6 +22,5 @@ export type CreateGroup = {
   requireLeaderApproval?: boolean;
   enableGroupChat?: boolean;
   groupCreator: string;
-  campusId?: string;
   church: string;
 };

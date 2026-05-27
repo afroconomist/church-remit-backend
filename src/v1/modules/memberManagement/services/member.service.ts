@@ -19,6 +19,15 @@ import ActionReasonFactory from "../../userManagement/factories/action_reason.fa
 import CategoryFactory from "../factories/category.factory";
 import CategoryRepository from "../repositories/category.repository";
 import FamilyMemberRepository from "../../familyManagement/repositories/family_member.repository";
+import EventRepository from "../../eventManagement/repositories/event.repository";
+import VolunteerRoleRepository from "../../volunteerManagement/repositories/volunteer_role.repo";
+import VolunteerRepository from "../../volunteerManagement/repositories/volunteer.repo";
+import GroupRepository from "../../groupManagement/repositories/group.repository";
+import GroupMemberRepository from "../../groupManagement/repositories/group_member.repository";
+import SacramentRepository from "../../sacramentManagement/repositories/sacrament.repository";
+import PrayerRequestRepository from "../../prayerManagement/repositories/prayer_request.repository";
+import PrayerWarriorRepository from "../../prayerManagement/repositories/prayer_warrior.repository";
+import FacilityRepository from "../../facilitymanagement/repositories/facility.repository";
 import MailService from "../../notificationAndEmailManagement/services/mail.service";
 import AccessControlManagementService from "../../accessControlManagement/services/access-control-management.service";
 import RoleRepo from "../../accessControlManagement/repositories/role.repo";
@@ -27,7 +36,6 @@ import logger from "@shared/utils/logger";
 import { IMember } from "../model/member.model";
 import AppError from "@shared/error/app.error";
 import slugify from "slugify";
-import { getAgeByDate } from "@shared/utils/functions.util";
 import { uploadFileToS3 } from "@shared/utils/file-upload.util";
 
 @injectable()
@@ -44,6 +52,15 @@ class MemberService {
     private readonly reasonRepository: ReasonRepository,
     private readonly categoryRepository: CategoryRepository,
     private readonly familyMemberRepository: FamilyMemberRepository,
+    private readonly eventRepository: EventRepository,
+    private readonly volunteerRoleRepository: VolunteerRoleRepository,
+    private readonly volunteerRepository: VolunteerRepository,
+    private readonly groupRepository: GroupRepository,
+    private readonly groupMemberRepository: GroupMemberRepository,
+    private readonly sacramentRepository: SacramentRepository,
+    private readonly prayerRequestRepository: PrayerRequestRepository,
+    private readonly prayerWarriorRepository: PrayerWarriorRepository,
+    private readonly facilityRepository: FacilityRepository,
   ) {}
 
   async addMember(member_data: AddMember, superAdminId: string) {
@@ -82,65 +99,15 @@ class MemberService {
       if (memberExists)
         return { success: false, message: "Member already added" };
 
-      const memberCategory = await this.categoryRepository.findOne({
-        slug: "youth-ministry",
-      });
-      if (!memberCategory)
-        return { success: false, message: "Member category not found" };
-
       const memberPassword = this.generateMemberPassword();
-
-      const ageOfMember = getAgeByDate(String(member_data.dateOfBirth));
-      if (ageOfMember > 18 && ageOfMember < 35) {
-        const member = MemberFactory.addMember({
-          ...member_data,
-          campusId: campusExists.id,
-          password: memberPassword,
-          roleId: role.id,
-          addedBy: superAdminId,
-          churchId: String(superAdminExists.churchId),
-          memberCategoryId: memberCategory.id,
-        });
-        const addedMember = await this.memberRepository.save(member);
-
-        if (addedMember.dateOfBirth) {
-          const memberBirthday = MemberBirthdayFactory.addMemberBirthday({
-            celebrantName: `${addedMember.firstName} ${addedMember.lastName}`,
-            dateOfBirth: addedMember.dateOfBirth,
-            celebrantEmail: addedMember.email,
-            celebrantPhone: addedMember.phoneNumber,
-            campus: campusExists.campusName,
-            memberId: addedMember.id,
-            campusId: addedMember.campusId,
-            churchId: addedMember.churchId,
-          });
-          await this.memberBirthdayRepository.save(memberBirthday);
-        }
-
-        const emailResponse = await this.sendAccountCreationEmail(
-          addedMember,
-          memberPassword,
-        );
-        if (!emailResponse.success) return emailResponse;
-
-        await this.categoryRepository.updateById(memberCategory.id, {
-          members: Number(memberCategory.members) + 1,
-        });
-
-        return {
-          success: true,
-          message: "Member has been added successfully",
-          welcome_mail: `Kindly check your email address ${member.email} for welcome mail`,
-          added_member_data: addedMember,
-        };
-      }
 
       const member = MemberFactory.addMember({
         ...member_data,
         password: memberPassword,
         roleId: role.id,
         addedBy: superAdminId,
-        churchId: String(superAdminExists.churchId),
+        campusId: campusExists.id,
+        churchId: churchExists.id,
       });
       const addedMember = await this.memberRepository.save(member);
 
@@ -372,7 +339,7 @@ class MemberService {
         throw new AppError(400, "Member does not exist");
       }
 
-      const memberCampus = await this.campusRepository.findById(String(member.campusId));
+      const memberCampus = await this.campusRepository.findById(data.campusId);
       if (!memberCampus) {
         throw new AppError(400, "Member campus does not exist");
       }
@@ -400,6 +367,7 @@ class MemberService {
         membershipStatus: data.membershipStatus,
         joinDate: data.joinDate,
         baptismDate: data.baptismDate,
+        campusId: memberCampus.id,
       });
 
       if (data.dateOfBirth && !memberBirthdayExist) {
@@ -417,6 +385,8 @@ class MemberService {
       } else if (data.dateOfBirth && memberBirthdayExist) {
         await this.memberBirthdayRepository.updateById(memberBirthdayExist.id, {
           dateOfBirth: data.dateOfBirth,
+          campus: memberCampus.campusName,
+          campusId: memberCampus.id,
         });
       }
 
@@ -985,6 +955,351 @@ class MemberService {
       logger.error({ error: "Error sending birthday message" });
       throw new Error(
         "An unexpected error occurred while sending birthday message.",
+      );
+    }
+  }
+
+  async getVolunteerRolesForMember(req: any) {
+    const memberId = req.user.id;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) throw new AppError(400, "Member does not exist");
+
+      const churchEvents = await this.eventRepository.findAllWithOrConditions([
+        { field: "church", value: member.churchId },
+        { field: "campusId", value: member.campusId },
+      ]);
+
+      const eventIds = churchEvents.map((event) => event.id);
+
+      if (eventIds.length === 0) {
+        return {
+          volunteerRoles: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const { data: volunteerRoles, totalRecords } =
+        await this.volunteerRoleRepository.findAndCountAll(
+          {
+            eventId: eventIds,
+          },
+          currentPage,
+          pageSize,
+        );
+
+      if (volunteerRoles.length === 0) {
+        return {
+          volunteerRoles: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const volunteerRolesWithVolunteers = await Promise.all(
+        volunteerRoles.map(async (role) => {
+          const volunteers = await this.volunteerRepository.findAll({
+            volunteerRole: role.id,
+          });
+          return {
+            ...role,
+            volunteers,
+          };
+        }),
+      );
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        volunteerRoles: volunteerRolesWithVolunteers,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching volunteer roles" });
+      throw new Error(
+        "An unexpected error occurred while fetching volunteer roles.",
+      );
+    }
+  }
+
+  async volunteerForRole(memberId: string, volunteerRoleId: string) {
+    try {
+      const [member, volunteerRole] = await Promise.all([
+        this.memberRepository.findById(memberId),
+        this.volunteerRoleRepository.findById(volunteerRoleId),
+      ]);
+      if (!member) throw new AppError(400, "Member does not exist");
+      if (!volunteerRole)
+        throw new AppError(400, "Volunteer role does not exist");
+
+      const volunteer = await this.volunteerRepository.findOne({
+        churchMemberId: member.id,
+      });
+      if (!volunteer)
+        return { success: false, message: "You are not a volunteer!" };
+
+      if (
+        volunteerRole.noOfVolunteersNeeded ===
+        volunteerRole.noOfAssignedVolunteers
+      ) {
+        return {
+          success: false,
+          message: "All volunteer slots for this role are filled",
+        };
+      }
+
+      await this.volunteerRepository.updateById(volunteer.id, {
+        volunteerRoleName: volunteerRole.name,
+        section: volunteerRole.section,
+        volunteerRole: volunteerRole.id,
+      });
+
+      await this.volunteerRoleRepository.updateById(volunteerRole.id, {
+        noOfAssignedVolunteers:
+          Number(volunteerRole.noOfAssignedVolunteers) + 1,
+      });
+
+      return {
+        success: true,
+        message: `You have successfully volunteered for ${volunteerRole.name} role`,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to update category");
+      throw new AppError(400, error.message);
+    }
+  }
+
+  async getGroupsMemberBelongsTo(req: any) {
+    const memberId = req.user.id;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) throw new AppError(400, "Member does not exist");
+
+      const memberGroupMemberships = await this.groupMemberRepository.findAll({
+        churchMemberId: member.id,
+      });
+
+      const groupIds = memberGroupMemberships.map((gm) => gm.group);
+
+      const { data: groups, totalRecords } =
+        await this.groupRepository.findAndCountAll(
+          { id: groupIds },
+          currentPage,
+          pageSize,
+        );
+
+      if (groups.length === 0) {
+        return {
+          groups: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        groups,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching groups member belongs to" });
+      throw new Error(
+        "An unexpected error occurred while fetching groups member belongs to.",
+      );
+    }
+  }
+
+  async getMemberSacraments(req: any) {
+    const memberId = req.user.id;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) throw new AppError(400, "Member does not exist");
+
+      const { data: memberSacraments, totalRecords } =
+        await this.sacramentRepository.findAndCountAll(
+          { memberName: `${member.firstName} ${member.lastName}` },
+          currentPage,
+          pageSize,
+        );
+
+      if (memberSacraments.length === 0) {
+        return {
+          memberSacraments: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        memberSacraments,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching member sacraments" });
+      throw new Error(
+        "An unexpected error occurred while fetching member sacraments.",
+      );
+    }
+  }
+
+  async getAllPrayerRequests(req: any) {
+    const memberId = req.user.id;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) throw new AppError(400, "Member does not exist");
+
+      const { data: prayerRequests, totalRecords } =
+        await this.prayerRequestRepository.findAndCountAll(
+          {
+            campusId: member.campusId,
+          },
+          currentPage,
+          pageSize,
+        );
+
+      if (prayerRequests.length === 0) {
+        return {
+          prayerRequests: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        prayerRequests,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error) {
+      logger.error({ error: "Error fetching prayer requests" });
+      throw new Error(
+        "An unexpected error occurred while fetching prayer requests.",
+      );
+    }
+  }
+
+  async getPrayerWarriorAssignments(req: any) {
+    const memberId = req.user.id;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) throw new AppError(400, "Member does not exist");
+
+      const prayerWarrior = await this.prayerWarriorRepository.findOne({
+        churchMemberId: member.id,
+      });
+      if (!prayerWarrior)
+        throw new AppError(400, "Member is not a prayer warrior");
+
+      const { data: prayerWarriorAssignments, totalRecords } =
+        await this.prayerRequestRepository.findAndCountAll(
+          {
+            prayerWarrior: prayerWarrior.id,
+          },
+          currentPage,
+          pageSize,
+        );
+
+      if (prayerWarriorAssignments.length === 0) {
+        return {
+          prayerWarriorAssignments: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        prayerWarriorAssignments,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error) {
+      logger.error({ error: "Error fetching prayer warrior assignments" });
+      throw new Error(
+        "An unexpected error occurred while fetching prayer warrior assignments.",
+      );
+    }
+  }
+
+  async getCampusFacilities(req: any) {
+    const memberId = req.user.id;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) throw new AppError(400, "Member does not exist");
+
+      const { data: churchFacilities, totalRecords } =
+        await this.facilityRepository.findAndCountAll(
+          { campusId: member.campusId },
+          currentPage,
+          pageSize,
+        );
+
+      if (churchFacilities.length === 0) {
+        return {
+          churchFacilities: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        churchFacilities,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching campus facilities" });
+      throw new Error(
+        "An unexpected error occurred while fetching campus facilities.",
       );
     }
   }

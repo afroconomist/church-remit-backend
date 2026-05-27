@@ -10,4 +10,5 @@ export const editEventRules = {
   registration: "boolean",
   recurring: "boolean",
   eventFrequency: "string",
+  campusId: "string",
 };

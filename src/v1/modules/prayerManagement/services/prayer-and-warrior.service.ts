@@ -1,6 +1,6 @@
 import { injectable } from "tsyringe";
 import PrayerFactory from "../factories/prayer_request.factory";
-import PrayerRepository from "../repositories/prayer_request.repository";
+import PrayerRequestRepository from "../repositories/prayer_request.repository";
 import PrayerRequestCommentRepository from "../repositories/prayer_request_comment.repository";
 import TestimonyRepository from "../repositories/testimony.repository";
 import PrayerWarriorFactory from "../factories/prayer_warrior.factory";
@@ -14,7 +14,7 @@ import AppError from "@shared/error/app.error";
 @injectable()
 class PrayerAndWarriorService {
   constructor(
-    private readonly prayerRepository: PrayerRepository,
+    private readonly prayerRequestRepository: PrayerRequestRepository,
     private readonly prayerRequestCommentRepository: PrayerRequestCommentRepository,
     private readonly testimonyRepository: TestimonyRepository,
     private readonly prayerWarriorRepository: PrayerWarriorRepository,
@@ -44,7 +44,7 @@ class PrayerAndWarriorService {
           campusId: String(user.campusId),
           church: String(user.churchId),
         });
-        const submittedPrayerRequest = await this.prayerRepository.save(
+        const submittedPrayerRequest = await this.prayerRequestRepository.save(
           prayerRequest,
         );
 
@@ -63,7 +63,7 @@ class PrayerAndWarriorService {
         privacySetting: data.privacySetting,
         church: String(member.churchId),
       });
-      const submittedPrayerRequest = await this.prayerRepository.save(
+      const submittedPrayerRequest = await this.prayerRequestRepository.save(
         prayerRequest,
       );
 
@@ -135,7 +135,7 @@ class PrayerAndWarriorService {
 
     try {
       const { data: prayerRequests, totalRecords } =
-        await this.prayerRepository.findAndCountAll(
+        await this.prayerRequestRepository.findAndCountAll(
           {
             church: churchId,
           },
@@ -216,13 +216,13 @@ class PrayerAndWarriorService {
       if (!prayerWarrior)
         throw new AppError(400, "Prayer warrior does not exist");
 
-      const prayerRequest = await this.prayerRepository.findById(
+      const prayerRequest = await this.prayerRequestRepository.findById(
         req.body.prayerRequestId,
       );
       if (!prayerRequest)
         throw new AppError(400, "Prayer request does not exist");
 
-      await this.prayerRepository.updateById(prayerRequest.id, {
+      await this.prayerRequestRepository.updateById(prayerRequest.id, {
         assignedTo: prayerWarrior.name,
         prayerWarrior: prayerWarrior.id,
       });
@@ -253,7 +253,7 @@ class PrayerAndWarriorService {
 
     try {
       const { data: prayerWarriorAssignments, totalRecords } =
-        await this.prayerRepository.findAndCountAll(
+        await this.prayerRequestRepository.findAndCountAll(
           {
             prayerWarrior: prayerWarriorId,
           },
@@ -287,7 +287,7 @@ class PrayerAndWarriorService {
 
   async markPrayerAnswered(prayerRequestId: string) {
     try {
-      const prayerRequest = await this.prayerRepository.findById(
+      const prayerRequest = await this.prayerRequestRepository.findById(
         prayerRequestId,
       );
       if (!prayerRequest)
@@ -299,7 +299,7 @@ class PrayerAndWarriorService {
       if (!prayerWarrior)
         throw new AppError(400, "Prayer warrior does not exist");
 
-      await this.prayerRepository.updateById(prayerRequest.id, {
+      await this.prayerRequestRepository.updateById(prayerRequest.id, {
         answered: true,
       });
 
@@ -322,13 +322,13 @@ class PrayerAndWarriorService {
 
   async prayOnPrayerRequests(prayerRequestId: string) {
     try {
-      const prayerRequest = await this.prayerRepository.findById(
+      const prayerRequest = await this.prayerRequestRepository.findById(
         prayerRequestId,
       );
       if (!prayerRequest)
         throw new AppError(400, "Prayer request does not exist");
 
-      await this.prayerRepository.updateById(prayerRequest.id, {
+      await this.prayerRequestRepository.updateById(prayerRequest.id, {
         pray: Number(prayerRequest.pray) + 1,
       });
 
@@ -351,7 +351,7 @@ class PrayerAndWarriorService {
     userId: string,
   ) {
     try {
-      const prayerRequest = await this.prayerRepository.findById(
+      const prayerRequest = await this.prayerRequestRepository.findById(
         prayerRequestId,
       );
       if (!prayerRequest)
@@ -406,7 +406,7 @@ class PrayerAndWarriorService {
     const prayerRequestId = req.params.prayerRequestId;
 
     try {
-      const prayerRequest = await this.prayerRepository.findById(
+      const prayerRequest = await this.prayerRequestRepository.findById(
         prayerRequestId,
       );
       if (!prayerRequest)

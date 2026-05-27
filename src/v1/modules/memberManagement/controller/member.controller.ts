@@ -252,6 +252,113 @@ class MemberController {
     return res.status(httpStatus.OK).send(SuccessResponse(response.message));
   };
 
+  getVolunteerRolesForMember = async (req: Request, res: Response) => {
+    try {
+      const volunteerRoles =
+        await this.memberService.getVolunteerRolesForMember(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", volunteerRoles));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  volunteerForRole = async (req: Request, res: Response) => {
+    try {
+      const result: any = await this.memberService.volunteerForRole(
+        req.user.id,
+        req.params.volunteerRoleId,
+      );
+      if (result.success) {
+        return res.send(SuccessResponse(result.message));
+      } else {
+        return res
+          .status(400)
+          .json({ status: result.success, message: result.message });
+      }
+    } catch (error) {
+      return res.status(500).json({
+        status: false,
+        message: "Failed to assign volunteer to role",
+      });
+    }
+  };
+
+  getGroupsMemberBelongsTo = async (req: Request, res: Response) => {
+    try {
+      const groups = await this.memberService.getGroupsMemberBelongsTo(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", groups));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getMemberSacraments = async (req: Request, res: Response) => {
+    try {
+      const memberSacraments = await this.memberService.getMemberSacraments(
+        req,
+      );
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", memberSacraments));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getAllPrayerRequests = async (req: Request, res: Response) => {
+    try {
+      const prayerRequests = await this.memberService.getAllPrayerRequests(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", prayerRequests));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getPrayerWarriorAssignments = async (req: Request, res: Response) => {
+    try {
+      const prayerWarriorAssignments =
+        await this.memberService.getPrayerWarriorAssignments(req);
+      return res
+        .status(httpStatus.OK)
+        .send(
+          SuccessResponse("Operation successful", prayerWarriorAssignments),
+        );
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getCampusFacilities = async (req: Request, res: Response) => {
+    try {
+      const churchFacilities = await this.memberService.getCampusFacilities(
+        req,
+      );
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", churchFacilities));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
   // controllers for forms dropdowns
   getAllChurchMembersForDropdown = async (req: Request, res: Response) => {
     try {

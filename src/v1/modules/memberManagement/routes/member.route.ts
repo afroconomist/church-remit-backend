@@ -191,6 +191,61 @@ router.post(
     memberController.sendBirthdayMessage(req, res).catch((err) => next(err)),
 );
 
+router.get(
+  "/members/volunteer-roles",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController
+      .getVolunteerRolesForMember(req, res)
+      .catch((err) => next(err)),
+);
+
+router.put(
+  "/members/:volunteerRoleId/volunteer",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController.volunteerForRole(req, res).catch((err) => next(err)),
+);
+
+router.get(
+  "/members/groups",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController
+      .getGroupsMemberBelongsTo(req, res)
+      .catch((err) => next(err)),
+);
+
+router.get(
+  "/members/sacraments",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController.getMemberSacraments(req, res).catch((err) => next(err)),
+);
+
+router.get(
+  "/members/prayer-requests",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController.getAllPrayerRequests(req, res).catch((err) => next(err)),
+);
+
+router.get(
+  "/members/prayer-warrior-assignments",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController
+      .getPrayerWarriorAssignments(req, res)
+      .catch((err) => next(err)),
+);
+
+router.get(
+  "/members/campus-facilities",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController.getCampusFacilities(req, res).catch((err) => next(err)),
+);
+
 // routes for form dropdowns
 router.get(
   "/dropdowns/:churchId/members",
