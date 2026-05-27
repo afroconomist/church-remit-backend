@@ -3,6 +3,6 @@ export const addNewVolunteerRules = {
   lastName: "required|string",
   email: "required|string",
   phoneNumber: "required|string",
-  skills: "required",
-  availability: "required",
+  skills: "array|required",
+  availability: "array|required",
 };

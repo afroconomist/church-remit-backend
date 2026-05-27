@@ -91,17 +91,22 @@ class FamilyAndMemberService {
 
   async getFamilies(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { campusId, page, limit } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
+      const filter: any = {
+        church: churchId,
+      };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
       const { data: families, totalRecords } =
         await this.familyRepository.findAndCountAll(
-          {
-            church: churchId,
-          },
+          filter,
           currentPage,
           pageSize,
         );

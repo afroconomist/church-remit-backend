@@ -38,7 +38,7 @@ class VolunteerAndRoleService {
       const volunteerRole = VolunteerRoleFactory.createVolunteerRole({
         ...data,
         eventId: churchEvent.id,
-        campusId: String(superAdmin.campusId),
+        campusId: churchEvent.campusId,
         church: String(superAdmin.churchId),
       });
       const newVolunteerRole = await this.volunteerRoleRepository.save(
@@ -86,8 +86,8 @@ class VolunteerAndRoleService {
           memberSince: new Date(),
           skills: JSON.stringify(data.skills),
           availability: JSON.stringify(data.availability),
-          campusId: String(member.campusId),
-          church: String(member.churchId),
+          campusId: member.campusId,
+          church: member.churchId,
           churchMemberId: member.id,
         });
         const newVolunteer = await this.volunteerRepository.save(volunteer);
@@ -124,8 +124,8 @@ class VolunteerAndRoleService {
         memberSince: new Date(),
         skills: JSON.stringify(data.skills),
         availability: JSON.stringify(data.availability),
-        campusId: String(addedMember.campusId),
-        church: String(addedMember.churchId),
+        campusId: addedMember.campusId,
+        church: addedMember.churchId,
         churchMemberId: addedMember.id,
       });
       const newVolunteer = await this.volunteerRepository.save(volunteer);
@@ -185,17 +185,20 @@ class VolunteerAndRoleService {
 
   async getAllVolunteerRoles(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
+      const filter: any = { church: churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
       const { data: volunteerRoles, totalRecords } =
         await this.volunteerRoleRepository.findAndCountAll(
-          {
-            church: churchId,
-          },
+          filter,
           currentPage,
           pageSize,
         );
@@ -240,17 +243,20 @@ class VolunteerAndRoleService {
 
   async getAllVolunteers(req: any) {
     const churchId = req.params.churchId;
-    const { page, limit } = req.query;
+    const { page, limit, campusId } = req.query;
 
     const pageSize = parseInt(limit, 10) || 10;
     const currentPage = parseInt(page, 10) || 1;
 
     try {
+      const filter: any = { church: churchId };
+      if (campusId) {
+        filter.campusId = campusId;
+      }
+
       const { data: volunteers, totalRecords } =
         await this.volunteerRepository.findAndCountAll(
-          {
-            church: churchId,
-          },
+          filter,
           currentPage,
           pageSize,
         );
