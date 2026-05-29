@@ -61,12 +61,12 @@ class AuthService {
     try {
       const checkUnUsedOTP = await this.otpRepository.findOne({
         userId: user.id,
-        status: "Pending",
+        status: "pending",
       });
       if (checkUnUsedOTP && data.token === checkUnUsedOTP.token) {
         const id = checkUnUsedOTP.id;
         await this.otpRepository.updateById(id, {
-          status: "Success",
+          status: "success",
         });
       } else {
         return {
@@ -115,7 +115,7 @@ class AuthService {
     try {
       const isVerified = await this.otpRepository.findOne({
         userId: user.id,
-        status: "Success",
+        status: "success",
       });
       if (isVerified) {
         return {
@@ -263,7 +263,7 @@ class AuthService {
       const checkOtp = await this.otpRepository.findOne({
         userId: user.id,
         token: data.token,
-        status: "Pending",
+        status: "pending",
       });
 
       if (!checkOtp) {

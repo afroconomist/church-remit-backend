@@ -264,4 +264,13 @@ router.get(
       .catch((err) => next(err)),
 );
 
+router.get(
+  "/dropdowns/:campusId/campus-members",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController
+      .getCampusMembersForDropdown(req, res)
+      .catch((err) => next(err)),
+);
+
 export default router;

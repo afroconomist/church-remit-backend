@@ -382,6 +382,22 @@ class MemberController {
         .json(ErrorResponse("Internal Server Error: ", error.message));
     }
   };
+
+  getCampusMembersForDropdown = async (req: Request, res: Response) => {
+    try {
+      const churchMembers =
+        await this.memberService.getCampusMembersForDropdown(
+          req.params.campusId,
+        );
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", churchMembers));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
 }
 
 export default MemberController;

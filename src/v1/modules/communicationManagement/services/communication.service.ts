@@ -132,7 +132,11 @@ class CommunicationService {
       }
 
       const { data: churchNews, totalRecords } =
-        await this.newsRepository.findAndCountAll(filter, page, limit);
+        await this.newsRepository.findAndCountAll(
+          filter,
+          currentPage,
+          pageSize,
+        );
 
       if (churchNews.length === 0) {
         return {
@@ -162,14 +166,22 @@ class CommunicationService {
     const news = await this.newsRepository.findById(newsId);
     if (!news) throw new AppError(400, "News not found");
 
-    const campus = await this.campusRepository.findById(String(news.campusId));
-    if (!campus) throw new AppError(400, "Campus does not exist");
+    let campusName;
+    if (news.campusId) {
+      const campus = await this.campusRepository.findById(
+        String(news.campusId),
+      );
+      if (!campus) throw new AppError(400, "Campus does not exist");
+      campusName = campus.campusName;
+    } else {
+      campusName = null;
+    }
 
     return {
       success: true,
       news: {
         ...news,
-        campusName: campus.campusName,
+        campusName,
       },
     };
   }
@@ -198,7 +210,7 @@ class CommunicationService {
         sendDate: data.sendDate,
         sendTime: data.sendTime,
         postedAt: new Date(),
-        campusId: String(data.campusId),
+        campusId: data.campusId,
         churchId: String(superAdmin.churchId),
       });
       const createdNewsletter = await this.newsletterRepository.save(
@@ -223,16 +235,22 @@ class CommunicationService {
     const newsletter = await this.newsletterRepository.findById(newsletterId);
     if (!newsletter) throw new AppError(400, "Newsletter not found");
 
-    const campus = await this.campusRepository.findById(
-      String(newsletter.campusId),
-    );
-    if (!campus) throw new AppError(400, "Campus does not exist");
+    let campusName;
+    if (newsletter.campusId) {
+      const campus = await this.campusRepository.findById(
+        String(newsletter.campusId),
+      );
+      if (!campus) throw new AppError(400, "Campus does not exist");
+      campusName = campus.campusName;
+    } else {
+      campusName = null;
+    }
 
     return {
       success: true,
       newsletter: {
         ...newsletter,
-        campusName: campus.campusName,
+        campusName,
       },
     };
   }
@@ -251,7 +269,11 @@ class CommunicationService {
       }
 
       const { data: churchNewsletters, totalRecords } =
-        await this.newsletterRepository.findAndCountAll(filter, page, limit);
+        await this.newsletterRepository.findAndCountAll(
+          filter,
+          currentPage,
+          pageSize,
+        );
 
       if (churchNewsletters.length === 0) {
         return {
@@ -339,7 +361,11 @@ class CommunicationService {
       }
 
       const { data: churchCirculars, totalRecords } =
-        await this.circularRepository.findAndCountAll(filter, page, limit);
+        await this.circularRepository.findAndCountAll(
+          filter,
+          currentPage,
+          pageSize,
+        );
 
       if (churchCirculars.length === 0) {
         return {
@@ -547,8 +573,8 @@ class CommunicationService {
       const { data: churchDiscussionBoards, totalRecords } =
         await this.discussionBoardRepository.findAndCountAll(
           filter,
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (churchDiscussionBoards.length === 0) {
@@ -592,8 +618,8 @@ class CommunicationService {
       const { data: discussionBoardTopics, totalRecords } =
         await this.boardTopicRepository.findAndCountAll(
           { discussionBoardId: discussionBoard.id },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (discussionBoardTopics.length === 0) {
@@ -609,16 +635,22 @@ class CommunicationService {
         topics: totalRecords,
       });
 
-      const campus = await this.campusRepository.findById(
-        String(discussionBoard.campusId),
-      );
-      if (!campus) throw new AppError(400, "Campus does not exist");
+      let campusName;
+      if (discussionBoard.campusId) {
+        const campus = await this.campusRepository.findById(
+          String(discussionBoard.campusId),
+        );
+        if (!campus) throw new AppError(400, "Campus does not exist");
+        campusName = campus.campusName;
+      } else {
+        campusName = null;
+      }
 
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
         discussionBoard: {
           ...discussionBoard,
-          campusName: campus.campusName,
+          campusName,
         },
         discussionBoardTopics,
         total_result: totalRecords,
@@ -647,8 +679,8 @@ class CommunicationService {
       const { data: boardTopicReplies, totalRecords } =
         await this.topicReplyRepository.findAndCountAll(
           { boardTopicId: boardTopic.id },
-          page,
-          limit,
+          currentPage,
+          pageSize,
         );
 
       if (boardTopicReplies.length === 0) {
@@ -718,7 +750,11 @@ class CommunicationService {
 
     try {
       const { data: memberTags, totalRecords } =
-        await this.tagRepository.findAndCountAll({ churchId }, page, limit);
+        await this.tagRepository.findAndCountAll(
+          { churchId },
+          currentPage,
+          pageSize,
+        );
 
       if (memberTags.length === 0) {
         return {
@@ -794,7 +830,7 @@ class CommunicationService {
         displayOnWebsite: data.displayOnWebsite,
         sendEmailNotification: data.sendEmailNotification,
         sendSMSNotification: data.sendSMSNotification,
-        campusId: String(data.campusId),
+        campusId: data.campusId,
         churchId: String(superAdmin.churchId),
       });
       const newAnnouncement = await this.announcementRepository.save(
@@ -869,16 +905,22 @@ class CommunicationService {
     );
     if (!announcement) throw new AppError(400, "Announcement not found");
 
-    const campus = await this.campusRepository.findById(
-      String(announcement.campusId),
-    );
-    if (!campus) throw new AppError(400, "Campus does not exist");
+    let campusName;
+    if (announcement.campusId) {
+      const campus = await this.campusRepository.findById(
+        String(announcement.campusId),
+      );
+      if (!campus) throw new AppError(400, "Campus does not exist");
+      campusName = campus.campusName;
+    } else {
+      campusName = null;
+    }
 
     return {
       success: true,
       announcement: {
         ...announcement,
-        campusName: campus.campusName,
+        campusName,
       },
     };
   }
