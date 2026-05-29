@@ -885,16 +885,22 @@ class EventService {
         );
       }
 
-      const campus = await this.campusRepository.findById(
-        String(churchEvent.campusId),
-      );
-      if (!campus) throw new AppError(400, "Campus does not exist");
+      let campusName;
+      if (churchEvent.campusId) {
+        const campus = await this.campusRepository.findById(
+          String(churchEvent.campusId),
+        );
+        if (!campus) throw new AppError(400, "Campus does not exist");
+        campusName = campus.campusName;
+      } else {
+        campusName = null;
+      }
 
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
         churchEvent: {
           ...churchEvent,
-          campusName: campus.campusName,
+          campusName,
         },
         registeredAttendees:
           registeredAttendees.length > 0 ? registeredAttendees : [],

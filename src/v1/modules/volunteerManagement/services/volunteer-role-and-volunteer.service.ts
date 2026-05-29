@@ -205,7 +205,7 @@ class VolunteerAndRoleService {
 
       if (volunteerRoles.length === 0) {
         return {
-          members: [],
+          volunteerRoles: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,
@@ -263,7 +263,7 @@ class VolunteerAndRoleService {
 
       if (volunteers.length === 0) {
         return {
-          members: [],
+          volunteers: [],
           total_result: 0,
           current_page: currentPage,
           total_pages: 0,

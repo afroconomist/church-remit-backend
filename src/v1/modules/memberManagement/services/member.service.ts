@@ -445,14 +445,20 @@ class MemberService {
       throw new AppError(400, "Member does not exist");
     }
 
-    const campus = await this.campusRepository.findById(
-      String(member.campusId),
-    );
-    if (!campus) throw new AppError(400, "Campus does not exist");
+    let campusName;
+    if (member.campusId) {
+      const campus = await this.campusRepository.findById(
+        String(member.campusId),
+      );
+      if (!campus) throw new AppError(400, "Campus does not exist");
+      campusName = campus.campusName;
+    } else {
+      campusName = null;
+    }
 
     return {
       ...member,
-      campusName: campus.campusName,
+      campusName,
     };
   }
 
@@ -1344,6 +1350,17 @@ class MemberService {
   ): Promise<{ id: string; name: string }[]> {
     return await this.memberRepository.findAllForDropdown(
       { churchId },
+      "id",
+      "firstName",
+      "lastName",
+    );
+  }
+
+  async getCampusMembersForDropdown(
+    campusId: string,
+  ): Promise<{ id: string; name: string }[]> {
+    return await this.memberRepository.findAllForDropdown(
+      { campusId },
       "id",
       "firstName",
       "lastName",
