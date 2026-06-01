@@ -31,6 +31,13 @@ router.get(
     campusController.getCampus(req, res).catch((err) => next(err)),
 );
 
+router.get(
+  "/campuses/:campusId/assets",
+  [authMiddleware, accessControlMiddleware(AccessControls.CAMPUS_LIST)],
+  (req: Request, res: Response, next) =>
+    campusController.getAllCampusAssets(req, res).catch((err) => next(err)),
+);
+
 router.post(
   "/campuses/:campusId/assign-personnel",
   [

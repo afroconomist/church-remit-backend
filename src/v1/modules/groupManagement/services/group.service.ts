@@ -423,9 +423,16 @@ class GroupService {
         };
       }
 
+      const churchGroupIds = churchGroups.map((group: any) => group.id);
+      const groupMembers = await this.groupMemberRepository.findAll({
+        group: churchGroupIds,
+        status: "Approved",
+      });
+
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
         churchGroups,
+        totalMembers: groupMembers.length,
         total_result: totalRecords,
         current_page: currentPage,
         total_pages: totalPages,

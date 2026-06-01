@@ -14,6 +14,7 @@ export class PrayerRequest extends Model {
   submittedBy?: string;
   prayerWarrior?: string;
   answered?: boolean;
+  praySessions?: string[] | string;
   campusId?: string;
   church: string;
 }

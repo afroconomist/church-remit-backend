@@ -50,7 +50,7 @@ class CommunicationService {
   async createNews(req: any) {
     const media = req.file;
     const rawData = req.body.data;
-    const superAdminId = req.user.id;
+    const adminId = req.user.id;
 
     if (!media) throw new AppError(400, "No media uploaded");
 
@@ -70,8 +70,11 @@ class CommunicationService {
         campusId,
       } = parsedData;
 
-      const superAdmin = await this.userRepository.findById(superAdminId);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
       const newsPublishDate = new Date(publishDate);
       const today = normalizeDate(new Date());
@@ -88,6 +91,8 @@ class CommunicationService {
         throw new AppError(400, "News media upload failed");
       }
 
+      let campusId_;
+      campusId_ = campusId ? campusId : admin.campusId;
       const news = NewsFactory.createNews({
         headline,
         shortSummary,
@@ -99,8 +104,8 @@ class CommunicationService {
         featureThisNews,
         showOnHomepage,
         postedAt: new Date(),
-        campusId,
-        churchId: String(superAdmin.churchId),
+        campusId: campusId_,
+        churchId: String(admin.churchId),
       });
       const createdNews = await this.newsRepository.save(news);
 
@@ -186,10 +191,13 @@ class CommunicationService {
     };
   }
 
-  async createNewsletter(data: CreateNewsletter, superAdminId: string) {
+  async createNewsletter(data: CreateNewsletter, adminId: string) {
     try {
-      const superAdmin = await this.userRepository.findById(superAdminId);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
       if (data.sendDate) {
         const sendDate = new Date(data.sendDate);
@@ -200,6 +208,8 @@ class CommunicationService {
         }
       }
 
+      let campusId;
+      campusId = campusId ? data.campusId : admin.campusId;
       const newsletter = NewsletterFactory.createNewsletter({
         newsletterTitle: data.newsletterTitle,
         emailSubjectLine: data.emailSubjectLine,
@@ -210,8 +220,8 @@ class CommunicationService {
         sendDate: data.sendDate,
         sendTime: data.sendTime,
         postedAt: new Date(),
-        campusId: data.campusId,
-        churchId: String(superAdmin.churchId),
+        campusId,
+        churchId: String(admin.churchId),
       });
       const createdNewsletter = await this.newsletterRepository.save(
         newsletter,
@@ -301,7 +311,7 @@ class CommunicationService {
 
   async uploadCircular(req: any) {
     const file = req.file;
-    const superAdminId = req.user.id;
+    const adminId = req.user.id;
     const { title, description, province, category, campusId } = req.body;
 
     if (!file) {
@@ -309,8 +319,11 @@ class CommunicationService {
     }
 
     try {
-      const superAdmin = await this.userRepository.findById(superAdminId);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
       const fileData = await uploadFileToS3(
         file,
@@ -320,6 +333,8 @@ class CommunicationService {
         throw new AppError(400, "Circular document upload failed");
       }
 
+      let campusId_;
+      campusId_ = campusId ? campusId : admin.campusId;
       const circular = CircularFactory.uploadCircular({
         title,
         description,
@@ -327,8 +342,8 @@ class CommunicationService {
         category,
         documentUrl: fileData.url,
         uploadedAt: new Date().toISOString(),
-        campusId,
-        churchId: String(superAdmin.churchId),
+        campusId: campusId_,
+        churchId: String(admin.churchId),
       });
       const uploadedCircular = await this.circularRepository.save(circular);
 
@@ -391,14 +406,16 @@ class CommunicationService {
     }
   }
 
-  async createDiscussionBoard(
-    data: CreateDiscussionBoard,
-    superAdminId: string,
-  ) {
+  async createDiscussionBoard(data: CreateDiscussionBoard, adminId: string) {
     try {
-      const superAdmin = await this.userRepository.findById(superAdminId);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
+      let campusId;
+      campusId = data.campusId ? data.campusId : admin.campusId;
       const discussionBoard = DiscussionBoardFactory.createDiscussionBoard({
         boardName: data.boardName,
         description: data.description,
@@ -407,8 +424,8 @@ class CommunicationService {
         whoCanPost: data.whoCanPost,
         notifyMembers: data.notifyMembers,
         members: 1,
-        campusId: data.campusId,
-        churchId: String(superAdmin.churchId),
+        campusId,
+        churchId: String(admin.churchId),
       });
       const createdDiscussionBoard = await this.discussionBoardRepository.save(
         discussionBoard,
@@ -815,11 +832,16 @@ class CommunicationService {
     return `${tag.tagName} member tag has been deleted successfully`;
   }
 
-  async createNewAnnouncement(data: CreateAnnouncement, superAdminId: string) {
+  async createNewAnnouncement(data: CreateAnnouncement, adminId: string) {
     try {
-      const superAdmin = await this.userRepository.findById(superAdminId);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
+      let campusId;
+      campusId = data.campusId ? data.campusId : admin.campusId;
       const announcement = AnnouncementFactory.createAnnouncement({
         title: data.title,
         content: data.content,
@@ -830,8 +852,8 @@ class CommunicationService {
         displayOnWebsite: data.displayOnWebsite,
         sendEmailNotification: data.sendEmailNotification,
         sendSMSNotification: data.sendSMSNotification,
-        campusId: data.campusId,
-        churchId: String(superAdmin.churchId),
+        campusId,
+        churchId: String(admin.churchId),
       });
       const newAnnouncement = await this.announcementRepository.save(
         announcement,

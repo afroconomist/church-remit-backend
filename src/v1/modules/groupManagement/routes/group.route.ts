@@ -77,14 +77,14 @@ router.get(
 
 router.get(
   "/:churchId/groups",
-  [authMiddleware, accessControlMiddleware(AccessControls.GROUP_LIST)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     groupController.getAllChurchGroups(req, res).catch((err) => next(err)),
 );
 
 router.get(
   "/:churchId/groups/category",
-  [authMiddleware, accessControlMiddleware(AccessControls.GROUP_LIST)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     groupController
       .getChurchGroupsBasedOnCategory(req, res)
@@ -93,7 +93,7 @@ router.get(
 
 router.get(
   "/groups/:groupId/group-and-members",
-  [authMiddleware, accessControlMiddleware(AccessControls.GROUP_MEMBERS)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     groupController.getGroupAndMembers(req, res).catch((err) => next(err)),
 );

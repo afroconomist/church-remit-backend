@@ -1,17 +1,17 @@
 import { SuccessResponse, ErrorResponse } from "@shared/utils/response.util";
 import { Request, Response } from "express";
 import { injectable } from "tsyringe";
-import FamilyAndMemberService from "../services/family-and-member.service";
+import FamilyService from "../services/family.service";
 import httpStatus from "http-status";
 
 @injectable()
 class FamilyAndMemberController {
   constructor(
-    private readonly familyAndMemberService: FamilyAndMemberService,
+    private readonly familyService: FamilyService,
   ) {}
 
   createfamily = async (req: Request, res: Response) => {
-    const result: any = await this.familyAndMemberService.createFamily(req);
+    const result: any = await this.familyService.createFamily(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
@@ -19,7 +19,7 @@ class FamilyAndMemberController {
 
   getFamilies = async (req: Request, res: Response) => {
     try {
-      const families = await this.familyAndMemberService.getFamilies(req);
+      const families = await this.familyService.getFamilies(req);
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", families));
@@ -31,7 +31,7 @@ class FamilyAndMemberController {
   };
 
   addFamilyMember = async (req: Request, res: Response) => {
-    const result: any = await this.familyAndMemberService.addFamilyMember(req);
+    const result: any = await this.familyService.addFamilyMember(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
@@ -40,7 +40,7 @@ class FamilyAndMemberController {
   getUnlinkedMembers = async (req: Request, res: Response) => {
     try {
       const unlinkedMembers =
-        await this.familyAndMemberService.getUnlinkedMembers(req);
+        await this.familyService.getUnlinkedMembers(req);
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", unlinkedMembers));
@@ -52,7 +52,7 @@ class FamilyAndMemberController {
   };
 
   linkToFamily = async (req: Request, res: Response) => {
-    const result: any = await this.familyAndMemberService.linkToFamily(req);
+    const result: any = await this.familyService.linkToFamily(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
@@ -60,7 +60,7 @@ class FamilyAndMemberController {
 
   getFamilyMembers = async (req: Request, res: Response) => {
     try {
-      const familyMembers = await this.familyAndMemberService.getFamilyMembers(
+      const familyMembers = await this.familyService.getFamilyMembers(
         req,
       );
       return res
@@ -75,7 +75,7 @@ class FamilyAndMemberController {
 
   editFamilyMember = async (req: Request, res: Response) => {
     try {
-      const result: any = await this.familyAndMemberService.editFamilyMember(
+      const result: any = await this.familyService.editFamilyMember(
         req,
       );
       if (result.success) {
@@ -94,7 +94,7 @@ class FamilyAndMemberController {
 
   editFamily = async (req: Request, res: Response) => {
     try {
-      const result: any = await this.familyAndMemberService.editFamily(req);
+      const result: any = await this.familyService.editFamily(req);
       if (result.success) {
         return res.send(SuccessResponse(result.message));
       } else {
@@ -110,13 +110,13 @@ class FamilyAndMemberController {
   };
 
   removeFamilyMember = async (req: Request, res: Response) => {
-    const response = await this.familyAndMemberService.removeFamilyMember(req);
+    const response = await this.familyService.removeFamilyMember(req);
 
     return res.status(httpStatus.OK).send(SuccessResponse(response));
   };
 
   deleteFamily = async (req: Request, res: Response) => {
-    const response = await this.familyAndMemberService.deleteFamily(req);
+    const response = await this.familyService.deleteFamily(req);
 
     return res.status(httpStatus.OK).send(SuccessResponse(response));
   };

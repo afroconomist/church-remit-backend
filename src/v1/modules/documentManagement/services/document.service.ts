@@ -2,6 +2,7 @@ import { injectable } from "tsyringe";
 import DocumentFactory from "../factories/doument.factory";
 import DocumentRepository from "../repositories/document.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
+import MemberRepository from "../../memberManagement/repositories/member.repository";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
 import { uploadFileToS3 } from "@shared/utils/file-upload.util";
@@ -11,11 +12,12 @@ class DocumentService {
   constructor(
     private readonly documentRepository: DocumentRepository,
     private readonly userRepository: UserRepository,
+    private readonly memberRepository: MemberRepository,
   ) {}
 
   async uploadDocument(req: any) {
     const file = req.file;
-    const superAdminId = req.user.id;
+    const adminId = req.user.id;
     const { category, confidentiality, campusId } = req.body;
 
     if (!file) {
@@ -30,8 +32,11 @@ class DocumentService {
     }
 
     try {
-      const superAdmin = await this.userRepository.findById(superAdminId);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
       const fileData = await uploadFileToS3(
         file,
@@ -41,13 +46,15 @@ class DocumentService {
         throw new AppError(400, "Document upload failed");
       }
 
+      let campusId_;
+      campusId_ = campusId ? campusId : admin.campusId;
       const document = DocumentFactory.uploadDocument({
         documentName: fileData.key,
         category,
         confidentiality,
         documentUrl: fileData.url,
-        campusId,
-        churchId: String(superAdmin.churchId),
+        campusId: campusId_,
+        churchId: String(admin.churchId),
       });
       const uploadedDocument = await this.documentRepository.save(document);
 

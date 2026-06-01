@@ -12,7 +12,7 @@ import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
 
 @injectable()
-class PrayerAndWarriorService {
+class PrayerService {
   constructor(
     private readonly prayerRequestRepository: PrayerRequestRepository,
     private readonly prayerRequestCommentRepository: PrayerRequestCommentRepository,
@@ -41,7 +41,7 @@ class PrayerAndWarriorService {
           urgency: data.urgency,
           privacySetting: data.privacySetting,
           submittedBy: `${user.firstName} ${user.lastName}`,
-          campusId: String(user.campusId),
+          campusId: user.campusId,
           church: String(user.churchId),
         });
         const submittedPrayerRequest = await this.prayerRequestRepository.save(
@@ -61,7 +61,8 @@ class PrayerAndWarriorService {
         category: data.category,
         urgency: data.urgency,
         privacySetting: data.privacySetting,
-        church: String(member.churchId),
+        campusId: user.campusId,
+        church: String(user.churchId),
       });
       const submittedPrayerRequest = await this.prayerRequestRepository.save(
         prayerRequest,
@@ -84,9 +85,6 @@ class PrayerAndWarriorService {
 
   async addPrayerWarrior(req: any) {
     try {
-      const superAdmin = await this.userRepository.findById(req.user.id);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
-
       const member = await this.memberRepository.findById(req.body.memberId);
       if (!member) throw new AppError(400, "Member does not exist");
 
@@ -326,7 +324,7 @@ class PrayerAndWarriorService {
     }
   }
 
-  async prayOnPrayerRequests(prayerRequestId: string) {
+  async prayOnPrayerRequests(prayerRequestId: string, userId: string) {
     try {
       const prayerRequest = await this.prayerRequestRepository.findById(
         prayerRequestId,
@@ -334,13 +332,28 @@ class PrayerAndWarriorService {
       if (!prayerRequest)
         throw new AppError(400, "Prayer request does not exist");
 
+      let praySessions: string[] = [];
+      if (prayerRequest.praySessions) {
+        praySessions =
+          typeof prayerRequest.praySessions === "string"
+            ? JSON.parse(prayerRequest.praySessions)
+            : prayerRequest.praySessions;
+      }
+
+      if (praySessions.includes(userId)) {
+        throw new AppError(400, "You have already prayed on this request");
+      }
+
+      praySessions.push(userId);
+
       await this.prayerRequestRepository.updateById(prayerRequest.id, {
-        pray: Number(prayerRequest.pray) + 1,
+        praySessions: JSON.stringify(praySessions),
+        pray: praySessions.length,
       });
 
       return {
         success: true,
-        message: "Prayer request has been prayed on",
+        message: "Your prayer has been recorded",
       };
     } catch (error: any) {
       logger.error(
@@ -522,4 +535,4 @@ class PrayerAndWarriorService {
   }
 }
 
-export default PrayerAndWarriorService;
+export default PrayerService;

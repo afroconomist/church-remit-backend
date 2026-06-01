@@ -3,6 +3,7 @@ import { AddAsset } from "../dtos/add-asset.dto";
 import AssetFactory from "../factories/asset.factory";
 import AssetRepository from "../repositories/asset.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
+import MemberRepository from "../../memberManagement/repositories/member.repository";
 import GroupRepository from "../../groupManagement/repositories/group.repository";
 import CampusRepository from "../../campusManagement/repositories/campus.repository";
 import logger from "@shared/utils/logger";
@@ -13,14 +14,18 @@ class AssetService {
   constructor(
     private readonly assetRepository: AssetRepository,
     private readonly userRepository: UserRepository,
+    private readonly memberRepository: MemberRepository,
     private readonly groupRepository: GroupRepository,
     private readonly campusRepository: CampusRepository,
   ) {}
 
-  async addAsset(data: AddAsset, superAdminId: string) {
+  async addAsset(data: AddAsset, adminId: string) {
     try {
-      const superAdmin = await this.userRepository.findById(superAdminId);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
       let groupId;
       let assetName;
@@ -32,13 +37,15 @@ class AssetService {
         assetName = `${group.groupName}'s ${data.assetName}`;
       }
 
+      let campusId;
+      campusId = data.campusId ? data.campusId : admin.campusId;
       assetName = data.assetName;
       const asset = AssetFactory.addAsset({
         ...data,
         assetName,
         groupId,
-        campusId: data.campusId,
-        churchId: String(superAdmin.churchId),
+        campusId,
+        churchId: String(admin.churchId),
       });
       const addedAsset = await this.assetRepository.save(asset);
 

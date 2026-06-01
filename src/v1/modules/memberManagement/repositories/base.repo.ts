@@ -86,6 +86,26 @@ export class BaseRepository<T, M extends Model> {
     return { data, totalRecords };
   }
 
+  async findAllWithOrConditions(
+    conditions: { field: string; value: any }[],
+  ): Promise<T[]> {
+    const query = this.model.query();
+
+    if (conditions.length === 0) {
+      return await query;
+    }
+
+    return await query.where((builder) => {
+      conditions.forEach((condition, index) => {
+        if (index === 0) {
+          builder.where(condition.field, condition.value);
+        } else {
+          builder.orWhere(condition.field, condition.value);
+        }
+      });
+    });
+  }
+
   async save(data: Partial<T>, transaction?: Transaction): Promise<M> {
     return await this.model.query(transaction).insert(data).returning("*");
   }

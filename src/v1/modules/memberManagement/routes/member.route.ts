@@ -215,6 +215,13 @@ router.put(
     memberController.volunteerForRole(req, res).catch((err) => next(err)),
 );
 
+router.delete(
+  "/members/:volunteerRoleId/unvolunteer",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController.unvolunteerFromRole(req, res).catch((err) => next(err)),
+);
+
 router.get(
   "/members/groups",
   [authMiddleware],
@@ -222,6 +229,13 @@ router.get(
     memberController
       .getGroupsMemberBelongsTo(req, res)
       .catch((err) => next(err)),
+);
+
+router.get(
+  "/members/events",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController.getEventsForMember(req, res).catch((err) => next(err)),
 );
 
 router.get(

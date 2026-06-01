@@ -1,17 +1,15 @@
 import { SuccessResponse, ErrorResponse } from "@shared/utils/response.util";
 import { Request, Response } from "express";
 import { injectable } from "tsyringe";
-import VolunteerAndRoleService from "../services/volunteer-role-and-volunteer.service";
+import VolunteerService from "../services/volunteer.service";
 import httpStatus from "http-status";
 
 @injectable()
-class VolunteerAndRoleController {
-  constructor(
-    private readonly volunteerAndRoleService: VolunteerAndRoleService,
-  ) {}
+class VolunteerController {
+  constructor(private readonly volunteerService: VolunteerService) {}
 
   createVolunteerRole = async (req: Request, res: Response) => {
-    const result: any = await this.volunteerAndRoleService.createVolunteerRole(
+    const result: any = await this.volunteerService.createVolunteerRole(
       req.body,
       req.user.id,
     );
@@ -21,7 +19,7 @@ class VolunteerAndRoleController {
   };
 
   addNewVolunteer = async (req: Request, res: Response) => {
-    const result: any = await this.volunteerAndRoleService.addNewVolunteer(req);
+    const result: any = await this.volunteerService.addNewVolunteer(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
@@ -29,8 +27,9 @@ class VolunteerAndRoleController {
 
   getAllVolunteerRoles = async (req: Request, res: Response) => {
     try {
-      const volunteerRoles =
-        await this.volunteerAndRoleService.getAllVolunteerRoles(req);
+      const volunteerRoles = await this.volunteerService.getAllVolunteerRoles(
+        req,
+      );
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", volunteerRoles));
@@ -43,9 +42,7 @@ class VolunteerAndRoleController {
 
   getAllVolunteers = async (req: Request, res: Response) => {
     try {
-      const volunteers = await this.volunteerAndRoleService.getAllVolunteers(
-        req,
-      );
+      const volunteers = await this.volunteerService.getAllVolunteers(req);
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", volunteers));
@@ -58,8 +55,9 @@ class VolunteerAndRoleController {
 
   assignVolunteerToRole = async (req: Request, res: Response) => {
     try {
-      const result: any =
-        await this.volunteerAndRoleService.assignVolunteerToRole(req);
+      const result: any = await this.volunteerService.assignVolunteerToRole(
+        req,
+      );
       if (result.success) {
         return res.send(SuccessResponse(result.message));
       } else {
@@ -75,13 +73,32 @@ class VolunteerAndRoleController {
     }
   };
 
+  removeVolunteerFromRole = async (req: Request, res: Response) => {
+    try {
+      const result: any = await this.volunteerService.removeVolunteerFromRole(
+        req,
+      );
+      if (result.success) {
+        return res.send(SuccessResponse(result.message));
+      } else {
+        return res
+          .status(400)
+          .json({ status: result.success, message: result.message });
+      }
+    } catch (error) {
+      return res.status(500).json({
+        status: false,
+        message: "Failed to remove volunteer from role",
+      });
+    }
+  };
+
   changeVolunteerStatus = async (req: Request, res: Response) => {
-    const result: any =
-      await this.volunteerAndRoleService.changeVolunteerStatus(req);
+    const result: any = await this.volunteerService.changeVolunteerStatus(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
   };
 }
 
-export default VolunteerAndRoleController;
+export default VolunteerController;

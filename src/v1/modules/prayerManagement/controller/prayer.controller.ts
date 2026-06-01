@@ -1,17 +1,15 @@
 import { SuccessResponse, ErrorResponse } from "@shared/utils/response.util";
 import { Request, Response } from "express";
 import { injectable } from "tsyringe";
-import PrayerAndWarriorService from "../services/prayer-and-warrior.service";
+import PrayerService from "../services/prayer.service";
 import httpStatus from "http-status";
 
 @injectable()
-class PrayerAndWarriorController {
-  constructor(
-    private readonly prayerAndWarriorService: PrayerAndWarriorService,
-  ) {}
+class PrayerController {
+  constructor(private readonly prayerService: PrayerService) {}
 
   submitPrayerRequest = async (req: Request, res: Response) => {
-    const result: any = await this.prayerAndWarriorService.submitPrayerRequest(
+    const result: any = await this.prayerService.submitPrayerRequest(
       req.body,
       req.user.id,
     );
@@ -21,9 +19,7 @@ class PrayerAndWarriorController {
   };
 
   addPrayerWarrior = async (req: Request, res: Response) => {
-    const result: any = await this.prayerAndWarriorService.addPrayerWarrior(
-      req,
-    );
+    const result: any = await this.prayerService.addPrayerWarrior(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
@@ -31,8 +27,7 @@ class PrayerAndWarriorController {
 
   getAllPrayerRequests = async (req: Request, res: Response) => {
     try {
-      const prayerRequests =
-        await this.prayerAndWarriorService.getAllPrayerRequests(req);
+      const prayerRequests = await this.prayerService.getAllPrayerRequests(req);
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", prayerRequests));
@@ -45,8 +40,7 @@ class PrayerAndWarriorController {
 
   getPrayerWarriors = async (req: Request, res: Response) => {
     try {
-      const prayerWarriors =
-        await this.prayerAndWarriorService.getPrayerWarriors(req);
+      const prayerWarriors = await this.prayerService.getPrayerWarriors(req);
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", prayerWarriors));
@@ -59,8 +53,7 @@ class PrayerAndWarriorController {
 
   assignPrayerToWarrior = async (req: Request, res: Response) => {
     try {
-      const result: any =
-        await this.prayerAndWarriorService.assignPrayerToWarrior(req);
+      const result: any = await this.prayerService.assignPrayerToWarrior(req);
       if (result.success) {
         return res.send(SuccessResponse(result.message));
       } else {
@@ -79,7 +72,7 @@ class PrayerAndWarriorController {
   getPrayerWarriorAssignments = async (req: Request, res: Response) => {
     try {
       const prayerWarriorAssignments =
-        await this.prayerAndWarriorService.getPrayerWarriorAssignments(req);
+        await this.prayerService.getPrayerWarriorAssignments(req);
       return res
         .status(httpStatus.OK)
         .send(
@@ -94,7 +87,7 @@ class PrayerAndWarriorController {
 
   markPrayerAnswered = async (req: Request, res: Response) => {
     try {
-      const result: any = await this.prayerAndWarriorService.markPrayerAnswered(
+      const result: any = await this.prayerService.markPrayerAnswered(
         req.params.prayerRequestId,
       );
       if (result.success) {
@@ -114,10 +107,10 @@ class PrayerAndWarriorController {
 
   prayOnPrayerRequests = async (req: Request, res: Response) => {
     try {
-      const result: any =
-        await this.prayerAndWarriorService.prayOnPrayerRequests(
-          req.params.prayerRequestId,
-        );
+      const result: any = await this.prayerService.prayOnPrayerRequests(
+        req.params.prayerRequestId,
+        req.user.id,
+      );
       if (result.success) {
         return res.send(SuccessResponse(result.message));
       } else {
@@ -134,36 +127,35 @@ class PrayerAndWarriorController {
   };
 
   commentOnPrayerRequest = async (req: Request, res: Response) => {
-    const result: any =
-      await this.prayerAndWarriorService.commentOnPrayerRequest(
-        req.params.prayerRequestId,
-        req.body.message,
-        req.user.id,
-      );
+    const result: any = await this.prayerService.commentOnPrayerRequest(
+      req.params.prayerRequestId,
+      req.body.message,
+      req.user.id,
+    );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
   };
 
   getCommentsOnPrayerRequest = async (req: Request, res: Response) => {
-    const result: any =
-      await this.prayerAndWarriorService.getCommentsOnPrayerRequest(req);
+    const result: any = await this.prayerService.getCommentsOnPrayerRequest(
+      req,
+    );
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
   };
 
   deleteCommentOnPrayerRequest = async (req: Request, res: Response) => {
-    const response =
-      await this.prayerAndWarriorService.deleteCommentOnPrayerRequest(
-        req.params.commentId,
-      );
+    const response = await this.prayerService.deleteCommentOnPrayerRequest(
+      req.params.commentId,
+    );
 
     return res.status(httpStatus.OK).send(SuccessResponse(response));
   };
 
   createTestimony = async (req: Request, res: Response) => {
-    const result: any = await this.prayerAndWarriorService.createTestimony(req);
+    const result: any = await this.prayerService.createTestimony(req);
     return res
       .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
       .json(result);
@@ -171,9 +163,7 @@ class PrayerAndWarriorController {
 
   getAllTestimonies = async (req: Request, res: Response) => {
     try {
-      const testimonies = await this.prayerAndWarriorService.getAllTestimonies(
-        req,
-      );
+      const testimonies = await this.prayerService.getAllTestimonies(req);
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", testimonies));
@@ -185,4 +175,4 @@ class PrayerAndWarriorController {
   };
 }
 
-export default PrayerAndWarriorController;
+export default PrayerController;
