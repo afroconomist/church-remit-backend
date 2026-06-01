@@ -10,7 +10,7 @@ import AppError from "@shared/error/app.error";
 import { getAgeByDate } from "@shared/utils/functions.util";
 
 @injectable()
-class FamilyAndMemberService {
+class FamilyService {
   constructor(
     private readonly familyRepository: FamilyRepository,
     private readonly familyMemberRepository: FamilyMemberRepository,
@@ -494,4 +494,4 @@ class FamilyAndMemberService {
   }
 }
 
-export default FamilyAndMemberService;
+export default FamilyService;

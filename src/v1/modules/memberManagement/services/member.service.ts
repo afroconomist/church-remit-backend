@@ -22,6 +22,7 @@ import CategoryRepository from "../repositories/category.repository";
 import FamilyMemberRepository from "../../familyManagement/repositories/family_member.repository";
 import EventRepository from "../../eventManagement/repositories/event.repository";
 import VolunteerRoleRepository from "../../volunteerManagement/repositories/volunteer_role.repo";
+import VolunteerRoleAssignmentRepository from "../../volunteerManagement/repositories/volunteer_role_assignment.repository";
 import VolunteerRepository from "../../volunteerManagement/repositories/volunteer.repo";
 import GroupRepository from "../../groupManagement/repositories/group.repository";
 import GroupMemberRepository from "../../groupManagement/repositories/group_member.repository";
@@ -55,6 +56,7 @@ class MemberService {
     private readonly familyMemberRepository: FamilyMemberRepository,
     private readonly eventRepository: EventRepository,
     private readonly volunteerRoleRepository: VolunteerRoleRepository,
+    private readonly volunteerRoleAssignmentRepository: VolunteerRoleAssignmentRepository,
     private readonly volunteerRepository: VolunteerRepository,
     private readonly groupRepository: GroupRepository,
     private readonly groupMemberRepository: GroupMemberRepository,
@@ -64,7 +66,7 @@ class MemberService {
     private readonly facilityRepository: FacilityRepository,
   ) {}
 
-  async addMember(member_data: AddMember, superAdminId: string) {
+  async addMember(member_data: AddMember, adminId: string) {
     try {
       const accountExists = await this.userRepository.findOne({
         email: member_data.email,
@@ -75,12 +77,14 @@ class MemberService {
           message: "Account already exists with this email",
         };
 
-      const superAdminExists = await this.userRepository.findById(superAdminId);
-      if (!superAdminExists)
-        return { success: false, message: "Super admin does not exist" };
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
       const churchExists = await this.churchRepository.findById(
-        String(superAdminExists.churchId),
+        String(admin.churchId),
       );
       if (!churchExists)
         return { success: false, message: "Church does not exist" };
@@ -100,14 +104,15 @@ class MemberService {
       if (memberExists)
         return { success: false, message: "Member already added" };
 
+      let campusId;
+      campusId = member_data.campusId ? campusExists.id : admin.campusId;
       const memberPassword = this.generateMemberPassword();
-
       const member = MemberFactory.addMember({
         ...member_data,
         password: memberPassword,
         roleId: role.id,
-        addedBy: superAdminId,
-        campusId: campusExists.id,
+        addedBy: adminId,
+        campusId,
         churchId: churchExists.id,
       });
       const addedMember = await this.memberRepository.save(member);
@@ -715,9 +720,6 @@ class MemberService {
 
   async categorizeMembers(req: any) {
     try {
-      const superAdmin = await this.userRepository.findById(req.user.id);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
-
       const category = await this.categoryRepository.findById(
         req.params.categoryId,
       );
@@ -755,7 +757,10 @@ class MemberService {
         updatedCount += batch.length;
       }
 
-      const currentCount = Number(category.members) || 0;
+      const categoryMembers = await this.memberRepository.findAll({
+        memberCategoryId: category.id,
+      });
+      const currentCount = categoryMembers.length || 0;
       await this.categoryRepository.updateById(category.id, {
         members: currentCount + updatedCount,
       });
@@ -1010,6 +1015,12 @@ class MemberService {
       const member = await this.memberRepository.findById(memberId);
       if (!member) throw new AppError(400, "Member does not exist");
 
+      let isVolunteer;
+      const volunteer = await this.volunteerRepository.findOne({
+        churchMemberId: member.id,
+      });
+      isVolunteer = volunteer ? true : false;
+
       const churchEvents = await this.eventRepository.findAllWithOrConditions([
         { field: "church", value: member.churchId },
         { field: "campusId", value: member.campusId },
@@ -1046,12 +1057,32 @@ class MemberService {
 
       const volunteerRolesWithVolunteers = await Promise.all(
         volunteerRoles.map(async (role) => {
+          const volunteerRoleAssignments =
+            await this.volunteerRoleAssignmentRepository.findAll({
+              volunteerRoleId: role.id,
+            });
+          const volunteerIds = volunteerRoleAssignments.map(
+            (assignment) => assignment.volunteerId,
+          );
           const volunteers = await this.volunteerRepository.findAll({
-            volunteerRole: role.id,
+            id: volunteerIds,
           });
+          const volunteerRoleEvent = await this.eventRepository.findById(
+            role.eventId,
+          );
+          const isAssignedOrVolunteered = volunteers.some(
+            (v) => v.id === volunteer?.id,
+          );
           return {
             ...role,
+            isAssignedOrVolunteered,
             volunteers,
+            eventName: volunteerRoleEvent
+              ? volunteerRoleEvent.eventTitle
+              : "Event not found",
+            eventDate: volunteerRoleEvent
+              ? volunteerRoleEvent.eventDate
+              : "Event not found",
           };
         }),
       );
@@ -1059,6 +1090,7 @@ class MemberService {
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
         volunteerRoles: volunteerRolesWithVolunteers,
+        isVolunteer,
         total_result: totalRecords,
         current_page: currentPage,
         total_pages: totalPages,
@@ -1087,6 +1119,18 @@ class MemberService {
       if (!volunteer)
         return { success: false, message: "You are not a volunteer!" };
 
+      const existingAssignment =
+        await this.volunteerRoleAssignmentRepository.findOne({
+          volunteerId: volunteer.id,
+          volunteerRoleId: volunteerRole.id,
+        });
+      if (existingAssignment) {
+        return {
+          success: false,
+          message: "You are already assigned to this role",
+        };
+      }
+
       if (
         volunteerRole.noOfVolunteersNeeded ===
         volunteerRole.noOfAssignedVolunteers
@@ -1097,11 +1141,11 @@ class MemberService {
         };
       }
 
-      await this.volunteerRepository.updateById(volunteer.id, {
-        volunteerRoleName: volunteerRole.name,
-        section: volunteerRole.section,
-        volunteerRole: volunteerRole.id,
-      });
+      await this.volunteerRoleAssignmentRepository.save({
+        volunteerId: volunteer.id,
+        volunteerRoleId: volunteerRole.id,
+        status: "ACTIVE",
+      } as any);
 
       await this.volunteerRoleRepository.updateById(volunteerRole.id, {
         noOfAssignedVolunteers:
@@ -1113,7 +1157,49 @@ class MemberService {
         message: `You have successfully volunteered for ${volunteerRole.name} role`,
       };
     } catch (error: any) {
-      logger.error({ error: error.message }, "Failed to update category");
+      logger.error({ error: error.message }, "Failed to volunteer for role");
+      throw new AppError(400, error.message);
+    }
+  }
+
+  async unvolunteerFromRole(memberId: string, volunteerRoleId: string) {
+    try {
+      const [member, volunteerRole] = await Promise.all([
+        this.memberRepository.findById(memberId),
+        this.volunteerRoleRepository.findById(volunteerRoleId),
+      ]);
+      if (!member) throw new AppError(400, "Member does not exist");
+      if (!volunteerRole)
+        throw new AppError(400, "Volunteer role does not exist");
+
+      const volunteer = await this.volunteerRepository.findOne({
+        churchMemberId: member.id,
+      });
+      if (!volunteer) throw new AppError(400, "You are not a volunteer");
+
+      const assignment = await this.volunteerRoleAssignmentRepository.findOne({
+        volunteerId: volunteer.id,
+        volunteerRoleId: volunteerRole.id,
+      });
+      if (!assignment) {
+        throw new AppError(400, "You are not assigned to this role");
+      }
+
+      await this.volunteerRoleAssignmentRepository.deleteById(assignment.id);
+
+      await this.volunteerRoleRepository.updateById(volunteerRole.id, {
+        noOfAssignedVolunteers: Math.max(
+          0,
+          Number(volunteerRole.noOfAssignedVolunteers) - 1,
+        ),
+      });
+
+      return {
+        success: true,
+        message: `You have successfully unvolunteered from ${volunteerRole.name} role`,
+      };
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Failed to unvolunteer from role");
       throw new AppError(400, error.message);
     }
   }
@@ -1162,6 +1248,52 @@ class MemberService {
       logger.error({ error: "Error fetching groups member belongs to" });
       throw new Error(
         "An unexpected error occurred while fetching groups member belongs to.",
+      );
+    }
+  }
+
+  async getEventsForMember(req: any) {
+    const memberId = req.user.id;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) throw new AppError(400, "Member does not exist");
+
+      const churchEvents = await this.eventRepository.findAllWithOrConditions([
+        { field: "church", value: member.churchId },
+        { field: "campusId", value: member.campusId },
+      ]);
+
+      const totalRecords = churchEvents.length;
+
+      if (churchEvents.length === 0) {
+        return {
+          churchEvents: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      const paginatedEvents = churchEvents.slice(start, end);
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        churchEvents: paginatedEvents,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching events for member" });
+      throw new Error(
+        "An unexpected error occurred while fetching events for member.",
       );
     }
   }
@@ -1237,9 +1369,16 @@ class MemberService {
         };
       }
 
+      let isPrayerWarrior;
+      const prayerWarrior = await this.prayerWarriorRepository.findOne({
+        churchMemberId: member.id,
+      });
+      isPrayerWarrior = prayerWarrior ? true : false;
+
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
         prayerRequests,
+        isPrayerWarrior,
         total_result: totalRecords,
         current_page: currentPage,
         total_pages: totalPages,

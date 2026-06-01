@@ -21,6 +21,7 @@ export enum DB_TABLES {
   LEAVES = "leaves",
   VOLUNTEER_ROLES = "volunteer_roles",
   VOLUNTEERS = "volunteers",
+  VOLUNTEER_ROLE_ASSIGNMENTS = "volunteer_role_assignments",
   EVENTS = "events",
   EVENT_AGENDAS = "event_agendas",
   EVENT_ATTENDEES = "event_attendees",
@@ -60,5 +61,5 @@ export enum DB_TABLES {
   TAGS = "tags",
   ANNOUNCEMENTS = "announcements",
   CIRCULARS = "circulars",
-  ASSETS = "assets"
+  ASSETS = "assets",
 }

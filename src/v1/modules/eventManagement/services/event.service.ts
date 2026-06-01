@@ -69,10 +69,13 @@ class EventService {
     private readonly campusRepository: CampusRepository,
   ) {}
 
-  async createNewEvent(data: CreateNewEventPayload, superAdminId: string) {
+  async createNewEvent(data: CreateNewEventPayload, adminId: string) {
     try {
-      const superAdmin = await this.userRepository.findById(superAdminId);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
       const startTime = data.eventStartTime;
       const endTime = data.eventEndTime;
@@ -98,6 +101,8 @@ class EventService {
         nextEventDateString = nextEventDate.toISOString().split("T")[0];
       }
 
+      let campusId;
+      campusId = data.campusId ? data.campusId : admin.campusId;
       const newEvent = EventFactory.createNewEvent({
         eventTitle: data.eventTitle,
         description: data.description,
@@ -112,8 +117,8 @@ class EventService {
         registration: data.registration,
         recurring: data.recurring,
         eventFrequency: data.eventFrequency,
-        campusId: data.campusId,
-        church: String(superAdmin.churchId),
+        campusId,
+        church: String(admin.churchId),
       });
       const createdNewEvent = await this.eventRepository.save(newEvent);
 
@@ -334,9 +339,16 @@ class EventService {
         };
       }
 
+      let totalAttendees;
+      const eventAttendees = await this.eventAttendeeRepository.findAll({
+        churchEvent: eventId,
+      });
+      totalAttendees = eventAttendees ? eventAttendees.length : 0;
+
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
         eventReviews,
+        totalAttendees,
         total_result: totalRecords,
         current_page: currentPage,
         total_pages: totalPages,
@@ -380,9 +392,17 @@ class EventService {
         };
       }
 
+      const churchEventIds = churchEvents.map((event: any) => event.id);
+      let totalAttendees;
+      const eventAttendees = await this.eventAttendeeRepository.findAll({
+        churchEvent: churchEventIds,
+      });
+      totalAttendees = eventAttendees ? eventAttendees.length : 0;
+
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
         churchEvents,
+        totalAttendees,
         total_result: totalRecords,
         current_page: currentPage,
         total_pages: totalPages,

@@ -3,6 +3,7 @@ import { Request } from "express";
 import { CreateVolunteerRole } from "../dtos/create-volunteer-role.dto";
 import VolunteerRoleFactory from "../factories/volunteer_role.factory";
 import VolunteerRoleRepository from "../repositories/volunteer_role.repo";
+import VolunteerRoleAssignmentRepository from "../repositories/volunteer_role_assignment.repository";
 import VolunteerFactory from "../factories/volunteer.factory";
 import VolunteerRepository from "../repositories/volunteer.repo";
 import UserRepository from "../../userManagement/repositories/user.repository";
@@ -16,9 +17,10 @@ import RoleRepo from "../../accessControlManagement/repositories/role.repo";
 import { generateCode } from "@shared/utils/functions.util";
 
 @injectable()
-class VolunteerAndRoleService {
+class VolunteerService {
   constructor(
     private readonly volunteerRoleRepository: VolunteerRoleRepository,
+    private readonly volunteerRoleAssignmentRepository: VolunteerRoleAssignmentRepository,
     private readonly volunteerRepository: VolunteerRepository,
     private readonly userRepository: UserRepository,
     private readonly memberRepository: MemberRepository,
@@ -27,10 +29,13 @@ class VolunteerAndRoleService {
     private readonly roleRepo: RoleRepo,
   ) {}
 
-  async createVolunteerRole(data: CreateVolunteerRole, superAdminId: string) {
+  async createVolunteerRole(data: CreateVolunteerRole, adminId: string) {
     try {
-      const superAdmin = await this.userRepository.findById(superAdminId);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
       const churchEvent = await this.eventRepository.findById(data.event_id);
       if (!churchEvent) throw new AppError(400, "Church event does not exist");
@@ -39,7 +44,7 @@ class VolunteerAndRoleService {
         ...data,
         eventId: churchEvent.id,
         campusId: churchEvent.campusId,
-        church: String(superAdmin.churchId),
+        church: String(admin.churchId),
       });
       const newVolunteerRole = await this.volunteerRoleRepository.save(
         volunteerRole,
@@ -62,11 +67,14 @@ class VolunteerAndRoleService {
 
   async addNewVolunteer(req: Request) {
     const data = req.body;
-    const superAdminId = req.user.id;
+    const adminId = req.user.id;
 
     try {
-      const superAdmin = await this.userRepository.findById(superAdminId);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
       const accountExist = await this.userRepository.findOne({
         email: data.email,
@@ -112,8 +120,9 @@ class VolunteerAndRoleService {
         password: memberPassword,
         membershipStatus: "Member",
         roleId: role.id,
-        addedBy: superAdmin.id,
-        churchId: String(superAdmin.churchId),
+        addedBy: admin.id,
+        campusId: admin.campusId,
+        churchId: String(admin.churchId),
       });
       const addedMember = await this.memberRepository.save(newMember);
 
@@ -138,7 +147,8 @@ class VolunteerAndRoleService {
 
       return {
         success: true,
-        message: "A new volunteer has been added successfully",
+        message:
+          "A new volunteer has been added successfully and a member account has been created.",
         new_volunteer: newVolunteer,
       };
     } catch (error: any) {
@@ -214,11 +224,27 @@ class VolunteerAndRoleService {
 
       const volunteerRolesWithVolunteers = await Promise.all(
         volunteerRoles.map(async (role) => {
+          const volunteerRoleAssignments =
+            await this.volunteerRoleAssignmentRepository.findAll({
+              volunteerRoleId: role.id,
+            });
+          const volunteerIds = volunteerRoleAssignments.map(
+            (assignment) => assignment.volunteerId,
+          );
           const volunteers = await this.volunteerRepository.findAll({
-            volunteerRole: role.id,
+            id: volunteerIds,
           });
+          const volunteerRoleEvent = await this.eventRepository.findById(
+            role.eventId,
+          );
           return {
             ...role,
+            eventName: volunteerRoleEvent
+              ? volunteerRoleEvent.eventTitle
+              : "Event not found",
+            eventDate: volunteerRoleEvent
+              ? volunteerRoleEvent.eventDate
+              : "Event not found",
             volunteers,
             availableSlots:
               role.noOfVolunteersNeeded - Number(role.noOfAssignedVolunteers),
@@ -287,26 +313,25 @@ class VolunteerAndRoleService {
 
   async assignVolunteerToRole(req: Request) {
     try {
-      const volunteer = await this.volunteerRepository.findById(
-        req.params.volunteerId,
-      );
+      const [volunteer, volunteerRole] = await Promise.all([
+        this.volunteerRepository.findById(req.params.volunteerId),
+        this.volunteerRoleRepository.findById(req.body.volunteerRoleId),
+      ]);
       if (!volunteer) throw new AppError(400, "Volunteer does not exist");
-
-      const volunteerRole = await this.volunteerRoleRepository.findById(
-        req.body.volunteerRoleId,
-      );
       if (!volunteerRole)
         throw new AppError(400, "Volunteer role does not exist");
 
-      const assignedVolunteer = await this.volunteerRepository.findOne({
-        id: volunteer.id,
-        volunteerRole: volunteerRole.id,
-      });
-      if (assignedVolunteer)
+      const existingAssignment =
+        await this.volunteerRoleAssignmentRepository.findOne({
+          volunteerId: volunteer.id,
+          volunteerRoleId: volunteerRole.id,
+        });
+      if (existingAssignment) {
         return {
           success: false,
           message: "Volunteer is already assigned to this role",
         };
+      }
 
       if (
         volunteerRole.noOfVolunteersNeeded ===
@@ -318,11 +343,11 @@ class VolunteerAndRoleService {
         };
       }
 
-      await this.volunteerRepository.updateById(volunteer.id, {
-        volunteerRoleName: volunteerRole.name,
-        section: volunteerRole.section,
-        volunteerRole: volunteerRole.id,
-      });
+      await this.volunteerRoleAssignmentRepository.save({
+        volunteerId: volunteer.id,
+        volunteerRoleId: volunteerRole.id,
+        status: "ACTIVE",
+      } as any);
 
       await this.volunteerRoleRepository.updateById(volunteerRole.id, {
         noOfAssignedVolunteers:
@@ -337,6 +362,46 @@ class VolunteerAndRoleService {
       logger.error(
         { error: error.message },
         "Failed to assign volunteer to role",
+      );
+      throw new AppError(400, error.message);
+    }
+  }
+
+  async removeVolunteerFromRole(req: Request) {
+    try {
+      const [volunteer, volunteerRole] = await Promise.all([
+        this.volunteerRepository.findById(req.params.volunteerId),
+        this.volunteerRoleRepository.findById(req.body.volunteerRoleId),
+      ]);
+      if (!volunteer) throw new AppError(400, "Volunteer does not exist");
+      if (!volunteerRole)
+        throw new AppError(400, "Volunteer role does not exist");
+
+      const assignment = await this.volunteerRoleAssignmentRepository.findOne({
+        volunteerId: volunteer.id,
+        volunteerRoleId: volunteerRole.id,
+      });
+      if (!assignment) {
+        throw new AppError(400, "Volunteer is not assigned to this role");
+      }
+
+      await this.volunteerRoleAssignmentRepository.deleteById(assignment.id);
+
+      await this.volunteerRoleRepository.updateById(volunteerRole.id, {
+        noOfAssignedVolunteers: Math.max(
+          0,
+          Number(volunteerRole.noOfAssignedVolunteers) - 1,
+        ),
+      });
+
+      return {
+        success: true,
+        message: `${volunteer.name} has been successfully removed from ${volunteerRole.name} role`,
+      };
+    } catch (error: any) {
+      logger.error(
+        { error: error.message },
+        "Failed to remove volunteer from role",
       );
       throw new AppError(400, error.message);
     }
@@ -369,4 +434,4 @@ class VolunteerAndRoleService {
   }
 }
 
-export default VolunteerAndRoleService;
+export default VolunteerService;

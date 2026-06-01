@@ -69,21 +69,21 @@ router.get(
 
 router.get(
   "/:churchId/events",
-  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     eventController.getAllChurchEvents(req, res).catch((err) => next(err)),
 );
 
 router.get(
   "/:churchId/events/upcoming",
-  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     eventController.getUpcomingChurchEvents(req, res).catch((err) => next(err)),
 );
 
 router.get(
   "/:churchId/events/recurring",
-  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     eventController
       .getRecurringChurchEvents(req, res)
@@ -92,14 +92,14 @@ router.get(
 
 router.get(
   "/:churchId/events/past",
-  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     eventController.getPastChurchEvents(req, res).catch((err) => next(err)),
 );
 
 router.get(
   "/events/:eventId/agendas",
-  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     eventController.getEventAgendas(req, res).catch((err) => next(err)),
 );
@@ -156,7 +156,7 @@ router.delete(
 
 router.get(
   "/events/:eventId/info",
-  [authMiddleware, accessControlMiddleware(AccessControls.EVENT_LIST)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     eventController.getEventAndAttendees(req, res).catch((err) => next(err)),
 );

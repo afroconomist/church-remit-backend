@@ -294,12 +294,46 @@ class MemberController {
     }
   };
 
+  unvolunteerFromRole = async (req: Request, res: Response) => {
+    try {
+      const result: any = await this.memberService.unvolunteerFromRole(
+        req.user.id,
+        req.params.volunteerRoleId,
+      );
+      if (result.success) {
+        return res.send(SuccessResponse(result.message));
+      } else {
+        return res
+          .status(400)
+          .json({ status: result.success, message: result.message });
+      }
+    } catch (error) {
+      return res.status(500).json({
+        status: false,
+        message: "Failed to remove volunteer from role",
+      });
+    }
+  };
+
   getGroupsMemberBelongsTo = async (req: Request, res: Response) => {
     try {
       const groups = await this.memberService.getGroupsMemberBelongsTo(req);
       return res
         .status(httpStatus.OK)
         .send(SuccessResponse("Operation successful", groups));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
+  getEventsForMember = async (req: Request, res: Response) => {
+    try {
+      const churchEvents = await this.memberService.getEventsForMember(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", churchEvents));
     } catch (error: any) {
       return res
         .status(httpStatus.INTERNAL_SERVER_ERROR)

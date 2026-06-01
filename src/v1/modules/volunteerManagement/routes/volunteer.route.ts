@@ -8,11 +8,9 @@ import { validate } from "@shared/middlewares/validator.middleware";
 import accessControlMiddleware from "@shared/middlewares/access-control.middleware";
 import { AccessControls } from "../../accessControlManagement/enums/access-control.enum";
 import authMiddleware from "@shared/middlewares/auth.middleware";
-import VolunteerAndRoleController from "../controller/volunteer-role-and-volunteer.controller";
+import VolunteerController from "../controller/volunteer.controller";
 
-const volunteerAndRoleController = container.resolve(
-  VolunteerAndRoleController,
-);
+const volunteerController = container.resolve(VolunteerController);
 
 const router = express.Router();
 
@@ -24,9 +22,7 @@ router.post(
     validate(createVolunteerRoleRules),
   ],
   (req: Request, res: Response, next) =>
-    volunteerAndRoleController
-      .createVolunteerRole(req, res)
-      .catch((err) => next(err)),
+    volunteerController.createVolunteerRole(req, res).catch((err) => next(err)),
 );
 
 router.post(
@@ -37,16 +33,14 @@ router.post(
     validate(addNewVolunteerRules),
   ],
   (req: Request, res: Response, next) =>
-    volunteerAndRoleController
-      .addNewVolunteer(req, res)
-      .catch((err) => next(err)),
+    volunteerController.addNewVolunteer(req, res).catch((err) => next(err)),
 );
 
 router.get(
   "/volunteers/:churchId/roles",
   [authMiddleware, accessControlMiddleware(AccessControls.VOLUNTEER_ROLES)],
   (req: Request, res: Response, next) =>
-    volunteerAndRoleController
+    volunteerController
       .getAllVolunteerRoles(req, res)
       .catch((err) => next(err)),
 );
@@ -55,9 +49,7 @@ router.get(
   "/volunteers/:churchId/",
   [authMiddleware, accessControlMiddleware(AccessControls.VOLUNTEER_LIST)],
   (req: Request, res: Response, next) =>
-    volunteerAndRoleController
-      .getAllVolunteers(req, res)
-      .catch((err) => next(err)),
+    volunteerController.getAllVolunteers(req, res).catch((err) => next(err)),
 );
 
 router.put(
@@ -68,9 +60,18 @@ router.put(
     validate(assignVolunteerToRoleRules),
   ],
   (req: Request, res: Response, next) => {
-    volunteerAndRoleController
-      .assignVolunteerToRole(req, res)
-      .catch((e) => next(e));
+    volunteerController.assignVolunteerToRole(req, res).catch((e) => next(e));
+  },
+);
+
+router.delete(
+  "/volunteers/:volunteerId/remove-role",
+  [
+    authMiddleware,
+    accessControlMiddleware(AccessControls.VOLUNTEER_ASSIGNMENT),
+  ],
+  (req: Request, res: Response, next) => {
+    volunteerController.removeVolunteerFromRole(req, res).catch((e) => next(e));
   },
 );
 
@@ -78,9 +79,7 @@ router.patch(
   "/volunteers/:volunteerId/change-status",
   [authMiddleware, validate(changeVolunteerStatusRules)],
   (req: Request, res: Response, next) => {
-    volunteerAndRoleController
-      .changeVolunteerStatus(req, res)
-      .catch((e) => next(e));
+    volunteerController.changeVolunteerStatus(req, res).catch((e) => next(e));
   },
 );
 

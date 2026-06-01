@@ -32,6 +32,21 @@ export class BaseRepository<T, M extends Model> {
     return await this.model.query().where(filter).first();
   }
 
+  async findAll(filter: ObjectLiteral): Promise<T[]> {
+    const baseQuery = this.model.query();
+
+    Object.entries(filter).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        baseQuery.whereIn(key, value);
+      } else {
+        baseQuery.where(key, value);
+      }
+    });
+
+    const data = await baseQuery;
+    return data;
+  }
+
   async findAndCountAll(
     filter: ObjectLiteral,
     page: number,

@@ -55,13 +55,24 @@ class CampusService {
       const superAdmin = await this.userRepository.findById(superAdminId);
       if (!superAdmin) throw new AppError(400, "Super admin does not exist");
 
+      const campusExists = await this.campusRepository.findOne({
+        campusEmail: data.campusEmail,
+      });
+      if (campusExists)
+        throw new AppError(
+          400,
+          "Email is already associated with another campus",
+        );
+
+      let campusPastor;
+      campusPastor = data.campusPastor ? data.campusPastor : "Not Assigned";
       const campus = CampusFactory.addCampus({
         campusName: data.campusName,
         campusCode: data.campusCode,
         campusAddress: data.campusAddress,
         campusEmail: data.campusEmail,
         campusPhoneNumber: data.campusPhoneNumber,
-        campusPastor: data.campusPastor,
+        campusPastor,
         localCurrency: data.localCurrency,
         timezone: data.timezone,
         established: data.established,
@@ -88,7 +99,28 @@ class CampusService {
     const campus = await this.campusRepository.findById(campusId);
     if (!campus) throw new AppError(400, "Campus does not exist");
 
-    return { success: true, campus };
+    const campusMembers = await this.memberRepository.findAll({
+      campusId: campus.id,
+    });
+
+    return {
+      success: true,
+      campus: { ...campus, totalMembers: campusMembers.length },
+    };
+  }
+
+  async getAllCampusAssets(campusId: string) {
+    const campus = await this.campusRepository.findById(campusId);
+    if (!campus) throw new AppError(400, "Campus does not exist");
+
+    const assets = await this.assetRepository.findAll({
+      campusId: campus.id,
+    });
+
+    return {
+      success: true,
+      assets,
+    };
   }
 
   async assignPersonnelToCampus(req: any) {
@@ -154,9 +186,15 @@ class CampusService {
         };
       }
 
+      const campusIds = churchCampuses.map((campus) => campus.id);
+      const campusMembers = await this.memberRepository.findAll({
+        campusId: campusIds,
+      });
+
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
         churchCampuses,
+        totalMembers: campusMembers.length,
         total_result: totalRecords,
         current_page: currentPage,
         total_pages: totalPages,

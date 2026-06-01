@@ -6,6 +6,7 @@ import FacilityRepository from "../repositories/facility.repository";
 import FacilityBookingFactory from "../factories/facility_booking.factory";
 import FacilityBookingRepository from "../repositories/facility_booking.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
+import MemberRepository from "../../memberManagement/repositories/member.repository";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
 import { normalizeDate } from "@shared/utils/functions.util";
@@ -16,13 +17,19 @@ class FacilityService {
     private readonly facilityRepository: FacilityRepository,
     private readonly facilityBookingRepository: FacilityBookingRepository,
     private readonly userRepository: UserRepository,
+    private readonly memberRepository: MemberRepository,
   ) {}
 
-  async addNewFacility(data: AddNewFacility, superAdminId: string) {
+  async addNewFacility(data: AddNewFacility, adminId: string) {
     try {
-      const superAdmin = await this.userRepository.findById(superAdminId);
-      if (!superAdmin) throw new AppError(400, "Super admin does not exist");
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
+      let campusId;
+      campusId = data.campusId ? data.campusId : admin.campusId;
       const facility = FacilityFactory.addNewFacility({
         facilityName: data.facilityName,
         facilityType: data.facilityType,
@@ -30,8 +37,8 @@ class FacilityService {
         location: data.location,
         features: data.features,
         status: "Available",
-        campusId: data.campusId,
-        churchId: String(superAdmin.churchId),
+        campusId,
+        churchId: String(admin.churchId),
       });
       const newFacility = await this.facilityRepository.save(facility);
 

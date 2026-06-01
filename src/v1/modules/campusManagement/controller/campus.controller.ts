@@ -25,6 +25,15 @@ class CampusController {
       .json(result);
   };
 
+  getAllCampusAssets = async (req: Request, res: Response) => {
+    const result: any = await this.campusService.getAllCampusAssets(
+      req.params.campusId,
+    );
+    return res
+      .status(result.success ? httpStatus.OK : httpStatus.BAD_REQUEST)
+      .json(result);
+  };
+
   assignPersonnelToCampus = async (req: Request, res: Response) => {
     const result: any = await this.campusService.assignPersonnelToCampus(req);
     return res
