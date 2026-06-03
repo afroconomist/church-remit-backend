@@ -2,6 +2,7 @@ import { injectable } from "tsyringe";
 import SacramentFactory from "../factories/sacrament.factory";
 import SacramentRepository from "../repositories/sacrament.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
+import MemberRepository from "../../memberManagement/repositories/member.repository";
 import { RecordSacrament } from "../dtos/record-sacrament.dto";
 import logger from "@shared/utils/logger";
 import AppError from "@shared/error/app.error";
@@ -11,13 +12,19 @@ class SacramentService {
   constructor(
     private readonly sacramentRepository: SacramentRepository,
     private readonly userRepository: UserRepository,
+    private readonly memberRepository: MemberRepository,
   ) {}
 
-  async recordSacrament(data: RecordSacrament, memberId: string) {
+  async recordSacrament(data: RecordSacrament, adminId: string) {
     try {
-      const member = await this.userRepository.findById(memberId);
-      if (!member) throw new AppError(400, "Member does not exist");
+      const [superAdmin, campusAdmin] = await Promise.all([
+        this.userRepository.findById(adminId),
+        this.memberRepository.findById(adminId),
+      ]);
+      const admin = superAdmin ? superAdmin : campusAdmin;
 
+      let campusId;
+      campusId = data.campusId ? data.campusId : admin.campusId;
       const sacrament = SacramentFactory.recordSacrament({
         sacramentType: data.sacramentType,
         memberName: data.memberName,
@@ -26,8 +33,8 @@ class SacramentService {
         parentsGuardians: data.parentsGuardians,
         sponsorsGodparentsWitnesses: data.sponsorsGodparentsWitnesses,
         additionalNotes: data.additionalNotes,
-        campusId: data.campusId,
-        church: String(member.churchId),
+        campusId,
+        church: String(admin.churchId),
       });
       const recordedSacrament = await this.sacramentRepository.save(sacrament);
 

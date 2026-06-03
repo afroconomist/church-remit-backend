@@ -41,8 +41,8 @@ router.get("/:churchId/facilities", (req: Request, res: Response, next) =>
   facilityController.getAllChurchFacilities(req, res).catch((err) => next(err)),
 );
 
-router.put(
-  "/facilities/:facilityId/maintain",
+router.patch(
+  "/facilities/:facilityId/change-status",
   [authMiddleware, accessControlMiddleware(AccessControls.FACILITY_UPDATE)],
   (req: Request, res: Response, next) =>
     facilityController.changeFacilityStatus(req, res).catch((err) => next(err)),

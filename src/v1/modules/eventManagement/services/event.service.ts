@@ -341,6 +341,7 @@ class EventService {
 
       let totalAttendees;
       const eventAttendees = await this.eventAttendeeRepository.findAll({
+        checkedIn: true,
         churchEvent: eventId,
       });
       totalAttendees = eventAttendees ? eventAttendees.length : 0;
@@ -716,6 +717,29 @@ class EventService {
       );
       if (!churchEvent) throw new AppError(400, "Church event does not exist");
 
+      const pastEventDate = new Date(churchEvent.eventDate);
+      const today = normalizeDate(new Date());
+      const normalizedPastEventDate = normalizeDate(pastEventDate);
+      if (normalizedPastEventDate < today && !churchEvent.recurring) {
+        throw new AppError(400, "Cannot edit past events");
+      }
+
+      const eventDate = new Date(data.eventDate);
+      const presentDay = normalizeDate(new Date());
+      const normalizedStart = normalizeDate(eventDate);
+      if (normalizedStart < presentDay) {
+        throw new Error("You cannot schedule event in the past");
+      }
+
+      let nextEventDateString: string | undefined;
+      if (data.recurring && data.eventFrequency) {
+        const nextEventDate = calculateNextEventDate(
+          eventDate,
+          data.eventFrequency,
+        );
+        nextEventDateString = nextEventDate.toISOString().split("T")[0];
+      }
+
       const startTime = data.eventStartTime;
       const endTime = data.eventEndTime;
       if (endTime <= startTime)
@@ -723,13 +747,6 @@ class EventService {
           success: false,
           message: "Event end time must be after event start time",
         };
-
-      const pastEventDate = new Date(churchEvent.eventDate);
-      const today = normalizeDate(new Date());
-      const normalizedPastEventDate = normalizeDate(pastEventDate);
-      if (normalizedPastEventDate < today && !churchEvent.recurring) {
-        throw new AppError(400, "Cannot edit past events");
-      }
 
       const existingAgendas = await this.eventAgendaRepository.findAll({
         churchEvent: churchEvent.id,
@@ -759,6 +776,7 @@ class EventService {
         category: data.category,
         location: data.location,
         eventDate: data.eventDate,
+        nextEventDate: nextEventDateString,
         eventStartTime: data.eventStartTime,
         eventEndTime: data.eventEndTime,
         maximumCapacity: data.maximumCapacity,

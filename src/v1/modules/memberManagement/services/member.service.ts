@@ -762,7 +762,7 @@ class MemberService {
       });
       const currentCount = categoryMembers.length || 0;
       await this.categoryRepository.updateById(category.id, {
-        members: currentCount + updatedCount,
+        members: currentCount,
       });
 
       return {
@@ -1025,17 +1025,7 @@ class MemberService {
         { field: "church", value: member.churchId },
         { field: "campusId", value: member.campusId },
       ]);
-
       const eventIds = churchEvents.map((event) => event.id);
-
-      if (eventIds.length === 0) {
-        return {
-          volunteerRoles: [],
-          total_result: 0,
-          current_page: currentPage,
-          total_pages: 0,
-        };
-      }
 
       const { data: volunteerRoles, totalRecords } =
         await this.volunteerRoleRepository.findAndCountAll(
@@ -1204,6 +1194,73 @@ class MemberService {
     }
   }
 
+  async getVolunteerAssignmentsForMember(req: any) {
+    const memberId = req.user.id;
+    const { page, limit } = req.query;
+
+    const pageSize = parseInt(limit, 10) || 10;
+    const currentPage = parseInt(page, 10) || 1;
+
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) throw new AppError(400, "Member does not exist");
+
+      const volunteer = await this.volunteerRepository.findOne({
+        churchMemberId: member.id,
+      });
+      const volunteerRoleAssignments = volunteer
+        ? await this.volunteerRoleAssignmentRepository.findAll({
+            volunteerId: volunteer.id,
+          })
+        : [];
+      const volunteerRolesId = volunteerRoleAssignments.map(
+        (assignment) => assignment.volunteerRoleId,
+      );
+
+      const { data: volunteerRoles, totalRecords } =
+        await this.volunteerRoleRepository.findAndCountAll(
+          {
+            id: volunteerRolesId,
+          },
+          currentPage,
+          pageSize,
+        );
+
+      if (volunteerRoles.length === 0) {
+        return {
+          volunteerRoles: [],
+          total_result: 0,
+          current_page: currentPage,
+          total_pages: 0,
+        };
+      }
+
+      const volunteerRolesWithEventDetails = await Promise.all(
+        volunteerRoles.map(async (role) => {
+          const event = await this.eventRepository.findById(role.eventId);
+          return {
+            ...role,
+            eventName: event?.eventTitle || "Unknown Event",
+            eventDate: event?.eventDate || "Unknown Date",
+          };
+        }),
+      );
+
+      const totalPages = Math.ceil(totalRecords / pageSize);
+      return {
+        volunteerRoles: volunteerRolesWithEventDetails,
+        total_result: totalRecords,
+        current_page: currentPage,
+        total_pages: totalPages,
+      };
+    } catch (error: any) {
+      logger.error({ error: "Error fetching volunteer roles for member" });
+      throw new Error(
+        "An unexpected error occurred while fetching volunteer roles for member.",
+      );
+    }
+  }
+
   async getGroupsMemberBelongsTo(req: any) {
     const memberId = req.user.id;
     const { page, limit } = req.query;
@@ -1311,7 +1368,7 @@ class MemberService {
 
       const { data: memberSacraments, totalRecords } =
         await this.sacramentRepository.findAndCountAll(
-          { memberName: `${member.firstName} ${member.lastName}` },
+          { campusId: member.campusId },
           currentPage,
           pageSize,
         );
@@ -1351,10 +1408,23 @@ class MemberService {
       const member = await this.memberRepository.findById(memberId);
       if (!member) throw new AppError(400, "Member does not exist");
 
+      const prayerRequests_ =
+        await this.prayerRequestRepository.findAllWithOrConditions([
+          { field: "campusId", value: member.campusId },
+          { field: "privacySetting", value: "Private" },
+          { field: "privacySetting", value: "Public" },
+          { field: "privacySetting", value: "Anonymous" },
+          {
+            field: "submittedBy",
+            value: `${member.firstName} ${member.lastName}`,
+          },
+        ]);
+      const prayerRequestIds = prayerRequests_.map((pr) => pr.id);
+
       const { data: prayerRequests, totalRecords } =
         await this.prayerRequestRepository.findAndCountAll(
           {
-            campusId: member.campusId,
+            id: prayerRequestIds,
           },
           currentPage,
           pageSize,

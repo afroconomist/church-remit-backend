@@ -488,6 +488,17 @@ class FamilyService {
     const family = await this.familyRepository.findById(req.params.familyId);
     if (!family) throw new AppError(400, "Family does not exist");
 
+    const familyMembers = await this.familyMemberRepository.findAll({
+      family: family.id,
+    });
+    if (familyMembers.length > 0) {
+      for (const member of familyMembers) {
+        await this.memberRepository.updateById(member.id, {
+          linkedToFamily: false,
+        });
+      }
+    }
+
     await this.familyRepository.deleteById(family.id);
 
     return "Family has been deleted successfully";
