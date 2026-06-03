@@ -20,7 +20,7 @@ export class BaseRepository<T, M extends Model> {
   async updateById(
     id: string,
     data: Partial<M>,
-    trx?: Transaction
+    trx?: Transaction,
   ): Promise<M> {
     return await this.model
       .query(trx)
@@ -30,7 +30,7 @@ export class BaseRepository<T, M extends Model> {
 
   async getAndCountAll(
     page: number,
-    limit: number
+    limit: number,
   ): Promise<{ data: T[]; totalRecords: number }> {
     const query = this.model.query();
 
@@ -53,19 +53,47 @@ export class BaseRepository<T, M extends Model> {
   async findAndCountAll(
     filter: ObjectLiteral,
     page: number,
-    limit: number
+    limit: number,
   ): Promise<{ data: T[]; totalRecords: number }> {
-    const query = this.model.query();
+    const baseQuery = this.model.query();
 
-    const totalRecords = await this.model.query().where(filter).resultSize();
+    Object.entries(filter).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        baseQuery.whereIn(key, value);
+      } else {
+        baseQuery.where(key, value);
+      }
+    });
 
-    const data = await query
-      .where(filter)
+    const totalRecords = await baseQuery.clone().resultSize();
+
+    const data = await baseQuery
+      .clone()
       .orderBy("createdAt", "desc")
       .limit(limit)
       .offset((page - 1) * limit);
 
     return { data, totalRecords };
+  }
+
+  async findAllWithOrConditions(
+    conditions: { field: string; value: any }[],
+  ): Promise<T[]> {
+    const query = this.model.query();
+
+    if (conditions.length === 0) {
+      return await query;
+    }
+
+    return await query.where((builder) => {
+      conditions.forEach((condition, index) => {
+        if (index === 0) {
+          builder.where(condition.field, condition.value);
+        } else {
+          builder.orWhere(condition.field, condition.value);
+        }
+      });
+    });
   }
 
   async save(data: Partial<T>, transaction?: Transaction): Promise<M> {

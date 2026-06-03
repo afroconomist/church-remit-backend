@@ -296,9 +296,43 @@ class VolunteerService {
         };
       }
 
+      const volunteersWithRoles = await Promise.all(
+        volunteers.map(async (volunteer) => {
+          const volunteerRoles =
+            await this.volunteerRoleAssignmentRepository.findAll({
+              volunteerId: volunteer.id,
+            });
+          const volunteerRolesIds = volunteerRoles.map(
+            (role) => role.volunteerRoleId,
+          );
+          const roles = await this.volunteerRoleRepository.findAll({
+            id: volunteerRolesIds,
+          });
+          const rolesWithEvent = await Promise.all(
+            roles.map(async (role) => {
+              const event = await this.eventRepository.findById(role.eventId);
+              return {
+                ...role,
+                eventName: event ? event.eventTitle : "Event not found",
+                eventDate: event ? event.eventDate : "Event not found",
+              };
+            }),
+          );
+          return {
+            ...volunteer,
+            rolesWithEvent,
+          };
+        }),
+      );
+
+      const totalActiveVolunteers = volunteersWithRoles.filter(
+        (volunteer) => volunteer.status === "Active",
+      ).length;
+
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
-        volunteers,
+        volunteers: volunteersWithRoles,
+        total_active: totalActiveVolunteers,
         total_result: totalRecords,
         current_page: currentPage,
         total_pages: totalPages,

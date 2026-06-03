@@ -143,7 +143,7 @@ router.delete(
 
 router.get(
   "/groups/:groupId/meetings",
-  [authMiddleware, accessControlMiddleware(AccessControls.GROUP_LIST)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     groupController.getGroupMeetings(req, res).catch((err) => next(err)),
 );

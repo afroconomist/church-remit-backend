@@ -223,6 +223,15 @@ router.delete(
 );
 
 router.get(
+  "/members/volunteer-assignments",
+  [authMiddleware],
+  (req: Request, res: Response, next) =>
+    memberController
+      .getVolunteerAssignmentsForMember(req, res)
+      .catch((err) => next(err)),
+);
+
+router.get(
   "/members/groups",
   [authMiddleware],
   (req: Request, res: Response, next) =>

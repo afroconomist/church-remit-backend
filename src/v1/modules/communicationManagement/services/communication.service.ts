@@ -619,6 +619,7 @@ class CommunicationService {
   }
 
   async getDiscussionBoardAndTopics(req: any) {
+    const churchMemberId = req.user.id;
     const discussionBoardId = req.params.discussionBoardId;
     const { page, limit } = req.query;
 
@@ -662,6 +663,18 @@ class CommunicationService {
       } else {
         campusName = null;
       }
+      let isBoardMember;
+      const boardMember = await this.boardMemberRepository.findOne({
+        churchMemberId,
+        discussionBoardId: discussionBoard.id,
+      });
+      isBoardMember = boardMember ? true : false;
+      let discussion_board_topics;
+      if (discussionBoard.visibility === "private" && !isBoardMember) {
+        discussion_board_topics = [];
+      } else {
+        discussion_board_topics = discussionBoardTopics;
+      }
 
       const totalPages = Math.ceil(totalRecords / pageSize);
       return {
@@ -669,7 +682,8 @@ class CommunicationService {
           ...discussionBoard,
           campusName,
         },
-        discussionBoardTopics,
+        discussionBoardTopics: discussion_board_topics,
+        isBoardMember,
         total_result: totalRecords,
         current_page: currentPage,
         total_pages: totalPages,

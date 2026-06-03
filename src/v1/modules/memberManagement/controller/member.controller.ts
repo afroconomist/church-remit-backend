@@ -315,6 +315,20 @@ class MemberController {
     }
   };
 
+  getVolunteerAssignmentsForMember = async (req: Request, res: Response) => {
+    try {
+      const volunteerRoles =
+        await this.memberService.getVolunteerAssignmentsForMember(req);
+      return res
+        .status(httpStatus.OK)
+        .send(SuccessResponse("Operation successful", volunteerRoles));
+    } catch (error: any) {
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse("Internal Server Error: ", error.message));
+    }
+  };
+
   getGroupsMemberBelongsTo = async (req: Request, res: Response) => {
     try {
       const groups = await this.memberService.getGroupsMemberBelongsTo(req);
