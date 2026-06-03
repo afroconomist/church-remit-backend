@@ -33,7 +33,7 @@ router.get(
 
 router.get(
   "/campuses/:campusId/assets",
-  [authMiddleware, accessControlMiddleware(AccessControls.CAMPUS_LIST)],
+  [authMiddleware, accessControlMiddleware(AccessControls.ASSET_LIST)],
   (req: Request, res: Response, next) =>
     campusController.getAllCampusAssets(req, res).catch((err) => next(err)),
 );
