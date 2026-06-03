@@ -13,6 +13,7 @@ import EventBudgetRepository from "../repositories/event_budget.repository";
 import UserRepository from "../../userManagement/repositories/user.repository";
 import MemberRepository from "../../memberManagement/repositories/member.repository";
 import VolunteerRoleRepository from "../../volunteerManagement/repositories/volunteer_role.repo";
+import VolunteerRoleAssignmentRepository from "../../volunteerManagement/repositories/volunteer_role_assignment.repository";
 import VolunteerRepository from "../../volunteerManagement/repositories/volunteer.repo";
 import CampusRepository from "../../campusManagement/repositories/campus.repository";
 import { SubmitReview } from "../dtos/submit-review.dto";
@@ -65,6 +66,7 @@ class EventService {
     private readonly userRepository: UserRepository,
     private readonly memberRepository: MemberRepository,
     private readonly volunteerRoleRepository: VolunteerRoleRepository,
+    private readonly volunteerRoleAssignmentRepository: VolunteerRoleAssignmentRepository,
     private readonly volunteerRepository: VolunteerRepository,
     private readonly campusRepository: CampusRepository,
   ) {}
@@ -642,10 +644,22 @@ class EventService {
       const event = await this.eventRepository.findById(eventId);
       if (!event) throw new AppError(400, "Event does not exist");
 
+      const eventVolunteerRoles = await this.volunteerRoleRepository.findAll({
+        eventId: event.id,
+      });
+      const volunteerRoleIds = eventVolunteerRoles.map((role) => role.id);
+      const volunteerRoleAssignments =
+        await this.volunteerRoleAssignmentRepository.findAll({
+          volunteerRoleId: volunteerRoleIds,
+        });
+      const volunteerIds = volunteerRoleAssignments.map(
+        (assignment) => assignment.volunteerId,
+      );
+
       const { data: eventVolunteers, totalRecords } =
         await this.volunteerRepository.findAndCountAll(
           {
-            eventId: event.id,
+            id: volunteerIds,
           },
           currentPage,
           pageSize,

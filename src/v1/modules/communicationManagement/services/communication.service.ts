@@ -432,8 +432,8 @@ class CommunicationService {
       );
 
       const boardMember = BoardMemberFactory.joinDiscussionBoard({
-        memberName: `${superAdmin.firstName} ${superAdmin.lastName}`,
-        churchMemberId: superAdmin.id,
+        memberName: `${admin.firstName} ${admin.lastName}`,
+        churchMemberId: admin.id,
         discussionBoardId: createdDiscussionBoard.id,
       });
       await this.boardMemberRepository.save(boardMember);
