@@ -76,24 +76,23 @@ export class BaseRepository<T, M extends Model> {
     return { data, totalRecords };
   }
 
-  async findAllWithOrConditions(
-    conditions: { field: string; value: any }[],
+  async findVisiblePrayerRequests(
+    campusId: string,
+    submittedBy: string,
   ): Promise<T[]> {
-    const query = this.model.query();
-
-    if (conditions.length === 0) {
-      return await query;
-    }
-
-    return await query.where((builder) => {
-      conditions.forEach((condition, index) => {
-        if (index === 0) {
-          builder.where(condition.field, "=", condition.value);
-        } else {
-          builder.orWhere(condition.field, "=", condition.value);
-        }
+    return this.model
+      .query()
+      .where((builder) => {
+        builder
+          .where("campusId", campusId)
+          .whereIn("privacySetting", ["Public", "Anonymous"]);
+      })
+      .orWhere((builder) => {
+        builder
+          .where("campusId", campusId)
+          .where("privacySetting", "Private")
+          .where("submittedBy", submittedBy);
       });
-    });
   }
 
   async save(data: Partial<T>, transaction?: Transaction): Promise<M> {
