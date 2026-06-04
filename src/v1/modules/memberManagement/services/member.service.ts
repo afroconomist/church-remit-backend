@@ -328,16 +328,7 @@ class MemberService {
     return {
       success: true,
       message: "Member profile retrieved successfully",
-      member: {
-        firstName: member.firstName ?? "",
-        lastName: member.lastName ?? "",
-        middleName: member.middleName ?? "",
-        phoneNumber: member.phoneNumber ?? "",
-        avatar: member.avatar ?? "",
-        email: member.email ?? "",
-        address: member.streetAddress ?? "",
-        role: member.roleId ?? "",
-      },
+      member,
     };
   }
 
@@ -1414,9 +1405,11 @@ class MemberService {
       const member = await this.memberRepository.findById(memberId);
       if (!member) throw new AppError(400, "Member does not exist");
 
-      const prayerRequests_ = await this.prayerRequestRepository.findAll({
-        campusId: member.campusId,
-      });
+      const prayerRequests_ =
+        await this.prayerRequestRepository.findVisiblePrayerRequests(
+          String(member.campusId),
+          `${member.firstName} ${member.lastName}`,
+        );
       const prayerRequestIds = prayerRequests_.map((pr) => pr.id);
 
       const { data: prayerRequests, totalRecords } =
