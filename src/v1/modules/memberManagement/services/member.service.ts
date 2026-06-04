@@ -105,7 +105,11 @@ class MemberService {
         return { success: false, message: "Member already added" };
 
       let campusId;
-      campusId = member_data.campusId ? campusExists.id : admin.campusId;
+      if (member_data.campusId) {
+        campusId = member_data.campusId;
+      } else {
+        campusId = admin.campusId;
+      }
       const memberPassword = this.generateMemberPassword();
       const member = MemberFactory.addMember({
         ...member_data,
@@ -1021,10 +1025,11 @@ class MemberService {
       });
       isVolunteer = volunteer ? true : false;
 
-      const churchEvents = await this.eventRepository.findAllWithOrConditions([
-        { field: "church", value: member.churchId },
-        { field: "campusId", value: member.campusId },
-      ]);
+      const churchEvents = await this.eventRepository.findAllWithConditions(
+        member.churchId,
+        member.campusId,
+      );
+      console.log("churchEvents", churchEvents);
       const eventIds = churchEvents.map((event) => event.id);
 
       const { data: volunteerRoles, totalRecords } =
@@ -1319,11 +1324,12 @@ class MemberService {
     try {
       const member = await this.memberRepository.findById(memberId);
       if (!member) throw new AppError(400, "Member does not exist");
+      console.log("member", member);
 
-      const churchEvents = await this.eventRepository.findAllWithOrConditions([
-        { field: "church", value: member.churchId },
-        { field: "campusId", value: member.campusId },
-      ]);
+      const churchEvents = await this.eventRepository.findAllWithConditions(
+        member.churchId,
+        member.campusId,
+      );
 
       const totalRecords = churchEvents.length;
 
@@ -1408,17 +1414,9 @@ class MemberService {
       const member = await this.memberRepository.findById(memberId);
       if (!member) throw new AppError(400, "Member does not exist");
 
-      const prayerRequests_ =
-        await this.prayerRequestRepository.findAllWithOrConditions([
-          { field: "campusId", value: member.campusId },
-          { field: "privacySetting", value: "Private" },
-          { field: "privacySetting", value: "Public" },
-          { field: "privacySetting", value: "Anonymous" },
-          {
-            field: "submittedBy",
-            value: `${member.firstName} ${member.lastName}`,
-          },
-        ]);
+      const prayerRequests_ = await this.prayerRequestRepository.findAll({
+        campusId: member.campusId,
+      });
       const prayerRequestIds = prayerRequests_.map((pr) => pr.id);
 
       const { data: prayerRequests, totalRecords } =

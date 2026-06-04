@@ -47,7 +47,11 @@ class DocumentService {
       }
 
       let campusId_;
-      campusId_ = campusId ? campusId : admin.campusId;
+      if (campusId || campusId === null) {
+        campusId_ = campusId;
+      } else {
+        campusId_ = admin.campusId;
+      }
       const document = DocumentFactory.uploadDocument({
         documentName: fileData.key,
         category,

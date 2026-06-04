@@ -24,7 +24,11 @@ class SacramentService {
       const admin = superAdmin ? superAdmin : campusAdmin;
 
       let campusId;
-      campusId = data.campusId ? data.campusId : admin.campusId;
+      if (data.campusId || data.campusId === null) {
+        campusId = data.campusId;
+      } else {
+        campusId = admin.campusId;
+      }
       const sacrament = SacramentFactory.recordSacrament({
         sacramentType: data.sacramentType,
         memberName: data.memberName,

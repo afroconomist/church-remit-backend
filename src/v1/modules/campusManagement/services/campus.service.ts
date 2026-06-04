@@ -426,10 +426,10 @@ class CampusService {
       const campusAdmin = await this.memberRepository.findById(campusAdminId);
       if (!campusAdmin) throw new AppError(404, "Campus admin not found");
 
-      const churchEvents = await this.eventRepository.findAllWithOrConditions([
-        { field: "church", value: campusAdmin.churchId },
-        { field: "campusId", value: campusAdmin.campusId },
-      ]);
+      const churchEvents = await this.eventRepository.findAllWithConditions(
+        campusAdmin.churchId,
+        campusAdmin.campusId,
+      );
 
       const eventIds = churchEvents.map((event) => event.id);
 
@@ -549,10 +549,10 @@ class CampusService {
       const campusAdmin = await this.memberRepository.findById(campusAdminId);
       if (!campusAdmin) throw new AppError(404, "Campus admin not found");
 
-      const churchEvents = await this.eventRepository.findAllWithOrConditions([
-        { field: "church", value: campusAdmin.churchId },
-        { field: "campusId", value: campusAdmin.campusId },
-      ]);
+      const churchEvents = await this.eventRepository.findAllWithConditions(
+        campusAdmin.churchId,
+        campusAdmin.campusId,
+      );
 
       const totalRecords = churchEvents.length;
 
@@ -598,10 +598,10 @@ class CampusService {
       const campusAdmin = await this.memberRepository.findById(campusAdminId);
       if (!campusAdmin) throw new AppError(404, "Campus admin not found");
 
-      const allEvents = await this.eventRepository.findAllWithOrConditions([
-        { field: "church", value: campusAdmin.churchId },
-        { field: "campusId", value: campusAdmin.campusId },
-      ]);
+      const allEvents = await this.eventRepository.findAllWithConditions(
+        campusAdmin.churchId,
+        campusAdmin.campusId,
+      );
 
       const upcomingEvents = allEvents.filter((event: any) => {
         const eventDate = new Date(event.eventDate);
@@ -655,10 +655,10 @@ class CampusService {
       const campusAdmin = await this.memberRepository.findById(campusAdminId);
       if (!campusAdmin) throw new AppError(404, "Campus admin not found");
 
-      const allEvents = await this.eventRepository.findAllWithOrConditions([
-        { field: "church", value: campusAdmin.churchId },
-        { field: "campusId", value: campusAdmin.campusId },
-      ]);
+      const allEvents = await this.eventRepository.findAllWithConditions(
+        campusAdmin.churchId,
+        campusAdmin.campusId,
+      );
 
       const recurringEvents = allEvents.filter(
         (event: any) => event.recurring === true,
@@ -713,10 +713,10 @@ class CampusService {
       const campusAdmin = await this.memberRepository.findById(campusAdminId);
       if (!campusAdmin) throw new AppError(404, "Campus admin not found");
 
-      const allEvents = await this.eventRepository.findAllWithOrConditions([
-        { field: "church", value: campusAdmin.churchId },
-        { field: "campusId", value: campusAdmin.campusId },
-      ]);
+      const allEvents = await this.eventRepository.findAllWithConditions(
+        campusAdmin.churchId,
+        campusAdmin.campusId,
+      );
 
       const pastEvents = allEvents.filter((event: any) => {
         const eventDate = new Date(event.eventDate);

@@ -493,7 +493,7 @@ class FamilyService {
     });
     if (familyMembers.length > 0) {
       for (const member of familyMembers) {
-        await this.memberRepository.updateById(member.id, {
+        await this.memberRepository.updateById(String(member.churchMemberId), {
           linkedToFamily: false,
         });
       }

@@ -29,7 +29,11 @@ class FacilityService {
       const admin = superAdmin ? superAdmin : campusAdmin;
 
       let campusId;
-      campusId = data.campusId ? data.campusId : admin.campusId;
+      if (data.campusId || data.campusId === null) {
+        campusId = data.campusId;
+      } else {
+        campusId = admin.campusId;
+      }
       const facility = FacilityFactory.addNewFacility({
         facilityName: data.facilityName,
         facilityType: data.facilityType,
@@ -70,15 +74,10 @@ class FacilityService {
       }
 
       const startTime = new Date(data.startTime);
-      const endTime = new Date(data.endTime);
       const today = normalizeDate(new Date());
       const normalizedStart = normalizeDate(startTime);
-      const normalizedEnd = normalizeDate(endTime);
       if (normalizedStart < today) {
         throw new Error("You cannot book a facility in the past");
-      }
-      if (normalizedEnd <= normalizedStart) {
-        throw new Error("End time must be after start time");
       }
 
       const booking = FacilityBookingFactory.bookFacility({

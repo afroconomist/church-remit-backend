@@ -92,7 +92,11 @@ class CommunicationService {
       }
 
       let campusId_;
-      campusId_ = campusId ? campusId : admin.campusId;
+      if (campusId || campusId === null) {
+        campusId_ = campusId;
+      } else {
+        campusId_ = admin.campusId;
+      }
       const news = NewsFactory.createNews({
         headline,
         shortSummary,
@@ -209,7 +213,11 @@ class CommunicationService {
       }
 
       let campusId;
-      campusId = campusId ? data.campusId : admin.campusId;
+      if (data.campusId || data.campusId === null) {
+        campusId = data.campusId;
+      } else {
+        campusId = admin.campusId;
+      }
       const newsletter = NewsletterFactory.createNewsletter({
         newsletterTitle: data.newsletterTitle,
         emailSubjectLine: data.emailSubjectLine,
@@ -334,7 +342,11 @@ class CommunicationService {
       }
 
       let campusId_;
-      campusId_ = campusId ? campusId : admin.campusId;
+      if (campusId || campusId === null) {
+        campusId_ = campusId;
+      } else {
+        campusId_ = admin.campusId;
+      }
       const circular = CircularFactory.uploadCircular({
         title,
         description,
@@ -415,7 +427,11 @@ class CommunicationService {
       const admin = superAdmin ? superAdmin : campusAdmin;
 
       let campusId;
-      campusId = data.campusId ? data.campusId : admin.campusId;
+      if (data.campusId || data.campusId === null) {
+        campusId = data.campusId;
+      } else {
+        campusId = admin.campusId;
+      }
       const discussionBoard = DiscussionBoardFactory.createDiscussionBoard({
         boardName: data.boardName,
         description: data.description,
@@ -855,7 +871,11 @@ class CommunicationService {
       const admin = superAdmin ? superAdmin : campusAdmin;
 
       let campusId;
-      campusId = data.campusId ? data.campusId : admin.campusId;
+      if (data.campusId || data.campusId === null) {
+        campusId = data.campusId;
+      } else {
+        campusId = admin.campusId;
+      }
       const announcement = AnnouncementFactory.createAnnouncement({
         title: data.title,
         content: data.content,

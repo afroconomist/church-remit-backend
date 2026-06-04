@@ -85,23 +85,19 @@ export class BaseRepository<T, M extends Model> {
     return await this.model.query().deleteById(id);
   }
 
-  async findAllWithOrConditions(
-    conditions: { field: string; value: any }[],
+  async findAllWithConditions(
+    churchId: string,
+    campusId?: string,
   ): Promise<T[]> {
-    const query = this.model.query();
+    return this.model
+      .query()
+      .where("church", churchId)
+      .where((builder) => {
+        builder.whereNull("campusId");
 
-    if (conditions.length === 0) {
-      return await query;
-    }
-
-    return await query.where((builder) => {
-      conditions.forEach((condition, index) => {
-        if (index === 0) {
-          builder.where(condition.field, condition.value);
-        } else {
-          builder.orWhere(condition.field, condition.value);
+        if (campusId) {
+          builder.orWhere("campusId", campusId);
         }
       });
-    });
   }
 }
