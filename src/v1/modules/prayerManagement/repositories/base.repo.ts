@@ -88,9 +88,9 @@ export class BaseRepository<T, M extends Model> {
     return await query.where((builder) => {
       conditions.forEach((condition, index) => {
         if (index === 0) {
-          builder.where(condition.field, condition.value);
+          builder.where(condition.field, "=", condition.value);
         } else {
-          builder.orWhere(condition.field, condition.value);
+          builder.orWhere(condition.field, "=", condition.value);
         }
       });
     });

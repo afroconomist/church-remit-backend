@@ -104,7 +104,11 @@ class EventService {
       }
 
       let campusId;
-      campusId = data.campusId ? data.campusId : admin.campusId;
+      if (data.campusId || data.campusId === null) {
+        campusId = data.campusId;
+      } else {
+        campusId = admin.campusId;
+      }
       const newEvent = EventFactory.createNewEvent({
         eventTitle: data.eventTitle,
         description: data.description,
@@ -917,8 +921,15 @@ class EventService {
         eventId: churchEvent.id,
       });
       const eventVolunteerRolesIds = eventVolunteerRoles.map((role) => role.id);
+      const volunteerRoleAssignments =
+        await this.volunteerRoleAssignmentRepository.findAll({
+          volunteerRoleId: eventVolunteerRolesIds,
+        });
+      const eventVolunteerIds = volunteerRoleAssignments.map(
+        (assignment) => assignment.volunteerId,
+      );
       const eventVolunteers = await this.volunteerRepository.findAll({
-        volunteerRole: eventVolunteerRolesIds,
+        id: eventVolunteerIds,
       });
 
       let isRegistered;

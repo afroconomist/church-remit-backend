@@ -38,7 +38,11 @@ class AssetService {
       }
 
       let campusId;
-      campusId = data.campusId ? data.campusId : admin.campusId;
+      if (data.campusId || data.campusId === null) {
+        campusId = data.campusId;
+      } else {
+        campusId = admin.campusId;
+      }
       assetName = data.assetName;
       const asset = AssetFactory.addAsset({
         ...data,
