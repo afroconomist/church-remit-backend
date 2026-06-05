@@ -72,7 +72,7 @@ router.get(
 
 router.put(
   "/prayer/:prayerRequestId/mark-answered",
-  [authMiddleware, accessControlMiddleware(AccessControls.PRAYER_ANSWERED)],
+  [authMiddleware],
   (req: Request, res: Response, next) =>
     prayerController.markPrayerAnswered(req, res).catch((err) => next(err)),
 );
